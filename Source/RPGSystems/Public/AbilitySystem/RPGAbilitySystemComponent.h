@@ -13,5 +13,9 @@ UCLASS()
 class RPGSYSTEMS_API URPGAbilitySystemComponent : public UAbilitySystemComponent
 {
 	GENERATED_BODY()
-	
+public:
+
+	void AddCharacterAbilities(const TArray<TSubclassOf<UGameplayAbility>>& AbilitiesToGrant);
+	void AddCharacterPassiveAbilities(const TArray<TSubclassOf<UGameplayAbility>>& PassivesToGrant);
+	void InitializeDefaultAttributes(const TSubclassOf<UGameplayEffect>& AttributeEffect);
 };

@@ -3,10 +3,13 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "GameplayTagContainer.h"
 #include "GameFramework/Character.h"
 #include "Logging/LogMacros.h"
 #include "RPGSystemsCharacter.generated.h"
 
+class URPGAttributeSet;
+class URPGAbilitySystemComponent;
 class USpringArmComponent;
 class UCameraComponent;
 class UInputMappingContext;
@@ -40,8 +43,10 @@ class ARPGSystemsCharacter : public ACharacter
 
 public:
 	ARPGSystemsCharacter();
-	
 
+	virtual void PossessedBy(AController* NewController) override;
+	virtual void OnRep_PlayerState() override;
+	
 protected:
 
 	/** Called for movement input */
@@ -49,8 +54,18 @@ protected:
 
 	/** Called for looking input */
 	void Look(const FInputActionValue& Value);
-			
+private:
+	UPROPERTY(BlueprintReadOnly,meta =(AllowPrivateAccess=true))
+	TObjectPtr<URPGAbilitySystemComponent> RPGAbilitySystemComp;
 
+	UPROPERTY(BlueprintReadOnly,meta =(AllowPrivateAccess=true))
+	TObjectPtr<URPGAttributeSet> RPGAttributes;
+
+	UPROPERTY(EditAnywhere,Category="Custom Values|Character Info")
+	FGameplayTag CharacterTag;
+	
+	void InitAbilityActorInfo();
+	void InitClassDefaults();
 protected:
 	// APawn interface
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;

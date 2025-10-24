@@ -10,6 +10,11 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
+#include "AbilitySystem/RPGAbilitySystemComponent.h"
+#include "AbilitySystem/Attributes/RPGAttributeSet.h"
+#include "Data/CharacterClassInfo.h"
+#include "Game/PlayerState/RPGPlayerState.h"
+#include "Libraries/RPGAbilitySystemLibrary.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
@@ -52,6 +57,72 @@ ARPGSystemsCharacter::ARPGSystemsCharacter()
 
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
+}
+
+void ARPGSystemsCharacter::PossessedBy(AController* NewController) //server
+{
+	Super::PossessedBy(NewController);
+
+	if (HasAuthority())
+	{
+		InitAbilityActorInfo();
+	}
+}
+
+void ARPGSystemsCharacter::OnRep_PlayerState() //clients
+{
+	Super::OnRep_PlayerState();
+
+	InitAbilityActorInfo(); 
+}
+
+void ARPGSystemsCharacter::InitAbilityActorInfo()
+{
+	ARPGPlayerState* RPGPlayerState = GetPlayerState<ARPGPlayerState>();
+	if (!IsValid(RPGPlayerState))
+	{
+		return;
+	}
+
+	RPGAbilitySystemComp = RPGPlayerState->GetRPGAbilitySystemComponent();
+	RPGAttributes = RPGPlayerState->GetRPGAttributeSet();
+
+	if (!IsValid(RPGAbilitySystemComp) || !IsValid(RPGAttributes))
+	{
+		return;
+	}
+
+	RPGAbilitySystemComp->InitAbilityActorInfo(RPGPlayerState,this);
+
+	if (HasAuthority())
+	{
+		InitClassDefaults();
+	}
+}
+
+void ARPGSystemsCharacter::InitClassDefaults()
+{
+	if (!CharacterTag.IsValid())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("No Character Tag Selected in this Character %s"), *GetNameSafe(this));
+		return;
+	}
+
+	UCharacterClassInfo* ClassInfo = URPGAbilitySystemLibrary::GetCharacterClassDefaultInfo(this);
+	if (!IsValid(ClassInfo))
+	{
+		return;
+	}
+
+	const FCharacterClassDefaultInfo* SelectedClassInfo =  ClassInfo->ClassDefaultInfoMap.Find(CharacterTag);
+	if (!SelectedClassInfo || !IsValid(RPGAbilitySystemComp))
+	{
+		return;
+	}
+	
+	RPGAbilitySystemComp->AddCharacterAbilities(SelectedClassInfo->StartingAbilities);
+	RPGAbilitySystemComp->AddCharacterPassiveAbilities(SelectedClassInfo->StartingPassives);
+	RPGAbilitySystemComp->InitializeDefaultAttributes(SelectedClassInfo->DefaultAttributes);
 }
 
 void ARPGSystemsCharacter::BeginPlay()
