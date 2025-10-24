@@ -76,6 +76,11 @@ void ARPGSystemsCharacter::OnRep_PlayerState() //clients
 	InitAbilityActorInfo(); 
 }
 
+UAbilitySystemComponent* ARPGSystemsCharacter::GetAbilitySystemComponent() const
+{
+	return RPGAbilitySystemComp;
+}
+
 void ARPGSystemsCharacter::InitAbilityActorInfo()
 {
 	ARPGPlayerState* RPGPlayerState = GetPlayerState<ARPGPlayerState>();
@@ -94,6 +99,8 @@ void ARPGSystemsCharacter::InitAbilityActorInfo()
 
 	RPGAbilitySystemComp->InitAbilityActorInfo(RPGPlayerState,this);
 
+	BindCallbacksDependencies();
+	
 	if (HasAuthority())
 	{
 		InitClassDefaults();
@@ -123,6 +130,37 @@ void ARPGSystemsCharacter::InitClassDefaults()
 	RPGAbilitySystemComp->AddCharacterAbilities(SelectedClassInfo->StartingAbilities);
 	RPGAbilitySystemComp->AddCharacterPassiveAbilities(SelectedClassInfo->StartingPassives);
 	RPGAbilitySystemComp->InitializeDefaultAttributes(SelectedClassInfo->DefaultAttributes);
+}
+
+void ARPGSystemsCharacter::BindCallbacksDependencies()
+{
+	if (!IsValid(RPGAbilitySystemComp) || !IsValid(RPGAttributes))
+	{
+		return;
+	}
+
+	RPGAbilitySystemComp->GetGameplayAttributeValueChangeDelegate(RPGAttributes->GetHealthAttribute()).AddLambda(
+		[this] (const FOnAttributeChangeData& Data)
+		{
+			OnHealthChanged(Data.NewValue, RPGAttributes->GetMaxHealth());
+		});
+
+	RPGAbilitySystemComp->GetGameplayAttributeValueChangeDelegate(RPGAttributes->GetManaAttribute()).AddLambda(
+		[this] (const FOnAttributeChangeData& Data)
+		{
+			OnHealthChanged(Data.NewValue, RPGAttributes->GetMaxMana());
+		});
+}
+
+void ARPGSystemsCharacter::BroadcastInitialValues()
+{
+	if (!IsValid(RPGAttributes))
+	{
+		return;
+	}
+
+	OnHealthChanged(RPGAttributes->GetHealth(), RPGAttributes->GetMaxHealth());
+	OnManaChanged(RPGAttributes->GetMana(), RPGAttributes->GetMaxMana());
 }
 
 void ARPGSystemsCharacter::BeginPlay()
