@@ -3,6 +3,10 @@
 
 #include "InventorySection/InventoryComponent.h"
 
+#include "AbilitySystemBlueprintLibrary.h"
+#include "AbilitySystemComponent.h"
+#include "InventorySection/ItemTypesToTables.h"
+#include "Libraries/RPGAbilitySystemLibrary.h"
 #include "Net/UnrealNetwork.h"
 
 bool FPackedInventory::NetSerialize(FArchive& Ar, UPackageMap* Map, bool& bOutSuccess)
@@ -94,5 +98,57 @@ void UInventoryComponent::ReconstructInventory(const FPackedInventory& InInvento
 void UInventoryComponent::OnRep_CachedInventory()
 {
 	ReconstructInventory(CadchedInventory);
+}
+
+void UInventoryComponent::UseItem(const FGameplayTag& ItemTag, int32 NumItems)
+{
+	AActor* Owner = GetOwner();
+	if (!IsValid(Owner))
+	{
+		return;
+	}
+
+	if (!Owner->HasAuthority())
+	{
+		ServerUseItem(ItemTag,NumItems);
+		return;
+	}
+
+	FMasterItemDefinition Item = GetItemDefinitionByTag(ItemTag);
+
+	UAbilitySystemComponent* OwnerASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Owner);
+	if (!IsValid(OwnerASC) || !IsValid(Item.ConsumableProps.ItemEffectClass))
+	{
+		return;
+	}
+	
+	const FGameplayEffectContextHandle ContextHandle = OwnerASC->MakeEffectContext();
+	const FGameplayEffectSpecHandle SpecHandle = OwnerASC->MakeOutgoingSpec(Item.ConsumableProps.ItemEffectClass,
+	Item.ConsumableProps.ItemEffectLevel,ContextHandle);
+	OwnerASC->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
+
+	AddItem(ItemTag, -1);
+
+	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Magenta,FString::Printf(TEXT("Server Item ussed: %s"),
+		*Item.ItemTag.ToString()));
+}
+
+void UInventoryComponent::ServerUseItem_Implementation(const FGameplayTag& ItemTag, int32 NumItems)
+{
+	UseItem(ItemTag,NumItems);
+}
+
+FMasterItemDefinition UInventoryComponent::GetItemDefinitionByTag(const FGameplayTag& ItemTag) const
+{
+	checkf(InventoryDefinitions, TEXT("No inventory definitions inside component: %s"),*GetNameSafe(this));
+
+	for (const auto& Pair : InventoryDefinitions->TagsToTables)
+	{
+		if (ItemTag.MatchesTag(Pair.Key))
+		{
+			return *URPGAbilitySystemLibrary::GetDataTableRowByTag<FMasterItemDefinition>(Pair.Value, ItemTag);
+		}
+	}
+	return FMasterItemDefinition();
 }
 

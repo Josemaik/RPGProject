@@ -3,6 +3,7 @@
 
 #include "Game/PlayerController/RPGPlayerController.h"
 
+#include "AbilitySystemBlueprintLibrary.h"
 #include "InventorySection/InventoryComponent.h"
 #include "Net/UnrealNetwork.h"
 
@@ -12,6 +13,11 @@ ARPGPlayerController::ARPGPlayerController()
 
 	InventoryComponent = CreateDefaultSubobject<UInventoryComponent>("InventoryComponent");
 	InventoryComponent->SetIsReplicated(true);
+}
+
+UAbilitySystemComponent* ARPGPlayerController::GetAbilitySystemComponent() const
+{
+	return UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(GetPawn());
 }
 
 void ARPGPlayerController::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const

@@ -4,8 +4,11 @@
 
 #include "CoreMinimal.h"
 #include "GameplayTagContainer.h"
+#include "ItemTypes.h"
 #include "Components/ActorComponent.h"
 #include "InventoryComponent.generated.h"
+
+class UItemTypesToTables;
 
 USTRUCT()
 struct FPackedInventory
@@ -44,7 +47,12 @@ public:
 	
 	UFUNCTION(BlueprintCallable)
 	void AddItem(const FGameplayTag& ItemTag, int32 NumItems = 1);
+
+	UFUNCTION(BlueprintCallable)
+	void UseItem(const FGameplayTag& ItemTag, int32 NumItems);
 	
+	UFUNCTION(BlueprintPure)
+	FMasterItemDefinition GetItemDefinitionByTag(const FGameplayTag& ItemTag) const;
 private:
 	UPROPERTY(ReplicatedUsing=OnRep_CachedInventory)
 	FPackedInventory CadchedInventory;
@@ -52,9 +60,15 @@ private:
 	UPROPERTY(BlueprintReadOnly, meta=(allowPrivateAccess=true))
 	TMap<FGameplayTag, int32> InventortyTagMap;
 
+	UPROPERTY(EditDefaultsOnly)
+	TObjectPtr<UItemTypesToTables> InventoryDefinitions;
+
 	UFUNCTION(Server, Reliable)
 	void ServerAddItem(const FGameplayTag& ItemTag, int32 NumItems);
 
+	UFUNCTION(Server, Reliable)
+	void ServerUseItem(const FGameplayTag& ItemTag, int32 NumItems);
+	
 	void PackageInventory(FPackedInventory& OutInventory);
 	void ReconstructInventory(const FPackedInventory& InInventory);
 	

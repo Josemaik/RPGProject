@@ -148,7 +148,7 @@ void ARPGSystemsCharacter::BindCallbacksDependencies()
 	RPGAbilitySystemComp->GetGameplayAttributeValueChangeDelegate(RPGAttributes->GetManaAttribute()).AddLambda(
 		[this] (const FOnAttributeChangeData& Data)
 		{
-			OnHealthChanged(Data.NewValue, RPGAttributes->GetMaxMana());
+			OnManaChanged(Data.NewValue, RPGAttributes->GetMaxMana());
 		});
 }
 
