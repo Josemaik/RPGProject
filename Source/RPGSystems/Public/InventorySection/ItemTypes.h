@@ -20,19 +20,19 @@ struct FConsumableProps
 	float ItemEffectLevel;
 };
 
-USTRUCT()
+USTRUCT(BlueprintType)
 struct FMasterItemDefinition : public FTableRowBase
 {
 	GENERATED_BODY()
 
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	FGameplayTag ItemTag;
 
-	UPROPERTY(BlueprintReadOnly)
-	int32 ItemQuantity;
-	
 	UPROPERTY(EditDefaultsOnly,BlueprintReadOnly)
 	FText ItemName;
+	
+	UPROPERTY(BlueprintReadOnly)
+	int32 ItemQuantity;
 
 	UPROPERTY(EditDefaultsOnly,BlueprintReadOnly)
 	TObjectPtr<UTexture2D> Icon;

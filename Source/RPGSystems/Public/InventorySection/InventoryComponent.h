@@ -33,6 +33,8 @@ struct TStructOpsTypeTraits<FPackedInventory> : TStructOpsTypeTraitsBase2<FPacke
 	};
 };
 
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnInventoryPackakdgedSignature, const FPackedInventory& /*Inventory Content*/)
+
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class RPGSYSTEMS_API UInventoryComponent : public UActorComponent
@@ -43,6 +45,8 @@ public:
 	
 	UInventoryComponent();
 
+	FOnInventoryPackakdgedSignature InventoryPackakdgedDelegate;
+	
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 	
 	UFUNCTION(BlueprintCallable)
@@ -53,6 +57,10 @@ public:
 	
 	UFUNCTION(BlueprintPure)
 	FMasterItemDefinition GetItemDefinitionByTag(const FGameplayTag& ItemTag) const;
+
+	void ReconstructInventory(const FPackedInventory& InInventory);
+	TMap<FGameplayTag, int32>& GetInventoryMap();
+
 private:
 	UPROPERTY(ReplicatedUsing=OnRep_CachedInventory)
 	FPackedInventory CadchedInventory;
@@ -70,10 +78,11 @@ private:
 	void ServerUseItem(const FGameplayTag& ItemTag, int32 NumItems);
 	
 	void PackageInventory(FPackedInventory& OutInventory);
-	void ReconstructInventory(const FPackedInventory& InInventory);
 	
 	UFUNCTION()
 	void OnRep_CachedInventory();
 };
+
+
 
 
