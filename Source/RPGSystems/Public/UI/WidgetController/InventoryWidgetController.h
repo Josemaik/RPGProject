@@ -10,9 +10,9 @@ struct FMasterItemDefinition;
 struct FPackedInventory;
 class UInventoryComponent;
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FInventoryItemSignature, const FMasterItemDefinition&, Item);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnInventoryBroadcastComplete);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FSctrollBoxResetSignature);
+DECLARE_MULTICAST_DELEGATE_OneParam(FInventoryItemSignature, const FMasterItemDefinition&);
+DECLARE_MULTICAST_DELEGATE(FOnInventoryBroadcastComplete);
+DECLARE_MULTICAST_DELEGATE(FSctrollBoxResetSignature);
 /**
  * 
  */
@@ -22,16 +22,15 @@ class RPGSYSTEMS_API UInventoryWidgetController : public UWidgetController
 	GENERATED_BODY()
 public:
 
-	UPROPERTY(BlueprintAssignable)
+	
 	FInventoryItemSignature InventoryItemDelegate;
-
-	UPROPERTY(BlueprintAssignable)
+	
 	FOnInventoryBroadcastComplete InventoryBroadcastCompleteDelegate;
-
-	UPROPERTY(BlueprintAssignable)
+	
 	FSctrollBoxResetSignature ScrollBoxResetDelegate;
 	
 	void SetOwningActor(AActor* InOwner);
+	FORCEINLINE AActor* GetOwningActor() { return OwningActor; };
 
 	void BindCallbacksToDependencies();
 	void BroadCastInitialValues();
