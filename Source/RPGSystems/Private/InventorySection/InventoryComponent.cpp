@@ -20,9 +20,9 @@ bool FPackedInventory::NetSerialize(FArchive& Ar, UPackageMap* Map, bool& bOutSu
 
 // Sets default values for this component's properties
 UInventoryComponent::UInventoryComponent()
+: bOwnerLocallyControlled(false)
 {
 	PrimaryComponentTick.bCanEverTick = false;
-	
 }
 
 void UInventoryComponent::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
@@ -64,7 +64,10 @@ void UInventoryComponent::AddItem(const FGameplayTag& ItemTag, int32 NumItems)
 
 void UInventoryComponent::ServerAddItem_Implementation(const FGameplayTag& ItemTag, int32 NumItems)
 {
-	AddItem(ItemTag,NumItems);
+	if (InventortyTagMap.Contains(ItemTag))
+	{
+		AddItem(ItemTag,NumItems);
+	}
 }
 
 void UInventoryComponent::PackageInventory(FPackedInventory& OutInventory)
@@ -103,8 +106,11 @@ TMap<FGameplayTag, int32>& UInventoryComponent::GetInventoryMap()
 
 void UInventoryComponent::OnRep_CachedInventory()
 {
-	ReconstructInventory(CadchedInventory);
-	InventoryPackakdgedDelegate.Broadcast(CadchedInventory);
+	if (bOwnerLocallyControlled)
+	{
+		ReconstructInventory(CadchedInventory);
+		InventoryPackakdgedDelegate.Broadcast(CadchedInventory);	
+	}
 }
 
 void UInventoryComponent::UseItem(const FGameplayTag& ItemTag, int32 NumItems)

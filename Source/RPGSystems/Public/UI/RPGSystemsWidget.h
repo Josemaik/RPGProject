@@ -28,9 +28,6 @@ class RPGSYSTEMS_API URPGSystemsWidget : public UUserWidget
 public:
 
 	void SetWidgetController(UWidgetController* InWidgetController);
-	
-	UFUNCTION(BlueprintImplementableEvent)
-	void OnWidgetControllerSet();
 
 private:
 	virtual void FinishDestroy() override;

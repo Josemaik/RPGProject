@@ -4,10 +4,13 @@
 
 #include "CoreMinimal.h"
 #include "AbilitySystemInterface.h"
+#include "GameplayTagContainer.h"
 #include "GameFramework/PlayerController.h"
 #include "Interfaces/InventoryInterface.h"
 #include "RPGPlayerController.generated.h"
 
+ class URPGAbilitySystemComponent;
+ class URPGInputConfig;
  class URPGSystemsWidget;
 class UInventoryComponent;
 /**
@@ -20,6 +23,8 @@ class RPGSYSTEMS_API ARPGPlayerController : public APlayerController, public IAb
 public:
 	ARPGPlayerController();
 
+	virtual void SetupInputComponent() override;
+	
 	/*Implements inventory interface*/
 	virtual UInventoryComponent* GetInventoryComponent_Implementation() override;
 	
@@ -31,8 +36,24 @@ public:
 	void CreateInventoryWidget();
 	
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
+
+protected:
+
+	virtual void BeginPlay() override;
+	
+	void AbilityInputPressed(FGameplayTag InputTag);
+	void AbilityInputReleased(FGameplayTag InputTag);
 	
 private:
+
+	URPGAbilitySystemComponent* GetRPGAbilitySystemComponent();
+	
+	UPROPERTY()
+	TObjectPtr<URPGAbilitySystemComponent> RPGAbilitySystemComponent;
+	
+	UPROPERTY(EditDefaultsOnly, Category="Custom Values|Input")
+	TObjectPtr<URPGInputConfig> RPGInputConfig;
+	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess=true), Replicated)
 	TObjectPtr<UInventoryComponent> InventoryComponent;
 
@@ -48,3 +69,6 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Custom Values|Widgets")
 	TSubclassOf<URPGSystemsWidget> InventoryWidgetClass;
 };
+
+
+

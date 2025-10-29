@@ -61,7 +61,11 @@ public:
 	void ReconstructInventory(const FPackedInventory& InInventory);
 	TMap<FGameplayTag, int32>& GetInventoryMap();
 
+	FORCEINLINE void SetOwnerLocallyControlled(const bool Value) { bOwnerLocallyControlled = Value; };
+	
 private:
+	bool bOwnerLocallyControlled;
+	
 	UPROPERTY(ReplicatedUsing=OnRep_CachedInventory)
 	FPackedInventory CadchedInventory;
 	

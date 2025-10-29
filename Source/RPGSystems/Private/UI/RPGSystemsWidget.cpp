@@ -13,7 +13,6 @@
 void URPGSystemsWidget::SetWidgetController(UWidgetController* InWidgetController)
 {
 	WidgetController = InWidgetController;
-	//OnWidgetControllerSet();
 	CacheEssentialVars();
 	BindInventoryItemDelegates();
 }

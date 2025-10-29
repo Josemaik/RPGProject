@@ -4,7 +4,11 @@
 #include "Game/PlayerController/RPGPlayerController.h"
 
 #include "AbilitySystemBlueprintLibrary.h"
+#include "AbilitySystem/RPGAbilitySystemComponent.h"
 #include "Blueprint/UserWidget.h"
+#include "Game/PlayerState/RPGPlayerState.h"
+#include "Input/RPGInputConfig.h"
+#include "Input/RPGSystemsInputComponent.h"
 #include "InventorySection/InventoryComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "UI/WidgetController/InventoryWidgetController.h"
@@ -19,11 +23,77 @@ ARPGPlayerController::ARPGPlayerController()
 	InventoryComponent->SetIsReplicated(true);
 }
 
+void ARPGPlayerController::SetupInputComponent()
+{
+	Super::SetupInputComponent();
+
+	if (!IsValid(RPGInputConfig))
+	{
+		return;
+	}
+
+	URPGSystemsInputComponent* RPGInputComp = Cast<URPGSystemsInputComponent>(InputComponent);
+	if (!IsValid(RPGInputComp))
+	{
+		return;
+	}
+
+	RPGInputComp->BindAbilityActions(RPGInputConfig, this, &ThisClass::AbilityInputPressed, &ThisClass::AbilityInputReleased);
+}
+
+// UAbilitySystemComponent* ARPGPlayerController::GetAbilitySystemComponent() const
+// {
+// 	
+// }
+
 void ARPGPlayerController::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ARPGPlayerController, InventoryComponent);
+}
+
+void ARPGPlayerController::BeginPlay()
+{
+	Super::BeginPlay();
+
+	if (IsValid(InventoryComponent))
+	{
+		InventoryComponent->SetOwnerLocallyControlled(IsLocalController());
+	}
+}
+
+void ARPGPlayerController::AbilityInputPressed(FGameplayTag InputTag)
+{
+	if (!IsValid(GetRPGAbilitySystemComponent()))
+	{
+		return;
+	}
+
+	RPGAbilitySystemComponent->AbilityInputPressed(InputTag);
+}
+
+void ARPGPlayerController::AbilityInputReleased(FGameplayTag InputTag)
+{
+	if (!IsValid(GetRPGAbilitySystemComponent()))
+	{
+		return;
+	}
+
+	RPGAbilitySystemComponent->AbilityInputReleased(InputTag);
+}
+
+URPGAbilitySystemComponent* ARPGPlayerController::GetRPGAbilitySystemComponent()
+{
+	if (!IsValid(RPGAbilitySystemComponent))
+	{
+		if (const ARPGPlayerState* RPGPlayerState = GetPlayerState<ARPGPlayerState>())
+		{
+			RPGAbilitySystemComponent = RPGPlayerState->GetRPGAbilitySystemComponent();
+		}
+	}
+
+	return RPGAbilitySystemComponent;
 }
 
 UInventoryComponent* ARPGPlayerController::GetInventoryComponent_Implementation()
