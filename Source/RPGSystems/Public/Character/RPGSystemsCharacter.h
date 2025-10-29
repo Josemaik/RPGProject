@@ -62,6 +62,7 @@ protected:
 	virtual void InitAbilityActorInfo() override;
 	virtual void BindCallbacksToDependencies() override;
 	virtual void InitClassDefaults() override;
+	virtual void BroadcastInitialValues() override;
 	
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	virtual void BeginPlay() override;
@@ -72,8 +73,5 @@ private:
 
 	UPROPERTY(BlueprintReadOnly,meta =(AllowPrivateAccess=true))
 	TObjectPtr<URPGAttributeSet> RPGAttributes;
-	
-	UFUNCTION(BlueprintCallable)
-	void BroadcastInitialValues();
 };
 

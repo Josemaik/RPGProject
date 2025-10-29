@@ -35,6 +35,7 @@ void URPGAbilitySystemComponent::InitializeDefaultAttributes(const TSubclassOf<U
 	const FGameplayEffectContextHandle ContextHandle = MakeEffectContext();
 	const FGameplayEffectSpecHandle SpecHandle = MakeOutgoingSpec(AttributeEffect, 1.f, ContextHandle);
 	ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
+	OnAttributesGiven.Broadcast();
 }
 
 void URPGAbilitySystemComponent::AbilityInputPressed(const FGameplayTag& InputTag)

@@ -32,35 +32,35 @@ void UInventoryComponent::GetLifetimeReplicatedProps(TArray<class FLifetimePrope
 	DOREPLIFETIME(UInventoryComponent, CadchedInventory);
 }
 
-void UInventoryComponent::AddItem(const FGameplayTag& ItemTag, int32 NumItems)
-{
-	AActor* Owner = GetOwner();
-	if (!IsValid(Owner))
+	void UInventoryComponent::AddItem(const FGameplayTag& ItemTag, int32 NumItems)
 	{
-		return;
-	}
+		AActor* Owner = GetOwner();
+		if (!IsValid(Owner))
+		{
+			return;
+		}
 
-	if (!Owner->HasAuthority())
-	{
-		ServerAddItem(ItemTag,NumItems);
-		return;
-	}
+		if (!Owner->HasAuthority())
+		{
+			ServerAddItem(ItemTag,NumItems);
+			return;
+		}
 
-	if (InventortyTagMap.Contains(ItemTag))
-	{
-		InventortyTagMap[ItemTag] += NumItems;
-	}
-	else
-	{
-		InventortyTagMap.Emplace(ItemTag,NumItems);
-	}
+		if (InventortyTagMap.Contains(ItemTag))
+		{
+			InventortyTagMap[ItemTag] += NumItems;
+		}
+		else
+		{
+			InventortyTagMap.Emplace(ItemTag,NumItems);
+		}
 
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red,
-		FString::Printf(TEXT("Server Items Added to Inventory %s, qty: %d"), *ItemTag.ToString(), NumItems));
+		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red,
+			FString::Printf(TEXT("Server Items Added to Inventory %s, qty: %d"), *ItemTag.ToString(), NumItems));
 
-	PackageInventory(CadchedInventory);
-	InventoryPackakdgedDelegate.Broadcast(CadchedInventory);
-}
+		PackageInventory(CadchedInventory);
+		InventoryPackakdgedDelegate.Broadcast(CadchedInventory);
+	}
 
 void UInventoryComponent::ServerAddItem_Implementation(const FGameplayTag& ItemTag, int32 NumItems)
 {
