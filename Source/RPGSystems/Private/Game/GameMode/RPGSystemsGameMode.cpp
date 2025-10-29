@@ -1,7 +1,6 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
-#include "RPGSystemsGameMode.h"
-#include "RPGSystemsCharacter.h"
+#include "Game/GameMode/RPGSystemsGameMode.h"
 #include "UObject/ConstructorHelpers.h"
 
 ARPGSystemsGameMode::ARPGSystemsGameMode()

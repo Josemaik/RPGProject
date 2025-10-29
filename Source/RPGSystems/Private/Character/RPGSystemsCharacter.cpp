@@ -1,6 +1,6 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
-#include "RPGSystemsCharacter.h"
+#include "Character/RPGSystemsCharacter.h"
 #include "Engine/LocalPlayer.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
@@ -99,7 +99,7 @@ void ARPGSystemsCharacter::InitAbilityActorInfo()
 
 	RPGAbilitySystemComp->InitAbilityActorInfo(RPGPlayerState,this);
 
-	BindCallbacksDependencies();
+	BindCallbacksToDependencies();
 	
 	if (HasAuthority())
 	{
@@ -132,7 +132,7 @@ void ARPGSystemsCharacter::InitClassDefaults()
 	RPGAbilitySystemComp->InitializeDefaultAttributes(SelectedClassInfo->DefaultAttributes);
 }
 
-void ARPGSystemsCharacter::BindCallbacksDependencies()
+void ARPGSystemsCharacter::BindCallbacksToDependencies()
 {
 	if (!IsValid(RPGAbilitySystemComp) || !IsValid(RPGAttributes))
 	{
