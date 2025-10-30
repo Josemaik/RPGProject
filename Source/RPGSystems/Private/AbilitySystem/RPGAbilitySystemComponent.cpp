@@ -83,7 +83,7 @@ void URPGAbilitySystemComponent::AbilityInputReleased(const FGameplayTag& InputT
 	}
 }
 
-void URPGAbilitySystemComponent::SetDynamicProjectile(const FGameplayTag& ProjectileTag)
+void URPGAbilitySystemComponent::SetDynamicProjectile(const FGameplayTag& ProjectileTag,int32 AbilityLevel)
 {
 	if (!ProjectileTag.IsValid())
 	{
@@ -92,7 +92,7 @@ void URPGAbilitySystemComponent::SetDynamicProjectile(const FGameplayTag& Projec
 	
 	if (!GetAvatarActor()->HasAuthority())
 	{
-		ServerSetDynamicProjectile(ProjectileTag);
+		ServerSetDynamicProjectile(ProjectileTag,AbilityLevel);
 		return;
 	}
 
@@ -103,7 +103,7 @@ void URPGAbilitySystemComponent::SetDynamicProjectile(const FGameplayTag& Projec
 	
 	if (IsValid(DynamicProjectileAbility))
 	{
-		FGameplayAbilitySpec Spec = FGameplayAbilitySpec(DynamicProjectileAbility, 1.f);
+		FGameplayAbilitySpec Spec = FGameplayAbilitySpec(DynamicProjectileAbility, AbilityLevel);
 		if (UProjectileAbility* ProjectileAbility = Cast<UProjectileAbility>(Spec.Ability))
 		{
 			ProjectileAbility->ProjectileToSpawnTag = ProjectileTag;
@@ -114,7 +114,7 @@ void URPGAbilitySystemComponent::SetDynamicProjectile(const FGameplayTag& Projec
 	}
 }
 
-void URPGAbilitySystemComponent::ServerSetDynamicProjectile_Implementation(const FGameplayTag& ProjectileTag)
+void URPGAbilitySystemComponent::ServerSetDynamicProjectile_Implementation(const FGameplayTag& ProjectileTag,int32 AbilityLevel)
 {
-	SetDynamicProjectile(ProjectileTag);
+	SetDynamicProjectile(ProjectileTag,AbilityLevel);
 }

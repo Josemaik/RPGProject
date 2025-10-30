@@ -31,7 +31,7 @@ public:
 	/*Implements ability system interface*/
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 	/*Implements rpg ability system interface*/
-	virtual void SetDynamicProjectile_Implementation(const FGameplayTag& ProjectileTag) override;
+	virtual void SetDynamicProjectile_Implementation(const FGameplayTag& ProjectileTag,int32 AbilityLevel) override;
 	
 	UInventoryWidgetController* GetInventoryWidgetController();
 
