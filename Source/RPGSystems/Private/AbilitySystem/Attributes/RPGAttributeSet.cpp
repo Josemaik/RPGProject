@@ -28,6 +28,19 @@ void URPGAttributeSet::PostGameplayEffectExecute(const struct FGameplayEffectMod
 	{
 		SetMana(FMath::Clamp(GetMana(), 0.f, GetMaxMana()));
 	}
+
+	if (Data.EvaluatedData.Attribute == GetIncomingHealthDamageAttribute())
+	{
+		HandleIncomingHealthDamage(Data);
+	}
+}
+
+void URPGAttributeSet::HandleIncomingHealthDamage(const FGameplayEffectModCallbackData& Data)
+{
+	const float LocalDamage = GetIncomingHealthDamage();
+	SetIncomingHealthDamage(0.f);
+
+	SetHealth(FMath::Clamp(GetHealth() - LocalDamage, 0.f, GetMaxHealth()));
 }
 
 void URPGAttributeSet::OnRep_Health(const FGameplayAttributeData& OldHealth)
