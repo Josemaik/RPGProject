@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "AbilitySystemInterface.h"
 #include "CharacterBase.h"
+#include "Interfaces/RPGAbilitySystemInterface.h"
 #include "Logging/LogMacros.h"
 #include "RPGSystemsCharacter.generated.h"
 
@@ -19,7 +20,7 @@ struct FInputActionValue;
 DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
 
 UCLASS(config=Game)
-class ARPGSystemsCharacter : public ACharacterBase,public IAbilitySystemInterface
+class ARPGSystemsCharacter : public ACharacterBase,public IAbilitySystemInterface, public IRPGAbilitySystemInterface
 {
 	GENERATED_BODY()
 	
@@ -43,11 +44,14 @@ class ARPGSystemsCharacter : public ACharacterBase,public IAbilitySystemInterfac
 
 public:
 	ARPGSystemsCharacter();
-
+	
 	virtual void PossessedBy(AController* NewController) override;
 	virtual void OnRep_PlayerState() override;
 
+	/*Ability System Interface*/
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
+	/*RPG Ability System Interface*/
+	virtual USceneComponent* GetDynamicSpawnPoint_Implementation() override;
 	
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
@@ -68,6 +72,10 @@ protected:
 	virtual void BeginPlay() override;
 	
 private:
+
+	UPROPERTY(VisibleAnywhere, meta=(AllowPrivateAccess=true))
+	TObjectPtr<USceneComponent> DynamicProjectileSpawnPoint;
+	
 	UPROPERTY(BlueprintReadOnly,meta =(AllowPrivateAccess=true))
 	TObjectPtr<URPGAbilitySystemComponent> RPGAbilitySystemComp;
 

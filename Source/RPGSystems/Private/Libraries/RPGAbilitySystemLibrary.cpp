@@ -16,3 +16,14 @@ UCharacterClassInfo* URPGAbilitySystemLibrary::GetCharacterClassDefaultInfo(cons
 	
 	return RPGGameMode->GetCharacterClassDefaultInfo();
 }
+
+UProjectileInfo* URPGAbilitySystemLibrary::GetProjectileInfo(const UObject* WorldContextObject)
+{
+	const ARPGGameMode* const RPGGameMode = Cast<ARPGGameMode>(UGameplayStatics::GetGameMode(WorldContextObject));
+	if (!IsValid(RPGGameMode))
+	{
+		return nullptr;
+	}
+	
+	return RPGGameMode->GetProjectileInfo();
+}

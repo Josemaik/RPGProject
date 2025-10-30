@@ -7,6 +7,7 @@
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "RPGAbilitySystemLibrary.generated.h"
 
+class UProjectileInfo;
 class UCharacterClassInfo;
 /**
  * 
@@ -20,6 +21,8 @@ public:
 	UFUNCTION(BlueprintPure)
 	static UCharacterClassInfo* GetCharacterClassDefaultInfo(const UObject* WorldContextObject);
 
+	static UProjectileInfo* GetProjectileInfo(const UObject* WorldContextObject);
+	
 	template<typename T>
 	static T* GetDataTableRowByTag(UDataTable* DataTable, FGameplayTag Tag);
 };
