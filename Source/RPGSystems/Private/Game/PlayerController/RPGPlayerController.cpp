@@ -106,6 +106,16 @@ UAbilitySystemComponent* ARPGPlayerController::GetAbilitySystemComponent() const
 	return UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(GetPawn());
 }
 
+void ARPGPlayerController::SetDynamicProjectile_Implementation(const FGameplayTag& ProjectileTag)
+{
+	if (!IsValid(RPGAbilitySystemComponent))
+	{
+		return;
+	}
+
+	RPGAbilitySystemComponent->SetDynamicProjectile(ProjectileTag);
+}
+
 UInventoryWidgetController* ARPGPlayerController::GetInventoryWidgetController()
 {
  	if (!IsValid(InventoryWidgetController))
