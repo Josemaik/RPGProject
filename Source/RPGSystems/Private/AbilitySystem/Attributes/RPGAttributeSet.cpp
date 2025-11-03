@@ -35,45 +35,31 @@ void URPGAttributeSet::PostGameplayEffectExecute(const struct FGameplayEffectMod
 		SetMana(FMath::Clamp(GetMana(), 0.f, GetMaxMana()));
 	}
 
-	if (Data.EvaluatedData.Attribute == GetIncomingHealthDamageAttribute())
+	if (Data.EvaluatedData.Attribute == GetIncomingDamageAttribute())
 	{
-		HandleIncomingHealthDamage(Data);
-	}
-
-	if (Data.EvaluatedData.Attribute == GetIncomingShieldDamageAttribute())
-	{
-		HandleIncomingShieldDamage(Data);
+		HandleIncomingDamage(Data);
 	}
 }
 
-void URPGAttributeSet::HandleIncomingHealthDamage(const FGameplayEffectModCallbackData& Data)
+void URPGAttributeSet::HandleIncomingDamage(const FGameplayEffectModCallbackData& Data)
 {
-	const float LocalDamage = GetIncomingHealthDamage();
-	SetIncomingHealthDamage(0.f);
+	const float LocalDamage = GetIncomingDamage();
+	SetIncomingDamage(0.f);
 
-	FGameplayEffectContextHandle ContextHandle = Data.EffectSpec.GetContext();
-	FRPGGameplayEffectContext* RPGContext = FRPGGameplayEffectContext::GetEffectContext(ContextHandle);
-	FColor DebugColor = RPGContext->IsCriticalHit() ? FColor::Red : FColor::Green;
-	
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, DebugColor,
-		FString::Printf(TEXT("Damage Delt: %d"), FMath::TruncToInt(LocalDamage)));
-	
-	SetHealth(FMath::Clamp(GetHealth() - LocalDamage, 0.f, GetMaxHealth()));
-}
+	float LocalShield = GetShield();
+	float OutShield = 0.f;
 
-void URPGAttributeSet::HandleIncomingShieldDamage(const FGameplayEffectModCallbackData& Data)
-{
-	const float LocalDamage = GetIncomingShieldDamage();
-	SetIncomingShieldDamage(0.f);
+	if (LocalDamage > 0.f && LocalShield > 0.f)
+	{
+		OutShield = LocalShield - LocalDamage;
+		SetShield(FMath::Clamp(OutShield, 0.f, GetMaxShield()));
+	}
 
-	FGameplayEffectContextHandle ContextHandle = Data.EffectSpec.GetContext();
-	FRPGGameplayEffectContext* RPGContext = FRPGGameplayEffectContext::GetEffectContext(ContextHandle);
-	FColor DebugColor = RPGContext->IsCriticalHit() ? FColor::Red : FColor::Green;
-	
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, DebugColor,
-		FString::Printf(TEXT("Damage Delt: %d"), FMath::TruncToInt(LocalDamage)));
-	
-	SetShield(FMath::Clamp(GetShield() - LocalDamage, 0.f, GetMaxShield()));
+	if (LocalDamage > 0.f && OutShield <= 0.f)
+	{
+		const float RemainderDamage = fabs(LocalShield - LocalDamage);
+		SetHealth(FMath::Clamp(GetHealth() - RemainderDamage, 0.f, GetMaxHealth()));
+	}
 }
 
 void URPGAttributeSet::OnRep_Health(const FGameplayAttributeData& OldHealth)

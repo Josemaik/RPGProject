@@ -62,17 +62,12 @@ public:
     ATTRIBUTE_ACCESSORS(URPGAttributeSet, MaxMana)
 
 	UPROPERTY()
-	FGameplayAttributeData IncomingHealthDamage;
-	ATTRIBUTE_ACCESSORS(URPGAttributeSet,IncomingHealthDamage);
-
-	UPROPERTY()
-	FGameplayAttributeData IncomingShieldDamage;
-	ATTRIBUTE_ACCESSORS(URPGAttributeSet,IncomingShieldDamage);
+	FGameplayAttributeData IncomingDamage;
+	ATTRIBUTE_ACCESSORS(URPGAttributeSet,IncomingDamage);
 	
 private:
 
-	void HandleIncomingHealthDamage(const FGameplayEffectModCallbackData& Data);
-	void HandleIncomingShieldDamage(const FGameplayEffectModCallbackData& Data);
+	void HandleIncomingDamage(const FGameplayEffectModCallbackData& Data);
 	
 	UFUNCTION()
 	void OnRep_Health(const FGameplayAttributeData& OldHealth);
