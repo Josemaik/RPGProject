@@ -21,6 +21,9 @@ public:
 
 	UFUNCTION(BlueprintImplementableEvent)
 	void OnManaChanged(float CurrentMana, float MaxMana);
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void OnShieldChanged(float CurrentShield, float MaxShield);
 	
 protected:
 	

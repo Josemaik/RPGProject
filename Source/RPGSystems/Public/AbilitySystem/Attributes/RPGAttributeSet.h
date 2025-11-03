@@ -33,6 +33,18 @@ public:
 	FGameplayAttributeData MaxHealth;
 	ATTRIBUTE_ACCESSORS(URPGAttributeSet, MaxHealth)
 
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_Shield)
+	FGameplayAttributeData Shield;
+	ATTRIBUTE_ACCESSORS(URPGAttributeSet, Shield)
+
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_MaxShield)
+	FGameplayAttributeData MaxShield;
+	ATTRIBUTE_ACCESSORS(URPGAttributeSet, MaxShield)
+
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_DamageReduction)
+	FGameplayAttributeData DamageReduction;
+	ATTRIBUTE_ACCESSORS(URPGAttributeSet, DamageReduction)
+	
 	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_Mana)
 	FGameplayAttributeData Mana;
 	ATTRIBUTE_ACCESSORS(URPGAttributeSet, Mana)
@@ -44,10 +56,15 @@ public:
 	UPROPERTY()
 	FGameplayAttributeData IncomingHealthDamage;
 	ATTRIBUTE_ACCESSORS(URPGAttributeSet,IncomingHealthDamage);
+
+	UPROPERTY()
+	FGameplayAttributeData IncomingShieldDamage;
+	ATTRIBUTE_ACCESSORS(URPGAttributeSet,IncomingShieldDamage);
 	
 private:
 
 	void HandleIncomingHealthDamage(const FGameplayEffectModCallbackData& Data);
+	void HandleIncomingShieldDamage(const FGameplayEffectModCallbackData& Data);
 	
 	UFUNCTION()
 	void OnRep_Health(const FGameplayAttributeData& OldHealth);
@@ -56,10 +73,20 @@ private:
 	void OnRep_MaxHealth(const FGameplayAttributeData& OldMaxHealth);
 
 	UFUNCTION()
+	void OnRep_Shield(const FGameplayAttributeData& OldShield);
+
+	UFUNCTION()
+	void OnRep_MaxShield(const FGameplayAttributeData& OldMaxShield);
+
+	UFUNCTION()
+	void OnRep_DamageReduction(const FGameplayAttributeData& OldDamageReduction);
+	
+	UFUNCTION()
 	void OnRep_Mana(const FGameplayAttributeData& OldMana);
 
 	UFUNCTION()
 	void OnRep_MaxMana(const FGameplayAttributeData& OldMaxmana);
 };
+
 
 
