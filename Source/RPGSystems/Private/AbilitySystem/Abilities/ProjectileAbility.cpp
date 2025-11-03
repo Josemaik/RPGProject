@@ -3,11 +3,12 @@
 
 #include "AbilitySystem/Abilities/ProjectileAbility.h"
 
+#include "AbilitySystemBlueprintLibrary.h"
+#include "AbilitySystemComponent.h"
 #include "Data/ProjectileInfo.h"
 #include "Interfaces/RPGAbilitySystemInterface.h"
 #include "Libraries/RPGAbilitySystemLibrary.h"
 #include "Projectiles/ProjectileBase.h"
-#include "Tests/AutomationCommon.h"
 
 UProjectileAbility::UProjectileAbility()
 {
@@ -32,14 +33,15 @@ void UProjectileAbility::OnGiveAbility(const FGameplayAbilityActorInfo* ActorInf
 }
 
 void UProjectileAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
-	const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo,
-	const FGameplayEventData* TriggerEventData)
+										const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo,
+										const FGameplayEventData* TriggerEventData)
 {
 	Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
 
 	if (HasAuthority(&ActivationInfo))
 	{
 		SpawnProjectile();
+		ReduceMana();
 	}
 	
 	FTimerHandle TimerHandle;
@@ -85,4 +87,22 @@ void UProjectileAbility::SpawnProjectile()
 			SpawnedProjectile->FinishSpawning(SpawnTransform);
 		}
 	}
+}
+
+void UProjectileAbility::ReduceMana() const
+{
+	if (!IsValid(AvatarActorFromInfo))
+	{
+		return;
+	}
+		
+	UAbilitySystemComponent* OwnerASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(AvatarActorFromInfo);
+	if (!IsValid(OwnerASC))
+	{
+		return;
+	}
+
+	FGameplayEffectContextHandle ContextHandle = OwnerASC->MakeEffectContext();
+	FGameplayEffectSpecHandle SpecHandle = OwnerASC->MakeOutgoingSpec(ManaReductionEffect, 1.f, ContextHandle);
+	OwnerASC->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
 }

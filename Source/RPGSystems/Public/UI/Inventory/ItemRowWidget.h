@@ -8,13 +8,12 @@
 #include "InventorySection/ItemTypes.h"
 #include "ItemRowWidget.generated.h"
 
-struct FGameplayTag;
 struct FMasterItemDefinition;
 class UTextBlock;
 class UButton;
 
 
-DECLARE_DELEGATE(FOnUseButtomClicked);
+DECLARE_DELEGATE_OneParam(FOnUseButtomClicked, const FGameplayTag&);
 /**
  * 
  */

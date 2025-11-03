@@ -6,46 +6,81 @@
 #include "GameplayTagContainer.h"
 #include "ItemTypes.h"
 #include "Components/ActorComponent.h"
+#include "Net/Serialization/FastArraySerializer.h"
 #include "InventoryComponent.generated.h"
 
 class UItemTypesToTables;
 
-USTRUCT()
-struct FPackedInventory
+USTRUCT(BlueprintType)
+struct FRPGInventoryEntry : public FFastArraySerializerItem
 {
 	GENERATED_BODY()
 
-	virtual ~FPackedInventory() = default;
-	virtual bool NetSerialize(FArchive& Ar, UPackageMap* Map, bool& bOutSuccess);
-	
-	UPROPERTY()
-	TArray<FGameplayTag> ItemTags;
+	UPROPERTY(BlueprintReadOnly)
+	FGameplayTag ItemTag = FGameplayTag();
 
-	UPROPERTY()
-	TArray<int32> ItemQuantities;
+	UPROPERTY(BlueprintReadOnly)
+	int Quantity = 0;
 };
+
+DECLARE_MULTICAST_DELEGATE_OneParam(FDirtyInventoryItemsSignature, const FRPGInventoryEntry&  /*Dirty Item*/)
+
+USTRUCT()
+struct FRPGInventoryList : public FFastArraySerializer
+{
+	GENERATED_BODY()
+	FRPGInventoryList() :
+	OwnerComponent(nullptr)
+	{}
+
+	FRPGInventoryList(UActorComponent* InOwnerComponent) :
+	OwnerComponent(InOwnerComponent)
+	{}
+
+	void AddItem(const FGameplayTag& ItemTag, int32 NumItems = 1);
+	void RemoveItem(const FGameplayTag& ItemTag, int32 NumItems = 1);
+	bool HasEnough(const FGameplayTag& ItemTag, int32 NumItems = 1);
+
+	// FFastArraySerializwer Contract
+	void PreReplicatedRemove(const TArrayView<int32> RemovedIndices, int32 FinalSize);
+	void PostReplicateAdd(const TArrayView<int32> AddedIndices, int32 FinalSize);
+	void PostReplicatedChange(const TArrayView<int32> ChangedIndices, int32 FinalSize);
+
+	bool NetDeltaSerialize(FNetDeltaSerializeInfo& DeltaParams)
+	{
+		return FastArrayDeltaSerialize<FRPGInventoryEntry, FRPGInventoryList>(Entries,DeltaParams,*this);
+	}
+
+	FDirtyInventoryItemsSignature DirtyItemDelegate;
+private:
+	friend class UInventoryComponent;
+	UPROPERTY()
+	TArray<FRPGInventoryEntry> Entries;
+
+	UPROPERTY(NotReplicated)
+	TObjectPtr<UActorComponent> OwnerComponent;
+};
+
 template<>
-struct TStructOpsTypeTraits<FPackedInventory> : TStructOpsTypeTraitsBase2<FPackedInventory>
+struct TStructOpsTypeTraits<FRPGInventoryList> : TStructOpsTypeTraitsBase2<FRPGInventoryList>
 {
 	enum
 	{
-		WithNetSerializer = true
+		WithNetDeltaSerializer = true
 	};
 };
-
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnInventoryPackakdgedSignature, const FPackedInventory& /*Inventory Content*/)
-
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class RPGSYSTEMS_API UInventoryComponent : public UActorComponent
 {
 	GENERATED_BODY()
 
-public:	
+public:
+
+	UPROPERTY(Replicated)
+	FRPGInventoryList InventoryList;
 	
 	UInventoryComponent();
-
-	FOnInventoryPackakdgedSignature InventoryPackakdgedDelegate;
 	
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 	
@@ -58,20 +93,9 @@ public:
 	UFUNCTION(BlueprintPure)
 	FMasterItemDefinition GetItemDefinitionByTag(const FGameplayTag& ItemTag) const;
 
-	void ReconstructInventory(const FPackedInventory& InInventory);
-	TMap<FGameplayTag, int32>& GetInventoryMap();
-
-	FORCEINLINE void SetOwnerLocallyControlled(const bool Value) { bOwnerLocallyControlled = Value; };
-	
+	TArray<FRPGInventoryEntry> GetInventoryEntries() const;
 private:
-	bool bOwnerLocallyControlled;
 	
-	UPROPERTY(ReplicatedUsing=OnRep_CachedInventory)
-	FPackedInventory CadchedInventory;
-	
-	UPROPERTY(BlueprintReadOnly, meta=(allowPrivateAccess=true))
-	TMap<FGameplayTag, int32> InventortyTagMap;
-
 	UPROPERTY(EditDefaultsOnly)
 	TObjectPtr<UItemTypesToTables> InventoryDefinitions;
 
@@ -80,13 +104,7 @@ private:
 
 	UFUNCTION(Server, Reliable)
 	void ServerUseItem(const FGameplayTag& ItemTag, int32 NumItems);
-	
-	void PackageInventory(FPackedInventory& OutInventory);
-	
-	UFUNCTION()
-	void OnRep_CachedInventory();
 };
-
 
 
 

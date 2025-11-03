@@ -26,8 +26,6 @@ void URPGSystemsWidget::FinishDestroy()
 	}
 	
 	InventoryWidgetController->InventoryItemDelegate.RemoveAll(this);
-	InventoryWidgetController->InventoryBroadcastCompleteDelegate.RemoveAll(this);
-	InventoryWidgetController->ScrollBoxResetDelegate.RemoveAll(this);
 }
 
 void URPGSystemsWidget::CacheEssentialVars()
@@ -50,12 +48,32 @@ void URPGSystemsWidget::CacheEssentialVars()
 void URPGSystemsWidget::BindInventoryItemDelegates()
 {
 	InventoryWidgetController->InventoryItemDelegate.AddUObject(this,&URPGSystemsWidget::HandleInventoyItemReceived);
-	InventoryWidgetController->InventoryBroadcastCompleteDelegate.AddUObject(this,&URPGSystemsWidget::OnInventoryItemBroadcastComplete);
-	InventoryWidgetController->ScrollBoxResetDelegate.AddUObject(this,&URPGSystemsWidget::OnScrollBoxReset);
 }
 
 void URPGSystemsWidget::HandleInventoyItemReceived(const FMasterItemDefinition& Item)
 {
+	if (UItemRowWidget** FoundPtr = ActiveItemRowWidgets.Find(Item.ItemTag))
+	{
+		if (UItemRowWidget* FoundWidget = *FoundPtr)
+		{
+			if (Item.ItemQuantity < 0)
+			{
+				return;
+			}
+			
+			if (Item.ItemQuantity == 0)
+			{
+				FoundWidget->OnUseButtomClickedDelegate.Unbind();
+				FoundWidget->RemoveFromParent();
+				ActiveItemRowWidgets.Remove(Item.ItemTag);
+				return;
+			}
+			
+			FoundWidget->SetQuantityText(Item.ItemQuantity);
+			return;
+		}
+	}
+	
 	CurrentItemRowWidget = Cast<UItemRowWidget>(CreateWidget(this,ItemRowWidgetClass));
 	
 	if (!IsValid(CurrentItemRowWidget))
@@ -70,31 +88,11 @@ void URPGSystemsWidget::HandleInventoyItemReceived(const FMasterItemDefinition& 
 
 	InventoryContent->AddChild(CurrentItemRowWidget);
 	
-	ActiveItemRowWidgets.Add(CurrentItemRowWidget);
-}
-
-void URPGSystemsWidget::OnInventoryItemBroadcastComplete()
-{
-	for (const auto& ItemRow: ActiveItemRowWidgets)
-	{
-		if (!IsValid(ItemRow))
+	ActiveItemRowWidgets.Add(Item.ItemTag,CurrentItemRowWidget);
+	
+	CurrentItemRowWidget->OnUseButtomClickedDelegate.BindLambda(
+		[this](const FGameplayTag& Tag)
 		{
-			continue;
-		}
-		
-		ItemRow->OnUseButtomClickedDelegate.BindLambda([this,ItemRow]()
-		{
-			OwningInventory->UseItem(ItemRow->ItemDefinition.ItemTag,1.f);
+			OwningInventory->UseItem(Tag,1);
 		});
-	}
-}
-
-void URPGSystemsWidget::OnScrollBoxReset()
-{
-	InventoryContent->ClearChildren();
-	for (const auto& ItemRow: ActiveItemRowWidgets)
-	{
-		ItemRow->OnUseButtomClickedDelegate.Unbind();
-	}
-	ActiveItemRowWidgets.Empty();
 }

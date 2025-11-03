@@ -29,6 +29,7 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category="Custom Values|Projectile")
 	FGameplayTag ProjectileToSpawnTag;
 private:
+	void ReduceMana() const;
 	
 	void SpawnProjectile();
 
@@ -36,4 +37,7 @@ private:
 	TObjectPtr<AActor> AvatarActorFromInfo;
 	
 	FProjectileParams CurrentProjectileParams;
+
+	UPROPERTY(EditDefaultsOnly, Category="Custom Values|Projectile")
+	TSubclassOf<UGameplayEffect> ManaReductionEffect = nullptr;
 };

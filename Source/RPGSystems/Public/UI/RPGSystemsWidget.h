@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "GameplayTagContainer.h"
 #include "Blueprint/UserWidget.h"
 #include "RPGSystemsWidget.generated.h"
 
@@ -38,13 +39,6 @@ private:
 	//callbacks
 	UFUNCTION()
 	void HandleInventoyItemReceived(const FMasterItemDefinition& Master);
-
-	UFUNCTION()
-	void OnInventoryItemBroadcastComplete();
-
-	UFUNCTION()
-	void OnScrollBoxReset();
-	
 	
 	UPROPERTY(BlueprintReadOnly, meta=(allowPrivateAccess=true))
 	TObjectPtr<UWidgetController> WidgetController;
@@ -61,7 +55,8 @@ private:
 	UPROPERTY()
 	TObjectPtr<UItemRowWidget> CurrentItemRowWidget;
 	
-	TArray<UItemRowWidget*> ActiveItemRowWidgets;
+	//TArray<UItemRowWidget*> ActiveItemRowWidgets;
+	TMap<FGameplayTag, UItemRowWidget*> ActiveItemRowWidgets;
 
 	//Hierarchy
 	UPROPERTY(VisibleAnywhere, meta = (BindWidget), Category = "UI")

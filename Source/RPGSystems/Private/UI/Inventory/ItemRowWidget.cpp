@@ -45,5 +45,5 @@ void UItemRowWidget::SetItemDefinition(const FMasterItemDefinition& InItemDefini
 
 void UItemRowWidget::OnClickedUseButtom()
 {
-	OnUseButtomClickedDelegate.ExecuteIfBound();
+	OnUseButtomClickedDelegate.ExecuteIfBound(ItemDefinition.ItemTag);
 }
