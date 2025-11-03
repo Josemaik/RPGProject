@@ -44,6 +44,14 @@ public:
 	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_DamageReduction)
 	FGameplayAttributeData DamageReduction;
 	ATTRIBUTE_ACCESSORS(URPGAttributeSet, DamageReduction)
+
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_CritChance)
+	FGameplayAttributeData CritChance;
+	ATTRIBUTE_ACCESSORS(URPGAttributeSet, CritChance)
+
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_CritDamage)
+	FGameplayAttributeData CritDamage;
+	ATTRIBUTE_ACCESSORS(URPGAttributeSet, CritDamage)
 	
 	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_Mana)
 	FGameplayAttributeData Mana;
@@ -80,6 +88,12 @@ private:
 
 	UFUNCTION()
 	void OnRep_DamageReduction(const FGameplayAttributeData& OldDamageReduction);
+
+	UFUNCTION()
+	void OnRep_CritChance(const FGameplayAttributeData& OldCritChance);
+
+	UFUNCTION()
+	void OnRep_CritDamage(const FGameplayAttributeData& OldCritDamage);
 	
 	UFUNCTION()
 	void OnRep_Mana(const FGameplayAttributeData& OldMana);
@@ -87,6 +101,3 @@ private:
 	UFUNCTION()
 	void OnRep_MaxMana(const FGameplayAttributeData& OldMaxmana);
 };
-
-
-

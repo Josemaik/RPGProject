@@ -3,13 +3,16 @@
 
 #include "AbilitySystem/ExecCalc/ExecCalcDamage.h"
 
+#include "AbilitySystem/RPGAbilityTypes.h"
 #include "AbilitySystem/RPGGameplayTags.h"
 #include "AbilitySystem/Attributes/RPGAttributeSet.h"
 
 struct RPGDamageStatics
 {
 	// Source Captures
-
+	DECLARE_ATTRIBUTE_CAPTUREDEF(CritChance);
+	DECLARE_ATTRIBUTE_CAPTUREDEF(CritDamage);
+	
 	//Target Captures
 	DECLARE_ATTRIBUTE_CAPTUREDEF(IncomingHealthDamage);
 	DECLARE_ATTRIBUTE_CAPTUREDEF(IncomingShieldDamage);
@@ -19,7 +22,8 @@ struct RPGDamageStatics
 	RPGDamageStatics()
 	{
 		//Source Defines
-
+		DEFINE_ATTRIBUTE_CAPTUREDEF(URPGAttributeSet, CritChance, Source, false);
+		DEFINE_ATTRIBUTE_CAPTUREDEF(URPGAttributeSet, CritDamage, Source, false);
 		//Target Defines
 		DEFINE_ATTRIBUTE_CAPTUREDEF(URPGAttributeSet, IncomingHealthDamage, Target, false);
 		DEFINE_ATTRIBUTE_CAPTUREDEF(URPGAttributeSet, IncomingShieldDamage, Target, false);
@@ -38,6 +42,8 @@ static const RPGDamageStatics& DamageStatics()
 UExecCalcDamage::UExecCalcDamage()
 {
 	//Source Captures
+	RelevantAttributesToCapture.Add(DamageStatics().CritChanceDef);
+	RelevantAttributesToCapture.Add(DamageStatics().CritDamageDef);
 	//Target Captures
 	RelevantAttributesToCapture.Add(DamageStatics().IncomingHealthDamageDef);
 	RelevantAttributesToCapture.Add(DamageStatics().IncomingShieldDamageDef);
@@ -50,17 +56,26 @@ void UExecCalcDamage::Execute_Implementation(const FGameplayEffectCustomExecutio
 {
 	const FGameplayEffectSpec& EffectSpec = ExecutionParams.GetOwningSpec();
 
-	const FGameplayTagContainer* TargetTags = EffectSpec.CapturedTargetTags.GetAggregatedTags();
-	const FGameplayTagContainer* SourceTags = EffectSpec.CapturedSourceTags.GetAggregatedTags();
-
 	FAggregatorEvaluateParameters EvaluateParams;
-	EvaluateParams.TargetTags = TargetTags;
-	EvaluateParams.SourceTags = SourceTags;
+	EvaluateParams.TargetTags = EffectSpec.CapturedTargetTags.GetAggregatedTags();
+	EvaluateParams.SourceTags = EffectSpec.CapturedSourceTags.GetAggregatedTags();
+
+	const FGameplayEffectContextHandle EffectContextHandle = EffectSpec.GetContext();
+	FRPGGameplayEffectContext* RPGContext = FRPGGameplayEffectContext::GetEffectContext(EffectContextHandle);
 	
 	//Get row damage value
 	float Damage = EffectSpec.GetSetByCallerMagnitude(RPGGameplayTags::Combat::Data_Damage);
 	Damage = FMath::Max<float>(Damage, 0.0f);
 
+	//Source Captures
+	float CritChance = 0.f;
+	ExecutionParams.AttemptCalculateCapturedAttributeMagnitude(DamageStatics().CritChanceDef, EvaluateParams, CritChance);
+	CritChance = FMath::Max<float>(CritChance, 0.f);
+
+	float CritDamage = 0.f;
+	ExecutionParams.AttemptCalculateCapturedAttributeMagnitude(DamageStatics().CritDamageDef, EvaluateParams, CritDamage);
+	CritDamage = FMath::Max<float>(CritDamage, 0.f);
+	
 	// Target Captures
 	float Shield = 0.f;
 	ExecutionParams.AttemptCalculateCapturedAttributeMagnitude(DamageStatics().ShieldDef, EvaluateParams, Shield);
@@ -69,7 +84,12 @@ void UExecCalcDamage::Execute_Implementation(const FGameplayEffectCustomExecutio
 	float DamageReduction = 0.f;
 	ExecutionParams.AttemptCalculateCapturedAttributeMagnitude(DamageStatics().DamageReductionDef, EvaluateParams, DamageReduction);
 	DamageReduction = FMath::Max(DamageReduction, 0.f);
+	// Calculation
 
+	const bool bCriticalHit = FMath::RandRange(0, 100) < CritChance;
+	Damage = bCriticalHit ? Damage + (CritDamage * 0.5f) : Damage;
+	RPGContext->SetIsCriticalHit(bCriticalHit);
+	
 	float OutShield = 0.f;
 
 	if (Damage > 0.f && Shield > 0.f)

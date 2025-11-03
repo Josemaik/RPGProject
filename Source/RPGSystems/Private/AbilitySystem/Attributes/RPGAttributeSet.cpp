@@ -3,6 +3,7 @@
 
 #include "AbilitySystem/Attributes/RPGAttributeSet.h"
 #include "GameplayEffectExtension.h"
+#include "AbilitySystem/RPGAbilityTypes.h"
 #include "Net/UnrealNetwork.h"
 
 void URPGAttributeSet::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
@@ -16,6 +17,8 @@ void URPGAttributeSet::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty
 	DOREPLIFETIME_CONDITION_NOTIFY(URPGAttributeSet, Shield, COND_None, REPNOTIFY_Always);
 	DOREPLIFETIME_CONDITION_NOTIFY(URPGAttributeSet, MaxShield, COND_None, REPNOTIFY_Always);
 	DOREPLIFETIME_CONDITION_NOTIFY(URPGAttributeSet, DamageReduction, COND_None, REPNOTIFY_Always);
+	DOREPLIFETIME_CONDITION_NOTIFY(URPGAttributeSet, CritChance, COND_None, REPNOTIFY_Always);
+	DOREPLIFETIME_CONDITION_NOTIFY(URPGAttributeSet, CritDamage, COND_None, REPNOTIFY_Always);
 }
 
 void URPGAttributeSet::PostGameplayEffectExecute(const struct FGameplayEffectModCallbackData& Data)
@@ -48,6 +51,13 @@ void URPGAttributeSet::HandleIncomingHealthDamage(const FGameplayEffectModCallba
 	const float LocalDamage = GetIncomingHealthDamage();
 	SetIncomingHealthDamage(0.f);
 
+	FGameplayEffectContextHandle ContextHandle = Data.EffectSpec.GetContext();
+	FRPGGameplayEffectContext* RPGContext = FRPGGameplayEffectContext::GetEffectContext(ContextHandle);
+	FColor DebugColor = RPGContext->IsCriticalHit() ? FColor::Red : FColor::Green;
+	
+	GEngine->AddOnScreenDebugMessage(-1, 5.f, DebugColor,
+		FString::Printf(TEXT("Damage Delt: %d"), FMath::TruncToInt(LocalDamage)));
+	
 	SetHealth(FMath::Clamp(GetHealth() - LocalDamage, 0.f, GetMaxHealth()));
 }
 
@@ -56,6 +66,13 @@ void URPGAttributeSet::HandleIncomingShieldDamage(const FGameplayEffectModCallba
 	const float LocalDamage = GetIncomingShieldDamage();
 	SetIncomingShieldDamage(0.f);
 
+	FGameplayEffectContextHandle ContextHandle = Data.EffectSpec.GetContext();
+	FRPGGameplayEffectContext* RPGContext = FRPGGameplayEffectContext::GetEffectContext(ContextHandle);
+	FColor DebugColor = RPGContext->IsCriticalHit() ? FColor::Red : FColor::Green;
+	
+	GEngine->AddOnScreenDebugMessage(-1, 5.f, DebugColor,
+		FString::Printf(TEXT("Damage Delt: %d"), FMath::TruncToInt(LocalDamage)));
+	
 	SetShield(FMath::Clamp(GetShield() - LocalDamage, 0.f, GetMaxShield()));
 }
 
@@ -82,6 +99,16 @@ void URPGAttributeSet::OnRep_MaxShield(const FGameplayAttributeData& OldMaxShiel
 void URPGAttributeSet::OnRep_DamageReduction(const FGameplayAttributeData& OldDamageReduction)
 {
 	GAMEPLAYATTRIBUTE_REPNOTIFY(URPGAttributeSet, DamageReduction, OldDamageReduction);
+}
+
+void URPGAttributeSet::OnRep_CritChance(const FGameplayAttributeData& OldCritChance)
+{
+	GAMEPLAYATTRIBUTE_REPNOTIFY(URPGAttributeSet, CritChance, OldCritChance);
+}
+
+void URPGAttributeSet::OnRep_CritDamage(const FGameplayAttributeData& OldCritDamage)
+{
+	GAMEPLAYATTRIBUTE_REPNOTIFY(URPGAttributeSet, CritDamage, OldCritDamage);
 }
 
 void URPGAttributeSet::OnRep_Mana(const FGameplayAttributeData& OldMana)
