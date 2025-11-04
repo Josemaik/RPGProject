@@ -9,15 +9,23 @@
 
 void UItemRowWidget::SetActionText(const FGameplayTag& GameplayTag)
 {
-	if (!GameplayTag.MatchesTag(GameplayTagConsumable))
+	if (GameplayTag.MatchesTag(GameplayTagConsumable))
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red,FString::Printf(TEXT("Not Match between Tags")));
-		ActionText->SetText(FText::FromString("Not a consumable"));
-		ActionButtom->SetIsEnabled(false); //Disable buttom
+		ActionText->SetText(FText::FromString("Use"));
 		return;
 	}
 	
-	ActionText->SetText(FText::FromString("Use"));
+	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red,FString::Printf(TEXT("Not Match between Tags")));
+	ActionText->SetText(FText::FromString("Not a consumable"));
+	ActionButtom->SetIsEnabled(false); //Disable buttom
+	
+	if (GameplayTag.MatchesTag(GameplayTagEquipment))
+	{
+		ActionText->SetText(FText::FromString("Equip"));
+		return;
+	}
+	
+	ActionText->SetText(FText::FromString("Not a equipment"));
 }
 
 void UItemRowWidget::SetItemNameText(FText Text)

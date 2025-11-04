@@ -108,8 +108,8 @@ public:
 
 private:
 
-	UFUNCTION(Server, Reliable)
-	void ServerEquipItem(const TSubclassOf<UEquipmentDefinition>& EquipmentDefiniton);
+	UFUNCTION(Server, Reliable) // RPC always need to copy/serialize ( const& references are not allowed)
+	void ServerEquipItem(TSubclassOf<UEquipmentDefinition> EquipmentDefiniton);
 
 	UFUNCTION(Server, Reliable)
 	void ServerUnEquipItem(UEquipmentInstance* InEquipmentInstance);

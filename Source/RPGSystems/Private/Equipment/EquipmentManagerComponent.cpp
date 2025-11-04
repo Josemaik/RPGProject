@@ -41,6 +41,9 @@ UEquipmentInstance* FRPGEquipmentList::AddEntry(const TSubclassOf<UEquipmentDefi
 
 	MarkItemDirty(NewEntry);
 	EquipmentEntryDelegate.Broadcast(NewEntry);
+
+	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red,
+			FString::Printf(TEXT("Equipped Item: %s"), *NewEntry.EntryTag.ToString()));
 	
 	return NewEntry.Instance;
 }
@@ -127,7 +130,7 @@ void UEquipmentManagerComponent::UnEquipItem(UEquipmentInstance* InEquipmentInst
 	EquipmentList.RemoveEntry(InEquipmentInstance);
 }
 
-void UEquipmentManagerComponent::ServerEquipItem_Implementation(const TSubclassOf<UEquipmentDefinition>& EquipmentDefiniton)
+void UEquipmentManagerComponent::ServerEquipItem_Implementation(TSubclassOf<UEquipmentDefinition> EquipmentDefiniton)
 {
 	EquipItem(EquipmentDefiniton);
 }

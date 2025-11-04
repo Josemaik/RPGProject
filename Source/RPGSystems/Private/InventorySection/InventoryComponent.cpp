@@ -5,6 +5,7 @@
 
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemComponent.h"
+#include "Equipment/EquipmentDefinition.h"
 #include "InventorySection/ItemTypesToTables.h"
 #include "Libraries/RPGAbilitySystemLibrary.h"
 #include "Net/UnrealNetwork.h"
@@ -154,30 +155,34 @@ void UInventoryComponent::UseItem(const FGameplayTag& ItemTag, int32 NumItems)
 		const FMasterItemDefinition Item = GetItemDefinitionByTag(ItemTag);
 		
 		UAbilitySystemComponent* OwnerASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Owner);
-		if (!IsValid(OwnerASC) || !IsValid(Item.ConsumableProps.ItemEffectClass))
+		if (!IsValid(OwnerASC))
 		{
 			return;
 		}
-		
-		const FGameplayEffectContextHandle ContextHandle = OwnerASC->MakeEffectContext();
-		const FGameplayEffectSpecHandle SpecHandle = OwnerASC->MakeOutgoingSpec(Item.ConsumableProps.ItemEffectClass,
-		Item.ConsumableProps.ItemEffectLevel,ContextHandle);
-		OwnerASC->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
 
-		InventoryList.RemoveItem(ItemTag);
+		if (IsValid(Item.ConsumableProps.ItemEffectClass))
+		{
+			const FGameplayEffectContextHandle ContextHandle = OwnerASC->MakeEffectContext();
+			const FGameplayEffectSpecHandle SpecHandle = OwnerASC->MakeOutgoingSpec(Item.ConsumableProps.ItemEffectClass,
+			Item.ConsumableProps.ItemEffectLevel,ContextHandle);
+			OwnerASC->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
 
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Magenta,FString::Printf(TEXT("Server Item ussed: %s"),
-			*Item.ItemTag.ToString()));
+			InventoryList.RemoveItem(ItemTag);
+
+			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Magenta,FString::Printf(TEXT("Server Item ussed: %s"),
+				*Item.ItemTag.ToString()));
+		}
+		if (IsValid(Item.EquipmentItemProps.EquipmentClass))
+		{
+			EquipmentItemDelegate.Broadcast(Item.EquipmentItemProps.EquipmentClass);
+			InventoryList.RemoveItem(ItemTag);
+		}
 	}
-	
 }
 
 void UInventoryComponent::ServerUseItem_Implementation(const FGameplayTag& ItemTag, int32 NumItems)
 {
-	if (InventoryList.HasEnough(ItemTag, NumItems))
-	{
-		UseItem(ItemTag, NumItems);
-	}
+	UseItem(ItemTag, NumItems);
 }
 
 FMasterItemDefinition UInventoryComponent::GetItemDefinitionByTag(const FGameplayTag& ItemTag) const

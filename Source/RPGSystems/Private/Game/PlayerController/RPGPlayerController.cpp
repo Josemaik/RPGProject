@@ -6,6 +6,7 @@
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystem/RPGAbilitySystemComponent.h"
 #include "Blueprint/UserWidget.h"
+#include "Equipment/EquipmentManagerComponent.h"
 #include "Game/PlayerState/RPGPlayerState.h"
 #include "Input/RPGInputConfig.h"
 #include "Input/RPGSystemsInputComponent.h"
@@ -21,6 +22,8 @@ ARPGPlayerController::ARPGPlayerController()
 
 	InventoryComponent = CreateDefaultSubobject<UInventoryComponent>("InventoryComponent");
 	InventoryComponent->SetIsReplicated(true);
+
+	EquipmentComponent = CreateDefaultSubobject<UEquipmentManagerComponent>(TEXT("EquipmentManagerComponent"));
 }
 
 void ARPGPlayerController::SetupInputComponent()
@@ -84,6 +87,23 @@ URPGAbilitySystemComponent* ARPGPlayerController::GetRPGAbilitySystemComponent()
 	}
 
 	return RPGAbilitySystemComponent;
+}
+
+void ARPGPlayerController::BindCallbacksToDependencies()
+{
+	if (!IsValid(InventoryComponent))
+	{
+		return;
+	}
+
+	InventoryComponent->EquipmentItemDelegate.AddLambda(
+		[this](const TSubclassOf<UEquipmentDefinition>& EquipmentDefinition)
+		{
+			if (IsValid(EquipmentComponent))
+			{
+				EquipmentComponent->EquipItem(EquipmentDefinition);
+			}
+		});
 }
 
 UInventoryComponent* ARPGPlayerController::GetInventoryComponent_Implementation()

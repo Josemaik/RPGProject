@@ -10,6 +10,7 @@
 #include "Interfaces/RPGAbilitySystemInterface.h"
 #include "RPGPlayerController.generated.h"
 
+class UEquipmentManagerComponent;
  class URPGAbilitySystemComponent;
  class URPGInputConfig;
  class URPGSystemsWidget;
@@ -48,6 +49,8 @@ protected:
 private:
 
 	URPGAbilitySystemComponent* GetRPGAbilitySystemComponent();
+
+	void BindCallbacksToDependencies();
 	
 	UPROPERTY()
 	TObjectPtr<URPGAbilitySystemComponent> RPGAbilitySystemComponent;
@@ -58,6 +61,9 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess=true), Replicated)
 	TObjectPtr<UInventoryComponent> InventoryComponent;
 
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, meta=(AllowPrivateAccess=true))
+	TObjectPtr<UEquipmentManagerComponent> EquipmentComponent;
+	
 	UPROPERTY()
 	TObjectPtr<UInventoryWidgetController> InventoryWidgetController;
 

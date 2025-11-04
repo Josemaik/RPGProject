@@ -41,6 +41,9 @@ private:
 	
 	UPROPERTY(EditDefaultsOnly)
 	FGameplayTag GameplayTagConsumable;
+
+	UPROPERTY(EditDefaultsOnly)
+	FGameplayTag GameplayTagEquipment;
 	
 	UPROPERTY(VisibleAnywhere,BlueprintReadWrite, meta = (BindWidget,AllowPrivateAccess="true"), Category = "UI")
 	UTextBlock* ItemName;
