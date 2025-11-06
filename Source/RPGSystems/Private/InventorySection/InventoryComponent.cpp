@@ -199,7 +199,7 @@ FMasterItemDefinition UInventoryComponent::GetItemDefinitionByTag(const FGamepla
 	return FMasterItemDefinition();
 }
 
-TArray<FRPGInventoryEntry> UInventoryComponent::GetInventoryEntries() const
+TArray<FRPGInventoryEntry> UInventoryComponent::GetInventoryEntries()
 {
 	return InventoryList.Entries;
 }

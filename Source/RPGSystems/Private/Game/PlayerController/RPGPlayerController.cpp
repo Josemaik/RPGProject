@@ -54,6 +54,14 @@ void ARPGPlayerController::GetLifetimeReplicatedProps(TArray<class FLifetimeProp
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ARPGPlayerController, InventoryComponent);
+	//DOREPLIFETIME(ARPGPlayerController, EquipmentComponent);
+}
+
+void ARPGPlayerController::BeginPlay()
+{
+	Super::BeginPlay();
+
+	BindCallbacksToDependencies();
 }
 
 void ARPGPlayerController::AbilityInputPressed(FGameplayTag InputTag)

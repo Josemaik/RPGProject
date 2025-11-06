@@ -9,6 +9,7 @@
 #include "Net/Serialization/FastArraySerializer.h"
 #include "EquipmentManagerComponent.generated.h"
 
+class URPGAbilitySystemComponent;
 class UEquipmentInstance;
 class UEquipmentDefinition;
 class UEquipmentManagerComponent;
@@ -27,9 +28,13 @@ struct FRPGEquipmentEntry : public FFastArraySerializerItem
 	UPROPERTY(BlueprintReadOnly)
 	FGameplayTag RarityTag = FGameplayTag();
 
+	UPROPERTY(BlueprintReadOnly)
+	TArray<FEquipmentStatEffectGroup> StatEffects = TArray<FEquipmentStatEffectGroup>();
+
 	UPROPERTY(NotReplicated)
 	FEquipmentGrantedHandles GrantedHandles = FEquipmentGrantedHandles();
 
+	FORCEINLINE bool HasStats() const { return StatEffects.IsEmpty(); }
 private:
 
 	friend UEquipmentManagerComponent;
@@ -56,7 +61,11 @@ struct FRPGEquipmentList : public FFastArraySerializer
 	OwnerComponent(InComponent)
 	{}
 
-	UEquipmentInstance* AddEntry(const TSubclassOf<UEquipmentDefinition>& InEquipmentDefinition);
+	URPGAbilitySystemComponent* GetAbilitySystemComponent();
+
+	void AddEquipmentStats(FRPGEquipmentEntry* Entry);
+	void RemoveEquipmentStats(FRPGEquipmentEntry* Entry);
+	UEquipmentInstance* AddEntry(const TSubclassOf<UEquipmentDefinition>& InEquipmentDefinition, const TArray<FEquipmentStatEffectGroup>& StatEffects);
 	void RemoveEntry(UEquipmentInstance* InEquipmentInstance);
 
 	// FFastArraySerializer Contract
@@ -66,6 +75,11 @@ struct FRPGEquipmentList : public FFastArraySerializer
 
 	bool NetDeltaSerialize(FNetDeltaSerializeInfo& DeltaParams)
 	{
+		UE_LOG(LogTemp, Warning, TEXT("[%s] FastArray NetDeltaSerialize | IsWriting: %d | IsReading: %d | %d entries"),
+	   OwnerComponent ? *OwnerComponent->GetName() : TEXT("NO_OWNER"),
+	   DeltaParams.Writer != nullptr,
+	   DeltaParams.Reader != nullptr,
+	   Entries.Num());
 		return FastArrayDeltaSerialize<FRPGEquipmentEntry, FRPGEquipmentList>(Entries,DeltaParams,*this);
 	}
 
@@ -98,18 +112,20 @@ public:
 
 	UPROPERTY(Replicated)
 	FRPGEquipmentList EquipmentList;
+
+	virtual void BeginPlay() override;
 	
 	UEquipmentManagerComponent();
 	
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 
-	void EquipItem(const TSubclassOf<UEquipmentDefinition>& EquipmentDefinition);
+	void EquipItem(const TSubclassOf<UEquipmentDefinition>& EquipmentDefinition,const TArray<FEquipmentStatEffectGroup>& StatEffects);
 	void UnEquipItem(UEquipmentInstance* InEquipmentInstance);
 
 private:
 
 	UFUNCTION(Server, Reliable) // RPC always need to copy/serialize ( const& references are not allowed)
-	void ServerEquipItem(TSubclassOf<UEquipmentDefinition> EquipmentDefiniton);
+	void ServerEquipItem(TSubclassOf<UEquipmentDefinition> EquipmentDefiniton,const TArray<FEquipmentStatEffectGroup>& StatEffects);
 
 	UFUNCTION(Server, Reliable)
 	void ServerUnEquipItem(UEquipmentInstance* InEquipmentInstance);

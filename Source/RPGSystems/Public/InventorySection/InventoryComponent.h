@@ -96,7 +96,7 @@ public:
 	UFUNCTION(BlueprintPure)
 	FMasterItemDefinition GetItemDefinitionByTag(const FGameplayTag& ItemTag) const;
 
-	TArray<FRPGInventoryEntry> GetInventoryEntries() const;
+	TArray<FRPGInventoryEntry> GetInventoryEntries();
 private:
 	
 	UPROPERTY(EditDefaultsOnly)
