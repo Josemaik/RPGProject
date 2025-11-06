@@ -52,6 +52,9 @@ struct FEquipmentStatEffectGroup : public FTableRowBase
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	bool bFractionalStat = false;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	float ProbabilityToSelect = 0.f;
+
 	UPROPERTY(BlueprintReadOnly)
 	float CurrentValue = 0.f;
 };

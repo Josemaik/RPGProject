@@ -5,14 +5,31 @@
 
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemComponent.h"
+#include "NativeGameplayTags.h"
+#include "PropertyCustomizationHelpers.h"
+#include "Data/EquipmentStaffEfects.h"
 #include "Equipment/EquipmentDefinition.h"
+#include "Equipment/EquipmentTypes.h"
 #include "InventorySection/ItemTypesToTables.h"
 #include "Libraries/RPGAbilitySystemLibrary.h"
 #include "Net/UnrealNetwork.h"
 
+namespace FGameplayTags::Static
+{
+	UE_DEFINE_GAMEPLAY_TAG_STATIC(Category_Equipment, "Item.Equipment");
+}
+
+///////////////////////////////
+//* UInventoryList Methods
+///////////////////////////////
 
 void FRPGInventoryList::AddItem(const FGameplayTag& ItemTag, int32 NumItems)
 {
+	if (ItemTag.MatchesTag(FGameplayTags::Static::Category_Equipment))
+	{
+		goto MakeNew;	
+	}
+	
 	for (auto EntryIt = Entries.CreateIterator(); EntryIt; ++EntryIt)
 	{
 		FRPGInventoryEntry& Entry = *EntryIt;
@@ -30,10 +47,20 @@ void FRPGInventoryList::AddItem(const FGameplayTag& ItemTag, int32 NumItems)
 		}
 	}
 
+	MakeNew:
+	FMasterItemDefinition Item = OwnerComponent->GetItemDefinitionByTag(ItemTag);
+	
 	FRPGInventoryEntry& NewEntry = Entries.AddDefaulted_GetRef();
 	NewEntry.ItemTag = ItemTag;
+	NewEntry.ItemName = Item.ItemName;
 	NewEntry.Quantity = NumItems;
+	NewEntry.ItemID = GenerateID();
 
+	if (NewEntry.ItemTag.MatchesTag(FGameplayTags::Static::Category_Equipment) && IsValid(WeakStats.Get()))
+	{
+		RollForStats(Item.EquipmentItemProps.EquipmentClass, &NewEntry);
+	}
+	
 	if (OwnerComponent->GetOwner()->HasAuthority())
 	{
 		DirtyItemDelegate.Broadcast(NewEntry);
@@ -42,13 +69,49 @@ void FRPGInventoryList::AddItem(const FGameplayTag& ItemTag, int32 NumItems)
 	MarkItemDirty(NewEntry);
 }
 
-void FRPGInventoryList::RemoveItem(const FGameplayTag& ItemTag, int32 NumItems)
+void FRPGInventoryList::RollForStats(const TSubclassOf<UEquipmentDefinition>& EquipmentDefinition,
+	FRPGInventoryEntry* Entry)
+{
+	UEquipmentStaffEfects* StatEffects = WeakStats.Get();
+	const UEquipmentDefinition* EquipmentCDO = GetDefault<UEquipmentDefinition>(EquipmentDefinition);
+
+	const int32 NumStatsToRoll = FMath::RandRange(EquipmentCDO->MinPossibleStats, EquipmentCDO->MaxPossibleStats);
+	int32 StatRollIndex = 0;
+	while (StatRollIndex < NumStatsToRoll)
+	{
+		const int32 RandomIndex = FMath::RandRange(0, EquipmentCDO->PossibleStatsRoles.Num() - 1);
+		const FGameplayTag& RandomTag = EquipmentCDO->PossibleStatsRoles.GetByIndex(RandomIndex);
+
+		for (const auto& Pair : StatEffects->MasterStatMap)
+		{
+			if (RandomTag.MatchesTag(Pair.Key))
+			{
+				if (const FEquipmentStatEffectGroup* PossibleStat = URPGAbilitySystemLibrary::GetDataTableRowByTag<FEquipmentStatEffectGroup>(Pair.Value, RandomTag))
+				{
+					if (FMath::FRandRange(0.f, 1.f) < PossibleStat->ProbabilityToSelect)
+					{
+						FEquipmentStatEffectGroup NewStat = *PossibleStat;
+
+						NewStat.CurrentValue = PossibleStat->bFractionalStat ? FMath::FRandRange(PossibleStat->MinStatLevel, PossibleStat->MaxStatLevel) :
+						FMath::TruncToInt(FMath::FRandRange(PossibleStat->MinStatLevel, PossibleStat->MaxStatLevel));
+
+						Entry->StatEffects.Add(NewStat);
+						++StatRollIndex;
+					}
+				}
+			}
+		}
+	}
+}
+
+
+void FRPGInventoryList::RemoveItem(const FRPGInventoryEntry& Entry, int32 NumItems)
 {
 	for (auto EntryIt = Entries.CreateIterator(); EntryIt; ++EntryIt)
 	{
 		FRPGInventoryEntry& Entry = *EntryIt;
 
-		if (Entry.ItemTag.MatchesTagExact(ItemTag))
+		if (Entry.ItemTag.MatchesTagExact(Entry.ItemTag))
 		{
 			Entry.Quantity -= NumItems;
 			MarkItemDirty(Entry);
@@ -78,6 +141,29 @@ bool FRPGInventoryList::HasEnough(const FGameplayTag& ItemTag, int32 NumItems)
 	return false;
 }
 
+uint64 FRPGInventoryList::GenerateID()
+{
+	uint64 NewID = ++LastAssingID;
+
+	int32 SignatureIndex = 0;
+	while (SignatureIndex < 12)
+	{
+		if (FMath::RandRange(0,100) < 85)
+		{
+			NewID |= (uint64)1 << FMath::RandRange(0,63);
+		}
+		++SignatureIndex;
+	}
+	
+	return NewID;
+}
+
+void FRPGInventoryList::SetStats(UEquipmentStaffEfects* InStats)
+{
+	WeakStats = InStats;
+}
+
+
 void FRPGInventoryList::PreReplicatedRemove(const TArrayView<int32> RemovedIndices, int32 FinalSize)
 {
 	// Can stay empty for now
@@ -101,11 +187,24 @@ void FRPGInventoryList::PostReplicatedChange(const TArrayView<int32> ChangedIndi
 	}
 }
 
-// Sets default values for this component's properties
+///////////////////////////////
+//* UInventoryComponent Methods
+///////////////////////////////
+
 UInventoryComponent::UInventoryComponent() :
 	InventoryList(this)
 {
 	PrimaryComponentTick.bCanEverTick = false;
+}
+
+void UInventoryComponent::BeginPlay()
+{
+	Super::BeginPlay();
+
+	if (GetOwner()->HasAuthority())
+	{
+		InventoryList.SetStats(StatEffects);
+	}
 }
 
 void UInventoryComponent::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
@@ -131,12 +230,7 @@ void UInventoryComponent::AddItem(const FGameplayTag& ItemTag, int32 NumItems)
 	InventoryList.AddItem(ItemTag, NumItems);
 }
 
-void UInventoryComponent::ServerAddItem_Implementation(const FGameplayTag& ItemTag, int32 NumItems)
-{
-	AddItem(ItemTag,NumItems);
-}
-
-void UInventoryComponent::UseItem(const FGameplayTag& ItemTag, int32 NumItems)
+void UInventoryComponent::UseItem(const FRPGInventoryEntry& Entry, int32 NumItems)
 {
 	AActor* Owner = GetOwner();
 	if (!IsValid(Owner))
@@ -146,13 +240,13 @@ void UInventoryComponent::UseItem(const FGameplayTag& ItemTag, int32 NumItems)
 
 	if (!Owner->HasAuthority())
 	{
-		ServerUseItem(ItemTag,NumItems);
+		ServerUseItem(Entry,NumItems);
 		return;
 	}
 	
-	if (InventoryList.HasEnough(ItemTag, NumItems))
+	if (InventoryList.HasEnough(Entry.ItemTag, NumItems))
 	{
-		const FMasterItemDefinition Item = GetItemDefinitionByTag(ItemTag);
+		const FMasterItemDefinition Item = GetItemDefinitionByTag(Entry.ItemTag);
 		
 		UAbilitySystemComponent* OwnerASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Owner);
 		if (!IsValid(OwnerASC))
@@ -167,22 +261,17 @@ void UInventoryComponent::UseItem(const FGameplayTag& ItemTag, int32 NumItems)
 			Item.ConsumableProps.ItemEffectLevel,ContextHandle);
 			OwnerASC->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
 
-			InventoryList.RemoveItem(ItemTag);
+			InventoryList.RemoveItem(Entry.ItemTag);
 
 			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Magenta,FString::Printf(TEXT("Server Item ussed: %s"),
 				*Item.ItemTag.ToString()));
 		}
 		if (IsValid(Item.EquipmentItemProps.EquipmentClass))
 		{
-			EquipmentItemDelegate.Broadcast(Item.EquipmentItemProps.EquipmentClass);
-			InventoryList.RemoveItem(ItemTag);
+			EquipmentItemDelegate.Broadcast(Item.EquipmentItemProps.EquipmentClass, Entry.StatEffects);
+			InventoryList.RemoveItem(Entry.ItemTag);
 		}
 	}
-}
-
-void UInventoryComponent::ServerUseItem_Implementation(const FGameplayTag& ItemTag, int32 NumItems)
-{
-	UseItem(ItemTag, NumItems);
 }
 
 FMasterItemDefinition UInventoryComponent::GetItemDefinitionByTag(const FGameplayTag& ItemTag) const
@@ -202,5 +291,19 @@ FMasterItemDefinition UInventoryComponent::GetItemDefinitionByTag(const FGamepla
 TArray<FRPGInventoryEntry> UInventoryComponent::GetInventoryEntries()
 {
 	return InventoryList.Entries;
+}
+
+//////////////////////////////
+//* Server Methods
+//////////////////////////////
+
+void UInventoryComponent::ServerAddItem_Implementation(const FGameplayTag& ItemTag, int32 NumItems)
+{
+	AddItem(ItemTag,NumItems);
+}
+
+void UInventoryComponent::ServerUseItem_Implementation(const FRPGInventoryEntry& Entry, int32 NumItems)
+{
+	UseItem(Entry, NumItems);
 }
 

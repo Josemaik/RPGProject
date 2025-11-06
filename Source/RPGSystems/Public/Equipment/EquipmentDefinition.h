@@ -28,5 +28,14 @@ public:
 	FGameplayTag RarityTag;
 
 	UPROPERTY(EditDefaultsOnly, Category="Custom Values|Info")
+	int32 MinPossibleStats = 0;
+	
+	UPROPERTY(EditDefaultsOnly, Category="Custom Values|Info")
+	int32 MaxPossibleStats = 1;
+
+	UPROPERTY(EditDefaultsOnly, Category="Custom Values|Info")
+	FGameplayTagContainer PossibleStatsRoles;
+	
+	UPROPERTY(EditDefaultsOnly, Category="Custom Values|Info")
 	TSubclassOf<UEquipmentInstance> InstanceType;
 };
