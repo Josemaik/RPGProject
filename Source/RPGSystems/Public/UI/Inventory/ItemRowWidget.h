@@ -5,15 +5,17 @@
 #include "CoreMinimal.h"
 #include "GameplayTagContainer.h"
 #include "Blueprint/UserWidget.h"
+#include "InventorySection/InventoryComponent.h"
 #include "InventorySection/ItemTypes.h"
 #include "ItemRowWidget.generated.h"
 
+struct FRPGInventoryEntry;
 struct FMasterItemDefinition;
 class UTextBlock;
 class UButton;
 
 
-DECLARE_DELEGATE_OneParam(FOnUseButtomClicked, const FGameplayTag&);
+DECLARE_DELEGATE_OneParam(FOnUseButtomClicked, const FRPGInventoryEntry&);
 /**
  * 
  */
@@ -28,11 +30,11 @@ public:
 
 	virtual void NativeConstruct() override;
 
-	void SetItemDefinition(const FMasterItemDefinition& InItemDefinition);
+	void SetInventoryEntry(const FRPGInventoryEntry& InItemDefinition);
 	
 	FOnUseButtomClicked	OnUseButtomClickedDelegate;
-
-	FMasterItemDefinition ItemDefinition;
+	
+	FRPGInventoryEntry ItemEntry;
 private:
 
 	//Callbacks

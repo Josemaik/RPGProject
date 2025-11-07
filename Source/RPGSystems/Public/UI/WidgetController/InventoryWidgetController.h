@@ -6,10 +6,11 @@
 #include "UI/WidgetController/WidgetController.h"
 #include "InventoryWidgetController.generated.h"
 
+struct FRPGInventoryEntry;
 struct FMasterItemDefinition;
 class UInventoryComponent;
 
-DECLARE_MULTICAST_DELEGATE_OneParam(FInventoryItemSignature, const FMasterItemDefinition&);
+DECLARE_MULTICAST_DELEGATE_OneParam(FInventoryEntrySignature, const FRPGInventoryEntry&);
 /**
  * 
  */
@@ -20,7 +21,7 @@ class RPGSYSTEMS_API UInventoryWidgetController : public UWidgetController
 public:
 
 	
-	FInventoryItemSignature InventoryItemDelegate;
+	FInventoryEntrySignature InventoryEntryDelegate;
 	
 	void SetOwningActor(AActor* InOwner);
 	FORCEINLINE AActor* GetOwningActor() { return OwningActor; };

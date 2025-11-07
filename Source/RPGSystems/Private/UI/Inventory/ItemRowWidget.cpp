@@ -6,6 +6,7 @@
 #include "GameplayTagContainer.h"
 #include "Components/Button.h"
 #include "Components/TextBlock.h"
+#include "InventorySection/InventoryComponent.h"
 
 void UItemRowWidget::SetActionText(const FGameplayTag& GameplayTag)
 {
@@ -46,12 +47,12 @@ void UItemRowWidget::NativeConstruct()
 	ActionButtom->OnClicked.AddDynamic(this,&UItemRowWidget::OnClickedUseButtom);
 }
 
-void UItemRowWidget::SetItemDefinition(const FMasterItemDefinition& InItemDefinition)
+void UItemRowWidget::SetInventoryEntry(const FRPGInventoryEntry& Entry)
 {
-	ItemDefinition = InItemDefinition;
+	ItemEntry = Entry;
 }
 
 void UItemRowWidget::OnClickedUseButtom()
 {
-	OnUseButtomClickedDelegate.ExecuteIfBound(ItemDefinition.ItemTag);
+	OnUseButtomClickedDelegate.ExecuteIfBound(ItemEntry);
 }

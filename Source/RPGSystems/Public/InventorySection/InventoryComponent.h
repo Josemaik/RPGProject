@@ -6,10 +6,11 @@
 #include "GameplayTagContainer.h"
 #include "ItemTypes.h"
 #include "Components/ActorComponent.h"
+#include "Equipment/EquipmentTypes.h"
 #include "Net/Serialization/FastArraySerializer.h"
 #include "InventoryComponent.generated.h"
 
-struct FEquipmentStatEffectGroup;
+
 class UEquipmentStaffEfects;
 class UItemTypesToTables;
 class UInventoryComponent;

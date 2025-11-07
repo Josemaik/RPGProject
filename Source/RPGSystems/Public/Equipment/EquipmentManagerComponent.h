@@ -34,7 +34,10 @@ struct FRPGEquipmentEntry : public FFastArraySerializerItem
 	UPROPERTY(NotReplicated)
 	FEquipmentGrantedHandles GrantedHandles = FEquipmentGrantedHandles();
 
-	FORCEINLINE bool HasStats() const { return StatEffects.IsEmpty(); }
+	bool HasStats() const
+	{
+		return !StatEffects.IsEmpty();
+	}
 private:
 
 	friend UEquipmentManagerComponent;

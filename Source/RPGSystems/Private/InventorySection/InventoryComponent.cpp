@@ -105,13 +105,13 @@ void FRPGInventoryList::RollForStats(const TSubclassOf<UEquipmentDefinition>& Eq
 }
 
 
-void FRPGInventoryList::RemoveItem(const FRPGInventoryEntry& Entry, int32 NumItems)
+void FRPGInventoryList::RemoveItem(const FRPGInventoryEntry& InventoryEntry, int32 NumItems)
 {
 	for (auto EntryIt = Entries.CreateIterator(); EntryIt; ++EntryIt)
 	{
 		FRPGInventoryEntry& Entry = *EntryIt;
-
-		if (Entry.ItemTag.MatchesTagExact(Entry.ItemTag))
+		
+		if (Entry.ItemID == InventoryEntry.ItemID)
 		{
 			Entry.Quantity -= NumItems;
 			MarkItemDirty(Entry);
@@ -119,7 +119,7 @@ void FRPGInventoryList::RemoveItem(const FRPGInventoryEntry& Entry, int32 NumIte
 			{
 				DirtyItemDelegate.Broadcast(Entry);
 			}
-			return;
+			break;
 		}
 	}
 }
@@ -261,7 +261,7 @@ void UInventoryComponent::UseItem(const FRPGInventoryEntry& Entry, int32 NumItem
 			Item.ConsumableProps.ItemEffectLevel,ContextHandle);
 			OwnerASC->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
 
-			InventoryList.RemoveItem(Entry.ItemTag);
+			InventoryList.RemoveItem(Entry);
 
 			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Magenta,FString::Printf(TEXT("Server Item ussed: %s"),
 				*Item.ItemTag.ToString()));
@@ -269,7 +269,7 @@ void UInventoryComponent::UseItem(const FRPGInventoryEntry& Entry, int32 NumItem
 		if (IsValid(Item.EquipmentItemProps.EquipmentClass))
 		{
 			EquipmentItemDelegate.Broadcast(Item.EquipmentItemProps.EquipmentClass, Entry.StatEffects);
-			InventoryList.RemoveItem(Entry.ItemTag);
+			InventoryList.RemoveItem(Entry);
 		}
 	}
 }

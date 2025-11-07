@@ -7,6 +7,7 @@
 #include "Blueprint/UserWidget.h"
 #include "RPGSystemsWidget.generated.h"
 
+struct FRPGInventoryEntry;
 class UItemRowWidget;
 class UInventoryWidgetController;
 class UInventoryComponent;
@@ -38,7 +39,7 @@ private:
 
 	//callbacks
 	UFUNCTION()
-	void HandleInventoyItemReceived(const FMasterItemDefinition& Master);
+	void HandleInventoyItemReceived(const FRPGInventoryEntry& Entry);
 	
 	UPROPERTY(BlueprintReadOnly, meta=(allowPrivateAccess=true))
 	TObjectPtr<UWidgetController> WidgetController;
@@ -56,7 +57,7 @@ private:
 	TObjectPtr<UItemRowWidget> CurrentItemRowWidget;
 	
 	//TArray<UItemRowWidget*> ActiveItemRowWidgets;
-	TMap<FGameplayTag, UItemRowWidget*> ActiveItemRowWidgets;
+	TMap<int64, UItemRowWidget*> ActiveItemRowWidgets;
 
 	//Hierarchy
 	UPROPERTY(VisibleAnywhere, meta = (BindWidget), Category = "UI")

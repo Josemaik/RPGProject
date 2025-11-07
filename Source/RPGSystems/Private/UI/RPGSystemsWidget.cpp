@@ -25,7 +25,7 @@ void URPGSystemsWidget::FinishDestroy()
 		return;
 	}
 	
-	InventoryWidgetController->InventoryItemDelegate.RemoveAll(this);
+	InventoryWidgetController->InventoryEntryDelegate.RemoveAll(this);
 }
 
 void URPGSystemsWidget::CacheEssentialVars()
@@ -47,29 +47,29 @@ void URPGSystemsWidget::CacheEssentialVars()
 
 void URPGSystemsWidget::BindInventoryItemDelegates()
 {
-	InventoryWidgetController->InventoryItemDelegate.AddUObject(this,&URPGSystemsWidget::HandleInventoyItemReceived);
+	InventoryWidgetController->InventoryEntryDelegate.AddUObject(this,&URPGSystemsWidget::HandleInventoyItemReceived);
 }
 
-void URPGSystemsWidget::HandleInventoyItemReceived(const FMasterItemDefinition& Item)
+void URPGSystemsWidget::HandleInventoyItemReceived(const FRPGInventoryEntry& Entry)
 {
-	if (UItemRowWidget** FoundPtr = ActiveItemRowWidgets.Find(Item.ItemTag))
+	if (UItemRowWidget** FoundPtr = ActiveItemRowWidgets.Find(Entry.ItemID))
 	{
 		if (UItemRowWidget* FoundWidget = *FoundPtr)
 		{
-			if (Item.ItemQuantity < 0)
+			if (Entry.Quantity < 0)
 			{
 				return;
 			}
 			
-			if (Item.ItemQuantity == 0)
+			if (Entry.Quantity == 0)
 			{
 				FoundWidget->OnUseButtomClickedDelegate.Unbind();
 				FoundWidget->RemoveFromParent();
-				ActiveItemRowWidgets.Remove(Item.ItemTag);
+				ActiveItemRowWidgets.Remove(Entry.ItemID);
 				return;
 			}
 			
-			FoundWidget->SetQuantityText(Item.ItemQuantity);
+			FoundWidget->SetQuantityText(Entry.Quantity);
 			return;
 		}
 	}
@@ -81,18 +81,18 @@ void URPGSystemsWidget::HandleInventoyItemReceived(const FMasterItemDefinition& 
 		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red,FString::Printf(TEXT("Item Widget is null")));
 		return;
 	}
-	CurrentItemRowWidget->SetItemDefinition(Item);
-	CurrentItemRowWidget->SetActionText(Item.ItemTag);
-	CurrentItemRowWidget->SetItemNameText(Item.ItemName);
-	CurrentItemRowWidget->SetQuantityText(Item.ItemQuantity);
+	CurrentItemRowWidget->SetInventoryEntry(Entry);
+	CurrentItemRowWidget->SetActionText(Entry.ItemTag);
+	CurrentItemRowWidget->SetItemNameText(Entry.ItemName);
+	CurrentItemRowWidget->SetQuantityText(Entry.Quantity);
 
 	InventoryContent->AddChild(CurrentItemRowWidget);
 	
-	ActiveItemRowWidgets.Add(Item.ItemTag,CurrentItemRowWidget);
+	ActiveItemRowWidgets.Add(Entry.ItemID,CurrentItemRowWidget);
 	
 	CurrentItemRowWidget->OnUseButtomClickedDelegate.BindLambda(
-		[this](const FGameplayTag& Tag)
+		[this](const FRPGInventoryEntry& Entry)
 		{
-			OwningInventory->UseItem(Tag,1);
+			OwningInventory->UseItem(Entry,1);
 		});
 }
