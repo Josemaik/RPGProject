@@ -52,6 +52,8 @@ UEquipmentInstance* FRPGEquipmentList::AddEntry(const TSubclassOf<UEquipmentDefi
 	NewEntry.StatEffects = StatEffects;
 	NewEntry.Instance = NewObject<UEquipmentInstance>(OwnerComponent->GetOwner(), InstanceType);
 
+	NewEntry.Instance->SpawnEquipmentActors(EquipmentCTO->ActorsToSpawn);
+	
 	if (NewEntry.HasStats())
 	{
 		AddEquipmentStats(&NewEntry);
@@ -85,6 +87,7 @@ void FRPGEquipmentList::RemoveEntry(UEquipmentInstance* InEquipmentInstance)
 
 		if (Entry.Instance == InEquipmentInstance)
 		{
+			Entry.Instance->DestroySpawnedActors();
 			RemoveEquipmentStats(&Entry);
 			EntryIt.RemoveCurrent();
 			MarkArrayDirty();
@@ -97,6 +100,7 @@ void FRPGEquipmentList::RemoveEquipmentStats(FRPGEquipmentEntry* Entry)
 {
 	if (URPGAbilitySystemComponent* ASC = GetAbilitySystemComponent())
 	{
+		UnEquippedEntryDelegate.Broadcast(*Entry);
 		ASC->RemoveEquipmentEffects(Entry);
 	}
 }
@@ -105,7 +109,7 @@ void FRPGEquipmentList::PreReplicatedRemove(const TArrayView<int32> RemovedIndic
 {
 	for (const int32 Index : RemovedIndices)
 	{
-		FRPGEquipmentEntry& Entry = Entries[Index];
+		const FRPGEquipmentEntry& Entry = Entries[Index];
 		
 		EquipmentEntryDelegate.Broadcast(Entry);
 		
@@ -118,7 +122,7 @@ void FRPGEquipmentList::PostReplicateAdd(const TArrayView<int32> AddedIndices, i
 {
 	for (const int32 Index : AddedIndices)
 	{
-		FRPGEquipmentEntry& Entry = Entries[Index];
+		const FRPGEquipmentEntry& Entry = Entries[Index];
 		
 		EquipmentEntryDelegate.Broadcast(Entry);
 		
@@ -137,19 +141,10 @@ void FRPGEquipmentList::PostReplicatedChange(const TArrayView<int32> ChangedIndi
 	}
 }
 
-void UEquipmentManagerComponent::BeginPlay()
-{
-	Super::BeginPlay();
-
-	UE_LOG(LogTemp, Warning, TEXT("EquipmentManagerComponent %s replicates: %s"),
-	  *GetName(),
-	  GetOwner()->HasAuthority() ? TEXT("Server") : TEXT("Client"));
-}
-
 UEquipmentManagerComponent::UEquipmentManagerComponent() :
 	EquipmentList(this)
 {
-	PrimaryComponentTick.bCanEverTick = false;
+	PrimaryComponentTick.bCanEverTick = true;
 	SetIsReplicatedByDefault(true);
 }
 
@@ -160,8 +155,15 @@ void UEquipmentManagerComponent::GetLifetimeReplicatedProps(TArray<class FLifeti
 	DOREPLIFETIME(UEquipmentManagerComponent, EquipmentList);
 }
 
+void UEquipmentManagerComponent::BeginPlay()
+{
+	Super::BeginPlay();
+
+	UE_LOG(LogTemp, Warning, TEXT("Equipment Owner: %s"), *GetOwner()->GetName());
+}
+
 void UEquipmentManagerComponent::EquipItem(const TSubclassOf<UEquipmentDefinition>& EquipmentDefinition,
-	const TArray<FEquipmentStatEffectGroup>& StatEffects)
+                                           const TArray<FEquipmentStatEffectGroup>& StatEffects)
 {
 	if (!GetOwner()->HasAuthority())
 	{
@@ -169,7 +171,10 @@ void UEquipmentManagerComponent::EquipItem(const TSubclassOf<UEquipmentDefinitio
 		return;
 	}
 
-	EquipmentList.AddEntry(EquipmentDefinition,StatEffects);
+	if (UEquipmentInstance* Result = EquipmentList.AddEntry(EquipmentDefinition,StatEffects))
+	{
+		Result->OnUnEquipped();
+	}
 }
 
 void UEquipmentManagerComponent::UnEquipItem(UEquipmentInstance* InEquipmentInstance)
@@ -179,7 +184,8 @@ void UEquipmentManagerComponent::UnEquipItem(UEquipmentInstance* InEquipmentInst
 		ServerUnEquipItem(InEquipmentInstance);
 		return;
 	}
-
+	
+	InEquipmentInstance->OnUnEquipped();
 	EquipmentList.RemoveEntry(InEquipmentInstance);
 }
 

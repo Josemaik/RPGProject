@@ -46,6 +46,7 @@ USTRUCT()
 struct FRPGInventoryList : public FFastArraySerializer
 {
 	GENERATED_BODY()
+	
 	FRPGInventoryList() :
 	OwnerComponent(nullptr)
 	{}
@@ -60,6 +61,7 @@ struct FRPGInventoryList : public FFastArraySerializer
 	uint64 GenerateID();
 	void SetStats(UEquipmentStaffEfects* InStats);
 	void RollForStats(const TSubclassOf<UEquipmentDefinition>& EquipmentDefinition, FRPGInventoryEntry* Entry);
+	void AddUnEquippedItem(const FGameplayTag& ItemTag, const TArray<FEquipmentStatEffectGroup>& StatEffects);
 	
 	// FFastArraySerializwer Contract
 	void PreReplicatedRemove(const TArrayView<int32> RemovedIndices, int32 FinalSize);
@@ -70,7 +72,7 @@ struct FRPGInventoryList : public FFastArraySerializer
 	{
 		return FastArrayDeltaSerialize<FRPGInventoryEntry, FRPGInventoryList>(Entries,DeltaParams,*this);
 	}
-
+	
 	FDirtyInventoryItemsSignature DirtyItemDelegate;
 private:
 	friend class UInventoryComponent;
@@ -96,6 +98,7 @@ struct TStructOpsTypeTraits<FRPGInventoryList> : TStructOpsTypeTraitsBase2<FRPGI
 		WithNetDeltaSerializer = true
 	};
 };
+
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class RPGSYSTEMS_API UInventoryComponent : public UActorComponent
@@ -123,6 +126,8 @@ public:
 	FMasterItemDefinition GetItemDefinitionByTag(const FGameplayTag& ItemTag) const;
 
 	TArray<FRPGInventoryEntry> GetInventoryEntries();
+
+	void AddUnEquippedItemEntry(const FGameplayTag& ItemTag, const TArray<FEquipmentStatEffectGroup>& InStatEffects);
 private:
 	
 	UPROPERTY(EditDefaultsOnly, Category="Custom Values|Stat Effect")
@@ -131,7 +136,7 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category="Custom Values|Item Definitions")
 	TObjectPtr<UItemTypesToTables> InventoryDefinitions;
 
-	//Server
+	//Server methods
 	UFUNCTION(Server, Reliable)
 	void ServerAddItem(const FGameplayTag& ItemTag, int32 NumItems);
 

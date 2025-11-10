@@ -10,6 +10,7 @@
 #include "Interfaces/RPGAbilitySystemInterface.h"
 #include "RPGPlayerController.generated.h"
 
+ class ARPGPlayerState;
 class UEquipmentManagerComponent;
  class URPGAbilitySystemComponent;
  class URPGInputConfig;
@@ -23,12 +24,20 @@ class RPGSYSTEMS_API ARPGPlayerController : public APlayerController, public IAb
 {
 	GENERATED_BODY()
 public:
-	ARPGPlayerController();
 
+	ARPGPlayerController();
+	
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category="Inventory")
+	UInventoryComponent* GetInventoryComponent() const;
+	/*Implements inventory interface*/
+	virtual UInventoryComponent* GetInventoryComponent_Implementation() const override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category="Equipment")
+	UEquipmentManagerComponent* GetEquipmentComponent() const;
+	virtual UEquipmentManagerComponent* GetEquipmentComponent_Implementation() const;
+	
 	virtual void SetupInputComponent() override;
 	
-	/*Implements inventory interface*/
-	virtual UInventoryComponent* GetInventoryComponent_Implementation() override;
 	/*Implements ability system interface*/
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 	/*Implements rpg ability system interface*/
@@ -38,8 +47,6 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void CreateInventoryWidget();
-	
-	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 
 protected:
 	virtual void BeginPlay() override;
@@ -58,12 +65,6 @@ private:
 	
 	UPROPERTY(EditDefaultsOnly, Category="Custom Values|Input")
 	TObjectPtr<URPGInputConfig> RPGInputConfig;
-	
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess=true), Replicated)
-	TObjectPtr<UInventoryComponent> InventoryComponent;
-
-	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, meta=(AllowPrivateAccess=true))
-	TObjectPtr<UEquipmentManagerComponent> EquipmentComponent;
 	
 	UPROPERTY()
 	TObjectPtr<UInventoryWidgetController> InventoryWidgetController;

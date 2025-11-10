@@ -17,7 +17,7 @@ class UEquipmentManagerComponent;
 USTRUCT(BlueprintType)
 struct FRPGEquipmentEntry : public FFastArraySerializerItem
 {
-	GENERATED_BODY()
+	GENERATED_USTRUCT_BODY()
 
 	UPROPERTY(BlueprintReadOnly)
 	FGameplayTag EntryTag = FGameplayTag();
@@ -41,7 +41,9 @@ struct FRPGEquipmentEntry : public FFastArraySerializerItem
 private:
 
 	friend UEquipmentManagerComponent;
+	
 	friend struct FRPGEquipmentList;
+	
 	UPROPERTY()
 	TSubclassOf<UEquipmentDefinition> EquipmentDefinition = nullptr;
 
@@ -50,17 +52,18 @@ private:
 };
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnEquipmentEntrySignature, const FRPGEquipmentEntry& /*Equipment Entry*/);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnUnEquippedEntry, const FRPGEquipmentEntry& /*UnEquiped Entry*/)
 
 USTRUCT()
 struct FRPGEquipmentList : public FFastArraySerializer
 {
-	GENERATED_BODY()
+	GENERATED_USTRUCT_BODY()
 
 	FRPGEquipmentList() :
 	OwnerComponent(nullptr)
 	{}
 
-	FRPGEquipmentList(UActorComponent* InComponent) :
+	FRPGEquipmentList(UEquipmentManagerComponent* InComponent) :
 	OwnerComponent(InComponent)
 	{}
 
@@ -78,22 +81,19 @@ struct FRPGEquipmentList : public FFastArraySerializer
 
 	bool NetDeltaSerialize(FNetDeltaSerializeInfo& DeltaParams)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("[%s] FastArray NetDeltaSerialize | IsWriting: %d | IsReading: %d | %d entries"),
-	   OwnerComponent ? *OwnerComponent->GetName() : TEXT("NO_OWNER"),
-	   DeltaParams.Writer != nullptr,
-	   DeltaParams.Reader != nullptr,
-	   Entries.Num());
-		return FastArrayDeltaSerialize<FRPGEquipmentEntry, FRPGEquipmentList>(Entries,DeltaParams,*this);
+		return FastArrayDeltaSerialize<FRPGEquipmentEntry, FRPGEquipmentList>(Entries, DeltaParams, *this);
 	}
 
 	FOnEquipmentEntrySignature EquipmentEntryDelegate;
+	FOnUnEquippedEntry UnEquippedEntryDelegate;
+	
+	
 private:
-
+	UPROPERTY(NotReplicated)
+	TObjectPtr<UEquipmentManagerComponent> OwnerComponent;
+	
 	UPROPERTY()
 	TArray<FRPGEquipmentEntry> Entries;
-
-	UPROPERTY(NotReplicated)
-	TObjectPtr<UActorComponent> OwnerComponent;
 };
 
 template<>
@@ -115,13 +115,12 @@ public:
 
 	UPROPERTY(Replicated)
 	FRPGEquipmentList EquipmentList;
-
-	virtual void BeginPlay() override;
 	
 	UEquipmentManagerComponent();
 	
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
-
+	virtual void BeginPlay() override;
+	
 	void EquipItem(const TSubclassOf<UEquipmentDefinition>& EquipmentDefinition,const TArray<FEquipmentStatEffectGroup>& StatEffects);
 	void UnEquipItem(UEquipmentInstance* InEquipmentInstance);
 
@@ -133,3 +132,4 @@ private:
 	UFUNCTION(Server, Reliable)
 	void ServerUnEquipItem(UEquipmentInstance* InEquipmentInstance);
 };
+

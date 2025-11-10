@@ -6,6 +6,7 @@
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystem/RPGAbilitySystemComponent.h"
 #include "Blueprint/UserWidget.h"
+#include "Engine/ActorChannel.h"
 #include "Equipment/EquipmentManagerComponent.h"
 #include "Game/PlayerState/RPGPlayerState.h"
 #include "Input/RPGInputConfig.h"
@@ -19,11 +20,22 @@
 ARPGPlayerController::ARPGPlayerController()
 {
 	bReplicates = true;
+}
 
-	InventoryComponent = CreateDefaultSubobject<UInventoryComponent>("InventoryComponent");
-	InventoryComponent->SetIsReplicated(true);
+UInventoryComponent* ARPGPlayerController::GetInventoryComponent_Implementation() const
+{
+	if (const ARPGPlayerState* PS = GetPlayerState<ARPGPlayerState>())
+		return PS->InventoryComponent;
 
-	EquipmentComponent = CreateDefaultSubobject<UEquipmentManagerComponent>(TEXT("EquipmentManagerComponent"));
+	return nullptr;
+}
+
+UEquipmentManagerComponent* ARPGPlayerController::GetEquipmentComponent_Implementation() const
+{
+	if (const ARPGPlayerState* PS = GetPlayerState<ARPGPlayerState>())
+		return PS->EquipmentComponent;
+
+	return nullptr;
 }
 
 void ARPGPlayerController::SetupInputComponent()
@@ -44,24 +56,11 @@ void ARPGPlayerController::SetupInputComponent()
 	RPGInputComp->BindAbilityActions(RPGInputConfig, this, &ThisClass::AbilityInputPressed, &ThisClass::AbilityInputReleased);
 }
 
-// UAbilitySystemComponent* ARPGPlayerController::GetAbilitySystemComponent() const
-// {
-// 	
-// }
-
-void ARPGPlayerController::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
-{
-	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-
-	DOREPLIFETIME(ARPGPlayerController, InventoryComponent);
-	//DOREPLIFETIME(ARPGPlayerController, EquipmentComponent);
-}
-
 void ARPGPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
 
-	BindCallbacksToDependencies();
+	GetWorldTimerManager().SetTimerForNextTick(this, &ARPGPlayerController::BindCallbacksToDependencies);
 }
 
 void ARPGPlayerController::AbilityInputPressed(FGameplayTag InputTag)
@@ -99,24 +98,39 @@ URPGAbilitySystemComponent* ARPGPlayerController::GetRPGAbilitySystemComponent()
 
 void ARPGPlayerController::BindCallbacksToDependencies()
 {
-	if (!IsValid(InventoryComponent))
+	UInventoryComponent* InvComp = GetInventoryComponent();
+	UEquipmentManagerComponent* EquipComp = GetEquipmentComponent();
+
+	// ----------------------------
+	// Inventory → Equipment binding
+	// ----------------------------
+	if (IsValid(InvComp))
 	{
-		return;
+		InvComp->EquipmentItemDelegate.AddLambda(
+			[this](const TSubclassOf<UEquipmentDefinition>& EquipmentDefinition,
+				   const TArray<FEquipmentStatEffectGroup>& StatEffects)
+			{
+				if (UEquipmentManagerComponent* Equip = GetEquipmentComponent())
+				{
+					Equip->EquipItem(EquipmentDefinition, StatEffects);
+				}
+			});
 	}
 
-	InventoryComponent->EquipmentItemDelegate.AddLambda(
-		[this](const TSubclassOf<UEquipmentDefinition>& EquipmentDefinition, const TArray<FEquipmentStatEffectGroup>& StatEffects)
-		{
-			if (IsValid(EquipmentComponent))
+	// ----------------------------
+	// Equipment → Inventory binding
+	// ----------------------------
+	if (IsValid(EquipComp))
+	{
+		EquipComp->EquipmentList.UnEquippedEntryDelegate.AddLambda(
+			[this](const FRPGEquipmentEntry& UnEquippedEntry)
 			{
-				EquipmentComponent->EquipItem(EquipmentDefinition,StatEffects);
-			}
-		});
-}
-
-UInventoryComponent* ARPGPlayerController::GetInventoryComponent_Implementation()
-{
-	return InventoryComponent;
+				if (UInventoryComponent* Inv = GetInventoryComponent())
+				{
+					Inv->AddUnEquippedItemEntry(UnEquippedEntry.EntryTag, UnEquippedEntry.StatEffects);
+				}
+			});
+	}
 }
 
 UAbilitySystemComponent* ARPGPlayerController::GetAbilitySystemComponent() const

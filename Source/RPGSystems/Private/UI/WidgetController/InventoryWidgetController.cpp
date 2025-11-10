@@ -20,9 +20,6 @@ void UInventoryWidgetController::BindCallbacksToDependencies()
 		OwningInventory->InventoryList.DirtyItemDelegate.AddLambda(
 			[this](const FRPGInventoryEntry& DirtyItem)
 			{
-				// FMasterItemDefinition Item = OwningInventory->GetItemDefinitionByTag(DirtyItem.ItemTag);
-				// Item.ItemQuantity = DirtyItem.Quantity;
-				
 				InventoryEntryDelegate.Broadcast(DirtyItem);
 			});
 	}
@@ -30,13 +27,10 @@ void UInventoryWidgetController::BindCallbacksToDependencies()
 
 void UInventoryWidgetController::BroadCastInitialValues()
 {
-	if (!IsValid(OwningInventory))
+	if (IsValid(OwningInventory))
 	{
 		for (const FRPGInventoryEntry& Entry : OwningInventory->GetInventoryEntries())
 		{
-			// FMasterItemDefinition Item = OwningInventory->GetItemDefinitionByTag(Entry.ItemTag);
-			// Item.ItemQuantity = Entry.Quantity;
-				
 			InventoryEntryDelegate.Broadcast(Entry);
 		}
 	}

@@ -6,16 +6,27 @@
 #include "UObject/NoExportTypes.h"
 #include "EquipmentInstance.generated.h"
 
+struct FEquipmentActorsToSpawn;
 /**
  * 
  */
-UCLASS()
+UCLASS(BlueprintType, Blueprintable)
 class RPGSYSTEMS_API UEquipmentInstance : public UObject
 {
 	GENERATED_BODY()
-
 public:
-
 	virtual void OnEquipped();
 	virtual void OnUnEquipped();
+
+	void SpawnEquipmentActors(const TArray<FEquipmentActorsToSpawn>& ActorsToSpawn);
+	void DestroySpawnedActors();
+
+private:
+
+	UPROPERTY()
+	TArray<AActor*> SpawnedActors;
+	
+	ACharacter* GetCharacter();
 };
+
+
