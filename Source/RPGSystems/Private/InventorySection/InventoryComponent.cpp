@@ -92,7 +92,7 @@ void FRPGInventoryList::RollForStats(const TSubclassOf<UEquipmentDefinition>& Eq
 			{
 				if (const FEquipmentAbilityGroup* PossibleAbility = URPGAbilitySystemLibrary::GetDataTableRowByTag<FEquipmentAbilityGroup>(Pair.Value, RandomTag))
 				{
-					if (FMath::RandRange(0.f, 1.f) < PossibleAbility->ProabilityToSelect)
+					if (FMath::RandRange(0.f, 1.f) <= PossibleAbility->ProabilityToSelect)
 					{
 						Entry->EffectPackage.Ability = *PossibleAbility;
 						break;

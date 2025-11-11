@@ -16,9 +16,6 @@ void UItemRowWidget::SetActionText(const FGameplayTag& GameplayTag)
 		return;
 	}
 	
-	//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red,FString::Printf(TEXT("Not Match between Tags")));
-	//ActionText->SetText(FText::FromString("Not a consumable"));
-	
 	if (GameplayTag.MatchesTag(GameplayTagEquipment))
 	{
 		ActionText->SetText(FText::FromString("Equip"));

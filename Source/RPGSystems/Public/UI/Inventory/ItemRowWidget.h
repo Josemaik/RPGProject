@@ -33,7 +33,8 @@ public:
 	void SetInventoryEntry(const FRPGInventoryEntry& InItemDefinition);
 	
 	FOnUseButtomClicked	OnUseButtomClickedDelegate;
-	
+
+	UPROPERTY(BlueprintReadOnly)
 	FRPGInventoryEntry ItemEntry;
 private:
 
@@ -41,10 +42,10 @@ private:
 	UFUNCTION()
 	void OnClickedUseButtom();
 	
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(AllowPrivateAccess=true))
 	FGameplayTag GameplayTagConsumable;
 
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(AllowPrivateAccess=true))
 	FGameplayTag GameplayTagEquipment;
 	
 	UPROPERTY(VisibleAnywhere,BlueprintReadWrite, meta = (BindWidget,AllowPrivateAccess="true"), Category = "UI")
