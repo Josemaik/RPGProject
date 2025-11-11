@@ -19,7 +19,7 @@ URPGAbilitySystemComponent* FRPGEquipmentList::GetAbilitySystemComponent()
 }
 
 UEquipmentInstance* FRPGEquipmentList::AddEntry(const TSubclassOf<UEquipmentDefinition>& InEquipmentDefinition,
-                                                const TArray<FEquipmentStatEffectGroup>& StatEffects)
+                                                const FEquipmentEffectPackage& EffectPackage)
 {
 	check(InEquipmentDefinition);
 	check(OwnerComponent);
@@ -49,7 +49,7 @@ UEquipmentInstance* FRPGEquipmentList::AddEntry(const TSubclassOf<UEquipmentDefi
 	NewEntry.RarityTag = EquipmentCTO->RarityTag;
 	NewEntry.SlotTag = EquipmentCTO->SlotTag;
 	NewEntry.EquipmentDefinition = InEquipmentDefinition;
-	NewEntry.StatEffects = StatEffects;
+	NewEntry.EffectPackage = EffectPackage;
 	NewEntry.Instance = NewObject<UEquipmentInstance>(OwnerComponent->GetOwner(), InstanceType);
 
 	NewEntry.Instance->SpawnEquipmentActors(EquipmentCTO->ActorsToSpawn);
@@ -57,6 +57,11 @@ UEquipmentInstance* FRPGEquipmentList::AddEntry(const TSubclassOf<UEquipmentDefi
 	if (NewEntry.HasStats())
 	{
 		AddEquipmentStats(&NewEntry);
+	}
+
+	if (NewEntry.HasAbility())
+	{
+		AddEquipmentAbility(&NewEntry);
 	}
 	
 	MarkItemDirty(NewEntry);
@@ -89,6 +94,7 @@ void FRPGEquipmentList::RemoveEntry(UEquipmentInstance* InEquipmentInstance)
 		{
 			Entry.Instance->DestroySpawnedActors();
 			RemoveEquipmentStats(&Entry);
+			RemoveEquipmentAbility(&Entry);
 			EntryIt.RemoveCurrent();
 			MarkArrayDirty();
 		}
@@ -102,6 +108,22 @@ void FRPGEquipmentList::RemoveEquipmentStats(FRPGEquipmentEntry* Entry)
 	{
 		UnEquippedEntryDelegate.Broadcast(*Entry);
 		ASC->RemoveEquipmentEffects(Entry);
+	}
+}
+
+void FRPGEquipmentList::AddEquipmentAbility(FRPGEquipmentEntry* Entry)
+{
+	if (URPGAbilitySystemComponent* ASC = GetAbilitySystemComponent())
+	{
+		ASC->AddEquipmentAbility(Entry);
+	}
+}
+
+void FRPGEquipmentList::RemoveEquipmentAbility(FRPGEquipmentEntry* Entry)
+{
+	if (URPGAbilitySystemComponent* ASC = GetAbilitySystemComponent())
+	{
+		ASC->RemoveEquipmentAbility(Entry);
 	}
 }
 
@@ -163,15 +185,15 @@ void UEquipmentManagerComponent::BeginPlay()
 }
 
 void UEquipmentManagerComponent::EquipItem(const TSubclassOf<UEquipmentDefinition>& EquipmentDefinition,
-                                           const TArray<FEquipmentStatEffectGroup>& StatEffects)
+                                           const FEquipmentEffectPackage& EffectPackage)
 {
 	if (!GetOwner()->HasAuthority())
 	{
-		ServerEquipItem(EquipmentDefinition,StatEffects);
+		ServerEquipItem(EquipmentDefinition,EffectPackage);
 		return;
 	}
 
-	if (UEquipmentInstance* Result = EquipmentList.AddEntry(EquipmentDefinition,StatEffects))
+	if (UEquipmentInstance* Result = EquipmentList.AddEntry(EquipmentDefinition,EffectPackage))
 	{
 		Result->OnUnEquipped();
 	}
@@ -190,9 +212,9 @@ void UEquipmentManagerComponent::UnEquipItem(UEquipmentInstance* InEquipmentInst
 }
 
 void UEquipmentManagerComponent::ServerEquipItem_Implementation(TSubclassOf<UEquipmentDefinition> EquipmentDefiniton,
-	const TArray<FEquipmentStatEffectGroup>& StatEffects)
+	const FEquipmentEffectPackage& EffectPackage)
 {
-	EquipItem(EquipmentDefiniton,StatEffects);
+	EquipItem(EquipmentDefiniton,EffectPackage);
 }
 
 void UEquipmentManagerComponent::ServerUnEquipItem_Implementation(UEquipmentInstance* InEquipmentInstance)

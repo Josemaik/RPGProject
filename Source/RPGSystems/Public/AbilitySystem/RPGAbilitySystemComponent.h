@@ -31,6 +31,8 @@ public:
 
 	void AddEquipmentEffects(FRPGEquipmentEntry* EquipmentEntry);
 	void RemoveEquipmentEffects(FRPGEquipmentEntry* EquipmentEntry);
+	void AddEquipmentAbility(FRPGEquipmentEntry* EquipmentEntry);
+	void RemoveEquipmentAbility(const FRPGEquipmentEntry* EquipmentEntry);
 private:
 
 	FGameplayAbilitySpecHandle ActiveProjectileAbility;
@@ -38,6 +40,9 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Custom Values|Projectile Ability");
 	TSubclassOf<UGameplayAbility> DynamicProjectileAbility;
 
+	FGameplayAbilitySpecHandle GrantEquipmentAbility(const FRPGEquipmentEntry* EquipmentEntry);
+	
 	UFUNCTION(Server, Reliable)
 	void ServerSetDynamicProjectile(const FGameplayTag& ProjectileTag,int32 AbilityLevel);
 };
+

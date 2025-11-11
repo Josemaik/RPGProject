@@ -15,7 +15,7 @@ class UEquipmentStaffEfects;
 class UItemTypesToTables;
 class UInventoryComponent;
 
-DECLARE_MULTICAST_DELEGATE_TwoParams(FEquipmentItemUsed, const TSubclassOf<UEquipmentDefinition>& /*Equipment Definition*/,const TArray<FEquipmentStatEffectGroup>& /* Stat Effects */)
+DECLARE_MULTICAST_DELEGATE_TwoParams(FEquipmentItemUsed, const TSubclassOf<UEquipmentDefinition>& /*Equipment Definition*/,const FEquipmentEffectPackage& /* Stat Effects and one Ability */)
 
 USTRUCT(BlueprintType)
 struct FRPGInventoryEntry : public FFastArraySerializerItem
@@ -35,7 +35,7 @@ struct FRPGInventoryEntry : public FFastArraySerializerItem
 	int64 ItemID = 0;
 
 	UPROPERTY(BlueprintReadOnly)
-	TArray<FEquipmentStatEffectGroup> StatEffects = TArray<FEquipmentStatEffectGroup>();
+	FEquipmentEffectPackage EffectPackage = FEquipmentEffectPackage();
 
 	FORCEINLINE bool IsValid() const { return ItemID != 0; }
 };
@@ -61,7 +61,7 @@ struct FRPGInventoryList : public FFastArraySerializer
 	uint64 GenerateID();
 	void SetStats(UEquipmentStaffEfects* InStats);
 	void RollForStats(const TSubclassOf<UEquipmentDefinition>& EquipmentDefinition, FRPGInventoryEntry* Entry);
-	void AddUnEquippedItem(const FGameplayTag& ItemTag, const TArray<FEquipmentStatEffectGroup>& StatEffects);
+	void AddUnEquippedItem(const FGameplayTag& ItemTag, const FEquipmentEffectPackage& EffectPackage);
 	
 	// FFastArraySerializwer Contract
 	void PreReplicatedRemove(const TArrayView<int32> RemovedIndices, int32 FinalSize);
@@ -127,7 +127,7 @@ public:
 
 	TArray<FRPGInventoryEntry> GetInventoryEntries();
 
-	void AddUnEquippedItemEntry(const FGameplayTag& ItemTag, const TArray<FEquipmentStatEffectGroup>& InStatEffects);
+	void AddUnEquippedItemEntry(const FGameplayTag& ItemTag, const FEquipmentEffectPackage& EffectPackage);
 private:
 	
 	UPROPERTY(EditDefaultsOnly, Category="Custom Values|Stat Effect")

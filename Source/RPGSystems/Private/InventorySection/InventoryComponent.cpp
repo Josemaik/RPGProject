@@ -80,7 +80,28 @@ void FRPGInventoryList::RollForStats(const TSubclassOf<UEquipmentDefinition>& Eq
 	
 	UEquipmentStaffEfects* StatEffects = WeakStats.Get();
 	const UEquipmentDefinition* EquipmentCDO = GetDefault<UEquipmentDefinition>(EquipmentDefinition);
+	
+	if (EquipmentCDO->bForceAbilityRoll || FMath::FRandRange(0.f, 1.f) < EquipmentCDO->ProbabilityToRollAbility)
+	{
+		const int32 RandomIndex = FMath::RandRange(0, EquipmentCDO->PossibleAbilityRoles.Num() - 1);
+		const FGameplayTag& RandomTag = EquipmentCDO->PossibleAbilityRoles.GetByIndex(RandomIndex);
 
+		for (const auto& Pair :StatEffects->MasterStatMap)
+		{
+			if (RandomTag.MatchesTag(Pair.Key))
+			{
+				if (const FEquipmentAbilityGroup* PossibleAbility = URPGAbilitySystemLibrary::GetDataTableRowByTag<FEquipmentAbilityGroup>(Pair.Value, RandomTag))
+				{
+					if (FMath::RandRange(0.f, 1.f) < PossibleAbility->ProabilityToSelect)
+					{
+						Entry->EffectPackage.Ability = *PossibleAbility;
+						break;
+					}
+				}
+			}
+		}
+	}
+	
 	const int32 NumStatsToRoll = FMath::RandRange(EquipmentCDO->MinPossibleStats, EquipmentCDO->MaxPossibleStats);
 	int32 StatRollIndex = 0;
 	while (StatRollIndex < NumStatsToRoll)
@@ -101,8 +122,9 @@ void FRPGInventoryList::RollForStats(const TSubclassOf<UEquipmentDefinition>& Eq
 						NewStat.CurrentValue = PossibleStat->bFractionalStat ? FMath::FRandRange(PossibleStat->MinStatLevel, PossibleStat->MaxStatLevel) :
 						FMath::TruncToInt(FMath::FRandRange(PossibleStat->MinStatLevel, PossibleStat->MaxStatLevel));
 
-						Entry->StatEffects.Add(NewStat);
+						Entry->EffectPackage.StatEffects.Add(NewStat);
 						++StatRollIndex;
+						break;
 					}
 				}
 			}
@@ -111,7 +133,7 @@ void FRPGInventoryList::RollForStats(const TSubclassOf<UEquipmentDefinition>& Eq
 }
 
 void FRPGInventoryList::AddUnEquippedItem(const FGameplayTag& ItemTag,
-	const TArray<FEquipmentStatEffectGroup>& StatEffects)
+	const FEquipmentEffectPackage& EffectPackage)
 {
 	const FMasterItemDefinition Item = OwnerComponent->GetItemDefinitionByTag(ItemTag);
 	
@@ -120,7 +142,7 @@ void FRPGInventoryList::AddUnEquippedItem(const FGameplayTag& ItemTag,
 	NewEntry.ItemName = Item.ItemName;
 	NewEntry.Quantity = 1;
 	NewEntry.ItemID = GenerateID();
-	NewEntry.StatEffects = StatEffects;
+	NewEntry.EffectPackage = EffectPackage;
 	
 	MarkItemDirty(NewEntry);
 	
@@ -289,7 +311,7 @@ void UInventoryComponent::UseItem(const FRPGInventoryEntry& Entry, int32 NumItem
 			}
 			if (IsValid(Item.EquipmentItemProps.EquipmentClass))
 			{
-				EquipmentItemDelegate.Broadcast(Item.EquipmentItemProps.EquipmentClass, Entry.StatEffects);
+				EquipmentItemDelegate.Broadcast(Item.EquipmentItemProps.EquipmentClass, Entry.EffectPackage);
 				InventoryList.RemoveItem(Entry);
 			}
 		}
@@ -320,9 +342,9 @@ TArray<FRPGInventoryEntry> UInventoryComponent::GetInventoryEntries()
 }
 
 void UInventoryComponent::AddUnEquippedItemEntry(const FGameplayTag& ItemTag,
-	const TArray<FEquipmentStatEffectGroup>& InStatEffects)
+	const FEquipmentEffectPackage& EffectPackage)
 {
-	InventoryList.AddUnEquippedItem(ItemTag, InStatEffects);
+	InventoryList.AddUnEquippedItem(ItemTag, EffectPackage);
 }
 
 //////////////////////////////

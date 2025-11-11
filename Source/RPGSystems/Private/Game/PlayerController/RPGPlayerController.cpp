@@ -108,11 +108,11 @@ void ARPGPlayerController::BindCallbacksToDependencies()
 	{
 		InvComp->EquipmentItemDelegate.AddLambda(
 			[this](const TSubclassOf<UEquipmentDefinition>& EquipmentDefinition,
-				   const TArray<FEquipmentStatEffectGroup>& StatEffects)
+				   const FEquipmentEffectPackage& EffectPackage)
 			{
 				if (UEquipmentManagerComponent* Equip = GetEquipmentComponent())
 				{
-					Equip->EquipItem(EquipmentDefinition, StatEffects);
+					Equip->EquipItem(EquipmentDefinition, EffectPackage);
 				}
 			});
 	}
@@ -127,7 +127,7 @@ void ARPGPlayerController::BindCallbacksToDependencies()
 			{
 				if (UInventoryComponent* Inv = GetInventoryComponent())
 				{
-					Inv->AddUnEquippedItemEntry(UnEquippedEntry.EntryTag, UnEquippedEntry.StatEffects);
+					Inv->AddUnEquippedItemEntry(UnEquippedEntry.EntryTag, UnEquippedEntry.EffectPackage);
 				}
 			});
 	}

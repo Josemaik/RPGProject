@@ -54,6 +54,15 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category="Custom Values|Stats")
 	FGameplayTagContainer PossibleStatsRoles;
 
-	UPROPERTY(EditDefaultsOnly, Category="Custom Values|Stats")
+	UPROPERTY(EditDefaultsOnly, Category="Custom Values|Actors")
 	TArray<FEquipmentActorsToSpawn> ActorsToSpawn;
+
+	UPROPERTY(EditDefaultsOnly, Category="Custom Values|Ability")
+	FGameplayTagContainer PossibleAbilityRoles;
+
+	UPROPERTY(EditDefaultsOnly, Category="Custom Values|Ability")
+	float ProbabilityToRollAbility = 0.f;
+
+	UPROPERTY(EditDefaultsOnly, Category="Custom Values|Ability")
+	bool bForceAbilityRoll = false;
 };
