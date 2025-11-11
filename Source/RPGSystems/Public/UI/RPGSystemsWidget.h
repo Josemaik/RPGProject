@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameplayTagContainer.h"
 #include "Blueprint/UserWidget.h"
+#include "InventorySection/InventoryComponent.h"
 #include "RPGSystemsWidget.generated.h"
 
 struct FRPGInventoryEntry;
@@ -40,6 +41,12 @@ private:
 	//callbacks
 	UFUNCTION()
 	void HandleInventoyItemReceived(const FRPGInventoryEntry& Entry);
+
+	UFUNCTION()
+	void HandleItemRowClicked(const FRPGInventoryEntry& Entry);
+
+	UFUNCTION()
+	void HandleInventoryItemRemoved(const int64 ItemID);
 	
 	UPROPERTY(BlueprintReadOnly, meta=(allowPrivateAccess=true))
 	TObjectPtr<UWidgetController> WidgetController;
@@ -87,3 +94,5 @@ private:
 	UPROPERTY(VisibleAnywhere, meta = (BindWidget), Category = "UI")
 	UTextBlock* ItemDescriptionText;
 };
+
+

@@ -59,8 +59,10 @@ void ARPGPlayerController::SetupInputComponent()
 void ARPGPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
-
-	GetWorldTimerManager().SetTimerForNextTick(this, &ARPGPlayerController::BindCallbacksToDependencies);
+	
+	GetWorldTimerManager().SetTimerForNextTick(
+	   this, &ARPGPlayerController::BindCallbacksToDependencies
+   );
 }
 
 void ARPGPlayerController::AbilityInputPressed(FGameplayTag InputTag)
@@ -106,15 +108,9 @@ void ARPGPlayerController::BindCallbacksToDependencies()
 	// ----------------------------
 	if (IsValid(InvComp))
 	{
-		InvComp->EquipmentItemDelegate.AddLambda(
-			[this](const TSubclassOf<UEquipmentDefinition>& EquipmentDefinition,
-				   const FEquipmentEffectPackage& EffectPackage)
-			{
-				if (UEquipmentManagerComponent* Equip = GetEquipmentComponent())
-				{
-					Equip->EquipItem(EquipmentDefinition, EffectPackage);
-				}
-			});
+		InvComp->EquipmentItemDelegate.AddUObject(
+			this, &ARPGPlayerController::HandleEquipmentRequested
+		);
 	}
 
 	// ----------------------------
@@ -122,14 +118,25 @@ void ARPGPlayerController::BindCallbacksToDependencies()
 	// ----------------------------
 	if (IsValid(EquipComp))
 	{
-		EquipComp->EquipmentList.UnEquippedEntryDelegate.AddLambda(
-			[this](const FRPGEquipmentEntry& UnEquippedEntry)
-			{
-				if (UInventoryComponent* Inv = GetInventoryComponent())
-				{
-					Inv->AddUnEquippedItemEntry(UnEquippedEntry.EntryTag, UnEquippedEntry.EffectPackage);
-				}
-			});
+		EquipComp->EquipmentList.UnEquippedEntryDelegate.AddUObject(
+		   this, &ARPGPlayerController::HandleUnEquippedItem);
+	}
+}
+
+void ARPGPlayerController::HandleEquipmentRequested(const TSubclassOf<UEquipmentDefinition>& EquipmentDefinition,
+	const FEquipmentEffectPackage& EffectPackage)
+{
+	if (UEquipmentManagerComponent* Equip = GetEquipmentComponent())
+	{
+		Equip->EquipItem(EquipmentDefinition, EffectPackage);
+	}
+}
+
+void ARPGPlayerController::HandleUnEquippedItem(const FRPGEquipmentEntry& UnEquippedEntry) 
+{
+	if (UInventoryComponent* Inv = GetInventoryComponent())
+	{
+		Inv->AddUnEquippedItemEntry(UnEquippedEntry.EntryTag, UnEquippedEntry.EffectPackage);
 	}
 }
 

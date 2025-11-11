@@ -16,6 +16,7 @@ class UButton;
 
 
 DECLARE_DELEGATE_OneParam(FOnUseButtomClicked, const FRPGInventoryEntry&);
+DECLARE_DELEGATE_OneParam(FOnItemRowClicked, const FRPGInventoryEntry&);
 /**
  * 
  */
@@ -24,18 +25,22 @@ class RPGSYSTEMS_API UItemRowWidget : public UUserWidget
 {
 	GENERATED_BODY()
 public:
+	FOnUseButtomClicked	OnUseButtomClickedDelegate;
+	FOnItemRowClicked OnItemRowClickedDelegate;
+	
 	void SetActionText(const FGameplayTag& GameplayTag);
 	void SetItemNameText(FText Text);
 	void SetQuantityText(int32 Quantity);
 
-	virtual void NativeConstruct() override;
-
 	void SetInventoryEntry(const FRPGInventoryEntry& InItemDefinition);
 	
-	FOnUseButtomClicked	OnUseButtomClickedDelegate;
-
 	UPROPERTY(BlueprintReadOnly)
 	FRPGInventoryEntry ItemEntry;
+	
+protected:
+	virtual void NativeConstruct() override;
+	virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
+	
 private:
 
 	//Callbacks

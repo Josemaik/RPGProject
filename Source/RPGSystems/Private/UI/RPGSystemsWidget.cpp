@@ -3,7 +3,9 @@
 
 #include "UI/RPGSystemsWidget.h"
 
+#include "ContentBrowserDataSource.h"
 #include "Components/ScrollBox.h"
+#include "Components/TextBlock.h"
 #include "Interfaces/InventoryInterface.h"
 #include "InventorySection/InventoryComponent.h"
 #include "UI/Inventory/ItemRowWidget.h"
@@ -48,27 +50,15 @@ void URPGSystemsWidget::CacheEssentialVars()
 void URPGSystemsWidget::BindInventoryItemDelegates()
 {
 	InventoryWidgetController->InventoryEntryDelegate.AddUObject(this,&URPGSystemsWidget::HandleInventoyItemReceived);
+	InventoryWidgetController->OnInventoryItemRemoved.AddUObject(this,&URPGSystemsWidget::HandleInventoryItemRemoved);
 }
 
 void URPGSystemsWidget::HandleInventoyItemReceived(const FRPGInventoryEntry& Entry)
 {
-	if (UItemRowWidget** FoundPtr = ActiveItemRowWidgets.Find(Entry.ItemID))
+	if (UItemRowWidget** FoundWidgetPtr = ActiveItemRowWidgets.Find(Entry.ItemID))
 	{
-		if (UItemRowWidget* FoundWidget = *FoundPtr)
+		if (UItemRowWidget* FoundWidget = *FoundWidgetPtr)
 		{
-			if (Entry.Quantity < 0)
-			{
-				return;
-			}
-			
-			if (Entry.Quantity == 0)
-			{
-				FoundWidget->OnUseButtomClickedDelegate.Unbind();
-				FoundWidget->RemoveFromParent();
-				ActiveItemRowWidgets.Remove(Entry.ItemID);
-				return;
-			}
-			
 			FoundWidget->SetQuantityText(Entry.Quantity);
 			return;
 		}
@@ -95,4 +85,30 @@ void URPGSystemsWidget::HandleInventoyItemReceived(const FRPGInventoryEntry& Ent
 		{
 			OwningInventory->UseItem(Entry,1);
 		});
+	CurrentItemRowWidget->OnItemRowClickedDelegate.BindLambda(
+		[this](const FRPGInventoryEntry& Entry)
+		{
+			HandleItemRowClicked(Entry);
+		});
+}
+
+void URPGSystemsWidget::HandleItemRowClicked(const FRPGInventoryEntry& Entry)
+{
+	if (!IsValid(ItemDescriptionText) || !IsValid(OwningInventory))
+	{
+		return;
+	}
+	
+	const FMasterItemDefinition& ItemDefiniton = OwningInventory->GetItemDefinitionByTag(Entry.ItemTag);
+	ItemDescriptionText->SetText(ItemDefiniton.ItemDescription);
+}
+
+void URPGSystemsWidget::HandleInventoryItemRemoved(const int64 ItemID)
+{
+	if (UItemRowWidget* ItemRow = ActiveItemRowWidgets.FindChecked(ItemID))
+	{
+		ItemRow->OnUseButtomClickedDelegate.Unbind();
+		ItemRow->RemoveFromParent();
+		ActiveItemRowWidgets.Remove(ItemID);
+	}
 }

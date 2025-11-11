@@ -38,17 +38,18 @@ struct FMasterItemDefinition : public FTableRowBase
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	FGameplayTag ItemTag = FGameplayTag();
 
+
 	UPROPERTY(EditDefaultsOnly,BlueprintReadOnly)
 	FText ItemName = FText();
 	
 	UPROPERTY(BlueprintReadOnly)
 	int32 ItemQuantity = 0;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	FText ItemDescription = FText();
 
 	UPROPERTY(EditDefaultsOnly,BlueprintReadOnly)
 	TObjectPtr<UTexture2D> Icon = nullptr;
-
-	UPROPERTY(EditDefaultsOnly,BlueprintReadOnly)
-	FText Description = FText();
 
 	UPROPERTY(EditDefaultsOnly,BlueprintReadOnly)
 	FConsumableProps ConsumableProps = FConsumableProps();

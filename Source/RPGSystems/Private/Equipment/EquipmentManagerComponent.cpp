@@ -140,7 +140,7 @@ void FRPGEquipmentList::PreReplicatedRemove(const TArrayView<int32> RemovedIndic
 	}
 }
 
-void FRPGEquipmentList::PostReplicateAdd(const TArrayView<int32> AddedIndices, int32 FinalSize)
+void FRPGEquipmentList::PostReplicatedAdd(const TArrayView<int32> AddedIndices, int32 FinalSize)
 {
 	for (const int32 Index : AddedIndices)
 	{

@@ -49,6 +49,15 @@ void UItemRowWidget::SetInventoryEntry(const FRPGInventoryEntry& Entry)
 	ItemEntry = Entry;
 }
 
+FReply UItemRowWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
+{
+	if (InMouseEvent.IsMouseButtonDown(EKeys::LeftMouseButton))
+	{
+		OnItemRowClickedDelegate.ExecuteIfBound(ItemEntry);
+	}
+	return FReply::Handled();
+}
+
 void UItemRowWidget::OnClickedUseButtom()
 {
 	OnUseButtomClickedDelegate.ExecuteIfBound(ItemEntry);

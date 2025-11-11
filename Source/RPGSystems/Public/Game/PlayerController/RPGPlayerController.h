@@ -10,6 +10,9 @@
 #include "Interfaces/RPGAbilitySystemInterface.h"
 #include "RPGPlayerController.generated.h"
 
+ struct FRPGEquipmentEntry;
+ struct FEquipmentEffectPackage;
+ class UEquipmentDefinition;
  class ARPGPlayerState;
 class UEquipmentManagerComponent;
  class URPGAbilitySystemComponent;
@@ -56,9 +59,18 @@ protected:
 	
 private:
 
+	bool bCallbacksbound = false;
+	
 	URPGAbilitySystemComponent* GetRPGAbilitySystemComponent();
 
 	void BindCallbacksToDependencies();
+
+	UFUNCTION()
+	void HandleEquipmentRequested(const TSubclassOf<UEquipmentDefinition>& EquipmentDefinition,
+				   const FEquipmentEffectPackage& EffectPackage);
+
+	UFUNCTION()
+	void HandleUnEquippedItem(const FRPGEquipmentEntry& UnEquippedEntry);
 	
 	UPROPERTY()
 	TObjectPtr<URPGAbilitySystemComponent> RPGAbilitySystemComponent;

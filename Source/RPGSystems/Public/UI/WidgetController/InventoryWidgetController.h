@@ -11,6 +11,7 @@ struct FMasterItemDefinition;
 class UInventoryComponent;
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FInventoryEntrySignature, const FRPGInventoryEntry&);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnInventoryItemRemoeved, const int64);
 /**
  * 
  */
@@ -22,6 +23,8 @@ public:
 
 	
 	FInventoryEntrySignature InventoryEntryDelegate;
+	
+	FOnInventoryItemRemoeved OnInventoryItemRemoved;
 	
 	void SetOwningActor(AActor* InOwner);
 	FORCEINLINE AActor* GetOwningActor() { return OwningActor; };

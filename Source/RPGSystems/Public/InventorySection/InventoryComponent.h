@@ -41,6 +41,7 @@ struct FRPGInventoryEntry : public FFastArraySerializerItem
 };
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FDirtyInventoryItemsSignature, const FRPGInventoryEntry&  /*Dirty Item*/)
+DECLARE_MULTICAST_DELEGATE_OneParam(FInventoryItemRemovedSignature, const int64 /*Item ID*/)
 
 USTRUCT()
 struct FRPGInventoryList : public FFastArraySerializer
@@ -65,7 +66,7 @@ struct FRPGInventoryList : public FFastArraySerializer
 	
 	// FFastArraySerializwer Contract
 	void PreReplicatedRemove(const TArrayView<int32> RemovedIndices, int32 FinalSize);
-	void PostReplicateAdd(const TArrayView<int32> AddedIndices, int32 FinalSize);
+	void PostReplicatedAdd(const TArrayView<int32> AddedIndices, int32 FinalSize);
 	void PostReplicatedChange(const TArrayView<int32> ChangedIndices, int32 FinalSize);
 
 	bool NetDeltaSerialize(FNetDeltaSerializeInfo& DeltaParams)
@@ -74,6 +75,7 @@ struct FRPGInventoryList : public FFastArraySerializer
 	}
 	
 	FDirtyInventoryItemsSignature DirtyItemDelegate;
+	FInventoryItemRemovedSignature InventoryItemRemovedDelegate;
 private:
 	friend class UInventoryComponent;
 	
@@ -108,8 +110,11 @@ class RPGSYSTEMS_API UInventoryComponent : public UActorComponent
 public:
 	FEquipmentItemUsed EquipmentItemDelegate;
 	
-	UPROPERTY(Replicated)
+	UPROPERTY(Replicated,ReplicatedUsing = OnRep_InventoryList)
 	FRPGInventoryList InventoryList;
+
+	UFUNCTION()
+	void OnRep_InventoryList();
 	
 	UInventoryComponent();
 	
@@ -135,13 +140,15 @@ private:
 	
 	UPROPERTY(EditDefaultsOnly, Category="Custom Values|Item Definitions")
 	TObjectPtr<UItemTypesToTables> InventoryDefinitions;
-
+	
 	//Server methods
 	UFUNCTION(Server, Reliable)
 	void ServerAddItem(const FGameplayTag& ItemTag, int32 NumItems);
 
-	UFUNCTION(Server, Reliable)
+	UFUNCTION(Server, Reliable, WithValidation)
 	void ServerUseItem(const FRPGInventoryEntry& Entry, int32 NumItems);
+
+	bool ServerUseItem_Validate(const FRPGInventoryEntry& Entry, int32 NumItems);
 };
 
 

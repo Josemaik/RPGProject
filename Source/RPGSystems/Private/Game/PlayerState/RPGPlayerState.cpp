@@ -34,8 +34,8 @@ void ARPGPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	// DOREPLIFETIME(ARPGPlayerState, InventoryComponent);
-	// DOREPLIFETIME(ARPGPlayerState, EquipmentComponent);
+	DOREPLIFETIME(ARPGPlayerState, InventoryComponent);
+	DOREPLIFETIME(ARPGPlayerState, EquipmentComponent);
 }
 
 void ARPGPlayerState::BeginPlay()
