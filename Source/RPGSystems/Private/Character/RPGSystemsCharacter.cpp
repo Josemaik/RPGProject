@@ -57,6 +57,8 @@ ARPGSystemsCharacter::ARPGSystemsCharacter()
 
 	DynamicProjectileSpawnPoint = CreateDefaultSubobject<USceneComponent>(TEXT("DynamicProjectileSpawnPoint"));
 	DynamicProjectileSpawnPoint->SetupAttachment(GetRootComponent());
+
+	GetCharacterMovement()->NavAgentProps.bCanCrouch = true;
 }
 
 void ARPGSystemsCharacter::PossessedBy(AController* NewController) //server

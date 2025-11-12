@@ -9,3 +9,8 @@ namespace RPGGameplayTags::Combat
 	//UE_DEFINE_GAMEPLAY_TAG_STATIC(Projectile_Basic, "Projectile.Basic");
 }
 
+namespace RPGGameplayTags::Player::State
+{
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Crouch, "Player.State.Crouch", "Player is Actively Crouching");
+}
+
