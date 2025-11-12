@@ -13,6 +13,7 @@
 #include "AbilitySystem/RPGAbilitySystemComponent.h"
 #include "AbilitySystem/Attributes/RPGAttributeSet.h"
 #include "Character/Animation/RPGAnimInstance.h"
+#include "Character/Components/RPGCharacterMovement.h"
 #include "Data/CharacterClassInfo.h"
 #include "Game/PlayerState/RPGPlayerState.h"
 #include "Libraries/RPGAbilitySystemLibrary.h"
@@ -22,7 +23,8 @@ DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 //////////////////////////////////////////////////////////////////////////
 // ARPGSystemsCharacter
 
-ARPGSystemsCharacter::ARPGSystemsCharacter()
+ARPGSystemsCharacter::ARPGSystemsCharacter(const FObjectInitializer& ObjectInitializer)
+	:Super(ObjectInitializer.SetDefaultSubobjectClass<URPGCharacterMovement>(CharacterMovementComponentName))
 {
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);

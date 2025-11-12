@@ -43,7 +43,7 @@ class ARPGSystemsCharacter : public ACharacterBase,public IAbilitySystemInterfac
 	UInputAction* LookAction;
 
 public:
-	ARPGSystemsCharacter();
+	ARPGSystemsCharacter(const FObjectInitializer& ObjectInitializer);
 	
 	virtual void PossessedBy(AController* NewController) override;
 	virtual void OnRep_PlayerState() override;
