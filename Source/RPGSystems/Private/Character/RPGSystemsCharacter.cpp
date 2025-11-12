@@ -12,6 +12,7 @@
 #include "InputActionValue.h"
 #include "AbilitySystem/RPGAbilitySystemComponent.h"
 #include "AbilitySystem/Attributes/RPGAttributeSet.h"
+#include "Character/Animation/RPGAnimInstance.h"
 #include "Data/CharacterClassInfo.h"
 #include "Game/PlayerState/RPGPlayerState.h"
 #include "Libraries/RPGAbilitySystemLibrary.h"
@@ -111,6 +112,11 @@ void ARPGSystemsCharacter::InitAbilityActorInfo()
 	if (HasAuthority())
 	{
 		InitClassDefaults();
+	}
+
+	if (URPGAnimInstance* RPGAnimInstance = Cast<URPGAnimInstance>(GetMesh()->GetAnimInstance()))
+	{
+		RPGAnimInstance->InitializeWithAbilitySystem(RPGAbilitySystemComp);
 	}
 }
 
