@@ -44,7 +44,6 @@ void URPGAbilitySystemComponent::InitializeDefaultAttributes(const TSubclassOf<U
 
 void URPGAbilitySystemComponent::AbilityInputPressed(const FGameplayTag& InputTag)
 {
-	//FScopedAbilityListLock ActiveScopeLock(*this);
 	if (!InputTag.IsValid())
 	{
 		return;
