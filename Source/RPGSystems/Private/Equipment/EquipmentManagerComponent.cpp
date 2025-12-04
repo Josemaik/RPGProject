@@ -54,14 +54,14 @@ UEquipmentInstance* FRPGEquipmentList::AddEntry(const TSubclassOf<UEquipmentDefi
 
 	NewEntry.Instance->SpawnEquipmentActors(EquipmentCTO->ActorsToSpawn);
 	
-	if (NewEntry.HasStats())
-	{
-		AddEquipmentStats(&NewEntry);
-	}
-
 	if (NewEntry.HasAbility())
 	{
 		AddEquipmentAbility(&NewEntry);
+	}
+	
+	if (NewEntry.HasStats())
+	{
+		AddEquipmentStats(&NewEntry);
 	}
 	
 	MarkItemDirty(NewEntry);
@@ -97,6 +97,43 @@ void FRPGEquipmentList::RemoveEntry(UEquipmentInstance* InEquipmentInstance)
 			RemoveEquipmentAbility(&Entry);
 			EntryIt.RemoveCurrent();
 			MarkArrayDirty();
+		}
+	}
+}
+
+void FRPGEquipmentList::BindAbilitySystemDelegates()
+{
+	if (URPGAbilitySystemComponent* ASC = GetAbilitySystemComponent())
+	{
+		ASC->OnEquipmentAbilityGiven.AddLambda(
+			[this,ASC](FRPGEquipmentEntry* EquipmentEntry,bool bAsync)
+		{
+			CheckAbilityLevels(ASC, EquipmentEntry,bAsync);
+		});
+	}
+}
+
+void FRPGEquipmentList::CheckAbilityLevels(UAbilitySystemComponent* ASC, FRPGEquipmentEntry* EquipmentEntry,bool bAsync)
+{
+	for (FGameplayAbilitySpec& Spec : ASC->GetActivatableAbilities())
+	{
+		if (Spec.GetDynamicSpecSourceTags().HasTagExact(EquipmentEntry->EffectPackage.Ability.AbilityTag))
+		{
+			for (auto EntryIt = Entries.CreateIterator(); EntryIt; ++EntryIt)
+			{
+				const FRPGEquipmentEntry& CurrentEntry = *EntryIt;
+				
+				if (!bAsync && CurrentEntry.EntryTag.MatchesTag(EquipmentEntry->EntryTag)) continue;
+				
+				for (const FEquipmentStatEffectGroup& StatEffect: CurrentEntry.EffectPackage.StatEffects)
+				{
+					if (!StatEffect.ContextTag.IsValid()) return;
+					if (Spec.GetDynamicSpecSourceTags().HasTagExact(StatEffect.ContextTag))
+					{
+						Spec.Level = FMath::Clamp(Spec.Level + StatEffect.CurrentValue, 1.f, Spec.Level + StatEffect.CurrentValue);
+					}
+				}
+			}
 		}
 	}
 }
@@ -182,6 +219,11 @@ void UEquipmentManagerComponent::BeginPlay()
 	Super::BeginPlay();
 
 	UE_LOG(LogTemp, Warning, TEXT("Equipment Owner: %s"), *GetOwner()->GetName());
+
+	if (GetOwner()->HasAuthority())
+	{
+		EquipmentList.BindAbilitySystemDelegates();
+	}
 }
 
 void UEquipmentManagerComponent::EquipItem(const TSubclassOf<UEquipmentDefinition>& EquipmentDefinition,

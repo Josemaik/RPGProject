@@ -8,6 +8,7 @@
 
 struct FRPGEquipmentEntry;
 DECLARE_MULTICAST_DELEGATE(FOnAttributesGiven)
+DECLARE_MULTICAST_DELEGATE_TwoParams(FOnEquipmentAbilityGiven, FRPGEquipmentEntry* /*Equipment Entry*/,bool /*Async*/);
 
 /**
  * 
@@ -19,6 +20,7 @@ class RPGSYSTEMS_API URPGAbilitySystemComponent : public UAbilitySystemComponent
 public:
 
 	FOnAttributesGiven OnAttributesGiven;
+	FOnEquipmentAbilityGiven OnEquipmentAbilityGiven;
 	
 	void AddCharacterAbilities(const TArray<TSubclassOf<UGameplayAbility>>& AbilitiesToGrant);
 	void AddCharacterPassiveAbilities(const TArray<TSubclassOf<UGameplayAbility>>& PassivesToGrant);
