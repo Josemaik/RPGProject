@@ -3,11 +3,19 @@
 
 #include "AbilitySystem/RPGAbilitySystemComponent.h"
 
+#include "NativeGameplayTags.h"
 #include "AbilitySystem/Abilities/ProjectileAbility.h"
 #include "AbilitySystem/Abilities/RPGGameplayAbility.h"
 #include "Engine/AssetManager.h"
 #include "Engine/StreamableManager.h"
 #include "Equipment/EquipmentManagerComponent.h"
+
+namespace RPGGameplayTags::Static
+{
+	UE_DEFINE_GAMEPLAY_TAG_STATIC(StatEffect_Category_Attribute, "StatEffect.Attribute");
+	UE_DEFINE_GAMEPLAY_TAG_STATIC(StatEffect_Category_Ability, "StatEffect.Ability");
+}
+
 
 void URPGAbilitySystemComponent::AddCharacterAbilities(const TArray<TSubclassOf<UGameplayAbility>>& AbilitiesToGrant)
 {
@@ -44,7 +52,6 @@ void URPGAbilitySystemComponent::InitializeDefaultAttributes(const TSubclassOf<U
 
 void URPGAbilitySystemComponent::AbilityInputPressed(const FGameplayTag& InputTag)
 {
-	//FScopedAbilityListLock ActiveScopeLock(*this);
 	if (!InputTag.IsValid())
 	{
 		return;
@@ -127,23 +134,36 @@ void URPGAbilitySystemComponent::AddEquipmentEffects(FRPGEquipmentEntry* Equipme
 	const FGameplayEffectContextHandle ContextHandle = MakeEffectContext();
 	for (const FEquipmentStatEffectGroup& StatEffect : EquipmentEntry->EffectPackage.StatEffects)
 	{
-		if (IsValid(StatEffect.EffectClass.Get()))
+		if (StatEffect.StatEffectTag.MatchesTag(RPGGameplayTags::Static::StatEffect_Category_Attribute))
 		{
-			const FGameplayEffectSpecHandle SpecHandle = MakeOutgoingSpec(StatEffect.EffectClass.Get(),StatEffect.CurrentValue, ContextHandle);
-			const FActiveGameplayEffectHandle ActiveHandle = ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
+			if (IsValid(StatEffect.EffectClass.Get()))
+			{
+				const FGameplayEffectSpecHandle SpecHandle = MakeOutgoingSpec(StatEffect.EffectClass.Get(),StatEffect.CurrentValue, ContextHandle);
+				const FActiveGameplayEffectHandle ActiveHandle = ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
 
-			EquipmentEntry->GrantedHandles.AddEffectHandle(ActiveHandle);
-		}
-		else
+				EquipmentEntry->GrantedHandles.AddEffectHandle(ActiveHandle);
+			}
+			else
+			{
+				Manager.RequestAsyncLoad(StatEffect.EffectClass.ToSoftObjectPath(),
+					[WeakThis,StatEffect,ContextHandle,EquipmentEntry]()
+					{
+						const FGameplayEffectSpecHandle SpecHandle = WeakThis->MakeOutgoingSpec(StatEffect.EffectClass.Get(),StatEffect.CurrentValue, ContextHandle);
+						const FActiveGameplayEffectHandle ActiveHandle = WeakThis->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
+
+						EquipmentEntry->GrantedHandles.AddEffectHandle(ActiveHandle);
+					});
+			}	
+		} else if (StatEffect.StatEffectTag.MatchesTag(RPGGameplayTags::Static::StatEffect_Category_Ability))
 		{
-			Manager.RequestAsyncLoad(StatEffect.EffectClass.ToSoftObjectPath(),
-				[WeakThis,StatEffect,ContextHandle,EquipmentEntry]()
+			if (!StatEffect.EffectClass.IsValid()) continue;
+			for (FGameplayAbilitySpec& Spec : GetActivatableAbilities())
+			{
+				if (Spec.GetDynamicSpecSourceTags().HasTagExact(StatEffect.ContextTag))
 				{
-					const FGameplayEffectSpecHandle SpecHandle = WeakThis->MakeOutgoingSpec(StatEffect.EffectClass.Get(),StatEffect.CurrentValue, ContextHandle);
-					const FActiveGameplayEffectHandle ActiveHandle = WeakThis->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
-
-					EquipmentEntry->GrantedHandles.AddEffectHandle(ActiveHandle);
-				});
+					Spec.Level = FMath::Clamp(Spec.Level + StatEffect.CurrentValue, 1.f, Spec.Level + StatEffect.CurrentValue);
+				}
+			}
 		}
 	}
 }
@@ -155,6 +175,21 @@ void URPGAbilitySystemComponent::RemoveEquipmentEffects(FRPGEquipmentEntry* Equi
 		RemoveActiveGameplayEffect(*HandleIt);
 		HandleIt.RemoveCurrent();
 	}
+
+	for (const FEquipmentStatEffectGroup& StatEffect : EquipmentEntry->EffectPackage.StatEffects)
+	{
+		if (StatEffect.StatEffectTag.MatchesTag(RPGGameplayTags::Static::StatEffect_Category_Ability))
+		{
+			if (!StatEffect.EffectClass.IsValid()) continue;
+			for (FGameplayAbilitySpec& Spec : GetActivatableAbilities())
+			{
+				if (Spec.GetDynamicSpecSourceTags().HasTagExact(StatEffect.ContextTag))
+				{
+					Spec.Level = FMath::Clamp(Spec.Level - StatEffect.CurrentValue, 1.f, Spec.Level - StatEffect.CurrentValue);
+				}
+			}
+		}
+	}
 }
 
 void URPGAbilitySystemComponent::AddEquipmentAbility(FRPGEquipmentEntry* EquipmentEntry)
@@ -165,6 +200,7 @@ void URPGAbilitySystemComponent::AddEquipmentAbility(FRPGEquipmentEntry* Equipme
 	if (IsValid(EquipmentEntry->EffectPackage.Ability.AbilityClass.Get()))
 	{	
 		EquipmentEntry->GrantedHandles.GrantedAbility = GrantEquipmentAbility(EquipmentEntry);
+		OnEquipmentAbilityGiven.Broadcast(EquipmentEntry,false);
 	}
 	else
 	{
@@ -172,6 +208,7 @@ void URPGAbilitySystemComponent::AddEquipmentAbility(FRPGEquipmentEntry* Equipme
 			[WeakThis, EquipmentEntry]()
 			{
 				EquipmentEntry->GrantedHandles.GrantedAbility = WeakThis->GrantEquipmentAbility(EquipmentEntry);
+				WeakThis->OnEquipmentAbilityGiven.Broadcast(EquipmentEntry,true);
 			});
 	}
 }
@@ -186,6 +223,9 @@ FGameplayAbilitySpecHandle URPGAbilitySystemComponent::GrantEquipmentAbility(
 {
 	FGameplayAbilitySpec AbilitySpec = FGameplayAbilitySpec(EquipmentEntry->EffectPackage.Ability.AbilityClass.Get(),
 		EquipmentEntry->EffectPackage.Ability.AbilityLevel);
+
+	AbilitySpec.GetDynamicSpecSourceTags().AddTag(EquipmentEntry->EffectPackage.Ability.AbilityTag);
+	
 	if (URPGGameplayAbility* RPGAbility = Cast<URPGGameplayAbility>(AbilitySpec.Ability))
 	{
 		AbilitySpec.GetDynamicSpecSourceTags().AddTag(RPGAbility->InputTag);

@@ -80,7 +80,9 @@ struct FRPGEquipmentList : public FFastArraySerializer
 	void RemoveEquipmentAbility(FRPGEquipmentEntry* Entry);
 	UEquipmentInstance* AddEntry(const TSubclassOf<UEquipmentDefinition>& InEquipmentDefinition,const FEquipmentEffectPackage& EffectPackage);
 	void RemoveEntry(UEquipmentInstance* InEquipmentInstance);
-
+	void BindAbilitySystemDelegates();
+	void CheckAbilityLevels(UAbilitySystemComponent* ASC, FRPGEquipmentEntry* EquipmentEntry,bool bAsync);
+	
 	// FFastArraySerializer Contract
 	void PreReplicatedRemove(const TArrayView<int32> RemovedIndices, int32 FinalSize);
 	void PostReplicatedAdd(const TArrayView<int32> AddedIndices, int32 FinalSize);
@@ -126,10 +128,11 @@ public:
 	UEquipmentManagerComponent();
 	
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
-	virtual void BeginPlay() override;
 	
 	void EquipItem(const TSubclassOf<UEquipmentDefinition>& EquipmentDefinition,const FEquipmentEffectPackage& EffectPackage);
 	void UnEquipItem(UEquipmentInstance* InEquipmentInstance);
+protected:
+	virtual void BeginPlay() override;
 
 private:
 
