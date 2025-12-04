@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameplayTagContainer.h"
+#include "ScalableFloat.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "RPGAbilitySystemLibrary.generated.h"
 
@@ -31,6 +32,9 @@ public:
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName="Set Loose Tag Count Static")) //only exposed to blueprints
 	static void K2_SetLooseTagCountStatic(UAbilitySystemComponent* ASC, FGameplayTag Tag, int32 NewCount);
+
+	UFUNCTION(BlueprintPure)
+	static float GetScalableFloatValueAtLevel(const FScalableFloat& Curve,float InLevel);
 	
 	template<typename T>
 	static T* GetDataTableRowByTag(UDataTable* DataTable, FGameplayTag Tag);

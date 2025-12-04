@@ -54,3 +54,8 @@ void URPGAbilitySystemLibrary::K2_SetLooseTagCountStatic(UAbilitySystemComponent
 		ASC->SetLooseGameplayTagCount(Tag, NewCount);
 	}
 }
+
+float URPGAbilitySystemLibrary::GetScalableFloatValueAtLevel(const FScalableFloat& Curve, float InLevel)
+{
+	return Curve.GetValueAtLevel(InLevel);
+}

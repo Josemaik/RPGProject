@@ -171,6 +171,11 @@ void ARPGSystemsCharacter::BindCallbacksToDependencies()
 		{
 			OnShieldChanged(Data.NewValue, RPGAttributes->GetMaxShield());
 		});
+	RPGAbilitySystemComp->GetGameplayAttributeValueChangeDelegate(RPGAttributes->GetMovementSpeedAttribute()).AddLambda(
+		[this] (const FOnAttributeChangeData& Data)
+		{
+			GetCharacterMovement()->MaxWalkSpeed = Data.NewValue;
+		});
 }
 
 void ARPGSystemsCharacter::BroadcastInitialValues()
@@ -183,6 +188,7 @@ void ARPGSystemsCharacter::BroadcastInitialValues()
 	OnHealthChanged(RPGAttributes->GetHealth(), RPGAttributes->GetMaxHealth());
 	OnManaChanged(RPGAttributes->GetMana(), RPGAttributes->GetMaxMana());
 	OnShieldChanged(RPGAttributes->GetShield(), RPGAttributes->GetMaxShield());
+	GetCharacterMovement()->MaxWalkSpeed = RPGAttributes->GetMovementSpeed();
 }
 
 void ARPGSystemsCharacter::BeginPlay()

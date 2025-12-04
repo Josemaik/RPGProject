@@ -61,6 +61,10 @@ public:
     FGameplayAttributeData MaxMana;
     ATTRIBUTE_ACCESSORS(URPGAttributeSet, MaxMana)
 
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing= OnRep_MovementSpeed)
+	FGameplayAttributeData MovementSpeed;
+	ATTRIBUTE_ACCESSORS(URPGAttributeSet, MovementSpeed)
+	
 	UPROPERTY()
 	FGameplayAttributeData IncomingDamage;
 	ATTRIBUTE_ACCESSORS(URPGAttributeSet,IncomingDamage);
@@ -95,4 +99,7 @@ private:
 
 	UFUNCTION()
 	void OnRep_MaxMana(const FGameplayAttributeData& OldMaxmana);
+
+	UFUNCTION()
+	void OnRep_MovementSpeed(const FGameplayAttributeData& OldMovementSpeed);
 };

@@ -19,6 +19,7 @@ void URPGAttributeSet::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty
 	DOREPLIFETIME_CONDITION_NOTIFY(URPGAttributeSet, DamageReduction, COND_None, REPNOTIFY_Always);
 	DOREPLIFETIME_CONDITION_NOTIFY(URPGAttributeSet, CritChance, COND_None, REPNOTIFY_Always);
 	DOREPLIFETIME_CONDITION_NOTIFY(URPGAttributeSet, CritDamage, COND_None, REPNOTIFY_Always);
+	DOREPLIFETIME_CONDITION_NOTIFY(URPGAttributeSet, MovementSpeed, COND_None, REPNOTIFY_Always)
 }
 
 void URPGAttributeSet::PostGameplayEffectExecute(const struct FGameplayEffectModCallbackData& Data)
@@ -64,8 +65,8 @@ void URPGAttributeSet::HandleIncomingDamage(const FGameplayEffectModCallbackData
 	FGameplayEffectContextHandle ContextHandle = Data.EffectSpec.GetContext();
 	FRPGGameplayEffectContext* RPGContext = FRPGGameplayEffectContext::GetEffectContext(ContextHandle);
 	FColor DebugColor = RPGContext->IsCriticalHit() ? FColor::Red : FColor::Green;
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, DebugColor, FString::Printf(TEXT("Damage "
-	"Dealt: %.2f"),LocalDamage));
+	// GEngine->AddOnScreenDebugMessage(-1, 5.f, DebugColor, FString::Printf(TEXT("Damage "
+	// "Dealt: %.2f"),LocalDamage));
 }
 
 void URPGAttributeSet::OnRep_Health(const FGameplayAttributeData& OldHealth)
@@ -112,3 +113,9 @@ void URPGAttributeSet::OnRep_MaxMana(const FGameplayAttributeData& OldMaxMana)
 {
 	GAMEPLAYATTRIBUTE_REPNOTIFY(URPGAttributeSet, MaxMana, OldMaxMana);
 }
+
+void URPGAttributeSet::OnRep_MovementSpeed(const FGameplayAttributeData& OldMovementSpeed)
+{
+	GAMEPLAYATTRIBUTE_REPNOTIFY(URPGAttributeSet, MovementSpeed, OldMovementSpeed);
+}
+
