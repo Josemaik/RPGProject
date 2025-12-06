@@ -362,6 +362,17 @@ void UInventoryComponent::UseItem(const FRPGInventoryEntry& Entry, int32 NumItem
 	}
 }
 
+void UInventoryComponent::DropItem(const FRPGInventoryEntry& Entry, int32 NumItems)
+{
+	if (!GetOwner()->HasAuthority())
+	{
+		ServerDropItem(Entry, NumItems);
+		return;
+	}
+
+	ItemDroppedDelegate.Broadcast(&Entry, NumItems);
+}
+
 FMasterItemDefinition UInventoryComponent::GetItemDefinitionByTag(const FGameplayTag& ItemTag) const
 {
 	checkf(InventoryDefinitions, TEXT("No inventory definitions inside component: %s"),*GetNameSafe(this));
@@ -440,5 +451,10 @@ void UInventoryComponent::ServerUseItem_Implementation(const FRPGInventoryEntry&
 bool UInventoryComponent::ServerUseItem_Validate(const FRPGInventoryEntry& Entry, int32 NumItems)
 {
 	return Entry.IsValid() && InventoryList.HasEnough(Entry.ItemTag, NumItems);
+}
+
+void UInventoryComponent::ServerDropItem_Implementation(const FRPGInventoryEntry& Entry, int32 NumItems)
+{
+	DropItem(Entry, NumItems);
 }
 

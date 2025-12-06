@@ -49,6 +49,9 @@ private:
 	void HandleItemRowClicked(const FRPGInventoryEntry& Entry);
 
 	UFUNCTION()
+	void HandleItemDropped(const FRPGInventoryEntry& Entry);
+	
+	UFUNCTION()
 	void HandleInventoryItemRemoved(const int64 ItemID);
 
 	UFUNCTION()
@@ -103,6 +106,5 @@ private:
 	UPROPERTY(VisibleAnywhere, meta = (BindWidget), Category = "UI")
 	UTextBlock* ItemDescriptionText;
 };
-
 
 

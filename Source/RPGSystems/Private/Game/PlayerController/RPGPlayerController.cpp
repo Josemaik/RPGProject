@@ -7,11 +7,14 @@
 #include "AbilitySystem/RPGAbilitySystemComponent.h"
 #include "Blueprint/UserWidget.h"
 #include "Engine/ActorChannel.h"
+#include "Engine/AssetManager.h"
+#include "Engine/StreamableManager.h"
 #include "Equipment/EquipmentManagerComponent.h"
 #include "Game/PlayerState/RPGPlayerState.h"
 #include "Input/RPGInputConfig.h"
 #include "Input/RPGSystemsInputComponent.h"
 #include "InventorySection/InventoryComponent.h"
+#include "InventorySection/ItemActor.h"
 #include "Net/UnrealNetwork.h"
 #include "UI/WidgetController/InventoryWidgetController.h"
 #include "UI/RPGSystemsWidget.h"
@@ -100,25 +103,31 @@ URPGAbilitySystemComponent* ARPGPlayerController::GetRPGAbilitySystemComponent()
 
 void ARPGPlayerController::BindCallbacksToDependencies()
 {
-	UInventoryComponent* InvComp = GetInventoryComponent();
-	UEquipmentManagerComponent* EquipComp = GetEquipmentComponent();
+	InventoryComponent = GetInventoryComponent();
+	EquipmentComponent = GetEquipmentComponent();
 
 	// ----------------------------
 	// Inventory → Equipment binding
 	// ----------------------------
-	if (IsValid(InvComp))
+	if (IsValid(InventoryComponent))
 	{
-		InvComp->EquipmentItemDelegate.AddUObject(
+		InventoryComponent->EquipmentItemDelegate.AddUObject(
 			this, &ARPGPlayerController::HandleEquipmentRequested
 		);
+
+		InventoryComponent->ItemDroppedDelegate.AddLambda(
+			[this](const FRPGInventoryEntry* Entry,int32 NumItems)
+		{
+			SpawnDroppedItem(Entry, NumItems);
+		});
 	}
 
 	// ----------------------------
 	// Equipment → Inventory binding
 	// ----------------------------
-	if (IsValid(EquipComp))
+	if (IsValid(EquipmentComponent))
 	{
-		EquipComp->EquipmentList.UnEquippedEntryDelegate.AddUObject(
+		EquipmentComponent->EquipmentList.UnEquippedEntryDelegate.AddUObject(
 		   this, &ARPGPlayerController::HandleUnEquippedItem);
 	}
 }
@@ -138,6 +147,47 @@ void ARPGPlayerController::HandleUnEquippedItem(const FRPGEquipmentEntry& UnEqui
 	{
 		Inv->AddUnEquippedItemEntry(UnEquippedEntry.EntryTag, UnEquippedEntry.EffectPackage);
 	}
+}
+
+void ARPGPlayerController::SpawnDroppedItem(const FRPGInventoryEntry* DroppedEntry, int32 NumItems) const
+{
+	if (!DroppedEntry || !IsValid(InventoryComponent))
+	{
+		return;
+	}
+	
+	TObjectPtr<APawn> OwnerPawn = GetPawn();
+	if (!IsValid(OwnerPawn))
+	{
+		return;
+	}
+	
+	const FVector FordwardLocation = OwnerPawn->GetActorLocation() + OwnerPawn->GetActorForwardVector() * ItemSpawnFordwardDistance;
+	FTransform SpawnTransform;
+	SpawnTransform.SetLocation(FordwardLocation);
+
+	AItemActor* NewActor = GetWorld()->SpawnActorDeferred<AItemActor>(AItemActor::StaticClass(), SpawnTransform);
+	if (IsValid(NewActor))
+	{
+		NewActor->SetParams(DroppedEntry, NumItems);
+		FMasterItemDefinition Item = InventoryComponent->GetItemDefinitionByTag(DroppedEntry->ItemTag);
+		if (IsValid(Item.ItemMesh.Get()))
+		{
+			NewActor->SetMesh(Item.ItemMesh.Get());
+			NewActor->FinishSpawning(SpawnTransform);
+		}
+		else
+		{
+			FStreamableManager& Manager = UAssetManager::GetStreamableManager();
+			Manager.RequestAsyncLoad(Item.ItemMesh.ToSoftObjectPath(),
+				[NewActor, Item, SpawnTransform]
+				{
+					NewActor->SetMesh(Item.ItemMesh.Get());
+					NewActor->FinishSpawning(SpawnTransform);
+				});
+		}
+	}
+	
 }
 
 UAbilitySystemComponent* ARPGPlayerController::GetAbilitySystemComponent() const

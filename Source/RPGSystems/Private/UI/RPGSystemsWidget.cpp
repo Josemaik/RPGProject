@@ -76,6 +76,7 @@ void URPGSystemsWidget::ClearEntries()
 
 void URPGSystemsWidget::HandleInventoyItemReceived(const FRPGInventoryEntry& Entry)
 {
+	if (!IsValid(OwningInventory)) return;
 	if (UItemRowWidget** FoundWidgetPtr = ActiveItemRowWidgets.Find(Entry.ItemID))
 	{
 		if (UItemRowWidget* FoundWidget = *FoundWidgetPtr)
@@ -84,6 +85,8 @@ void URPGSystemsWidget::HandleInventoyItemReceived(const FRPGInventoryEntry& Ent
 			return;
 		}
 	}
+
+	FMasterItemDefinition ItemDefinition = OwningInventory->GetItemDefinitionByTag(Entry.ItemTag);
 	
 	CurrentItemRowWidget = Cast<UItemRowWidget>(CreateWidget(this,ItemRowWidgetClass));
 	
@@ -92,7 +95,7 @@ void URPGSystemsWidget::HandleInventoyItemReceived(const FRPGInventoryEntry& Ent
 		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red,FString::Printf(TEXT("Item Widget is null")));
 		return;
 	}
-	CurrentItemRowWidget->SetInventoryEntry(Entry);
+	CurrentItemRowWidget->SetInventoryEntry(Entry, ItemDefinition.Icon);
 	CurrentItemRowWidget->SetActionText(Entry.ItemTag);
 	CurrentItemRowWidget->SetItemNameText(Entry.ItemName);
 	CurrentItemRowWidget->SetQuantityText(Entry.Quantity);
@@ -111,6 +114,7 @@ void URPGSystemsWidget::HandleInventoyItemReceived(const FRPGInventoryEntry& Ent
 		{
 			HandleItemRowClicked(Entry);
 		});
+	CurrentItemRowWidget->OnItemDroppedEventDelegate.BindUObject(this,&ThisClass::HandleItemDropped);
 }
 
 void URPGSystemsWidget::HandleItemRowClicked(const FRPGInventoryEntry& Entry)
@@ -124,11 +128,21 @@ void URPGSystemsWidget::HandleItemRowClicked(const FRPGInventoryEntry& Entry)
 	ItemDescriptionText->SetText(ItemDefiniton.ItemDescription);
 }
 
+void URPGSystemsWidget::HandleItemDropped(const FRPGInventoryEntry& Entry)
+{
+	if (!IsValid(OwningInventory)) return;
+	
+	OwningInventory->DropItem(Entry,Entry.Quantity);
+	HandleInventoryItemRemoved(Entry.ItemID);
+}
+
 void URPGSystemsWidget::HandleInventoryItemRemoved(const int64 ItemID)
 {
 	if (UItemRowWidget* ItemRow = ActiveItemRowWidgets.FindChecked(ItemID))
 	{
 		ItemRow->OnUseButtomClickedDelegate.Unbind();
+		ItemRow->OnItemRowClickedDelegate.Unbind();
+		ItemRow->OnItemDroppedEventDelegate.Unbind();
 		ItemRow->RemoveFromParent();
 		ActiveItemRowWidgets.Remove(ItemID);
 	}

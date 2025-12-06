@@ -47,6 +47,7 @@ struct FRPGInventoryEntry : public FFastArraySerializerItem
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FDirtyInventoryItemsSignature, const FRPGInventoryEntry&  /*Dirty Item*/)
 DECLARE_MULTICAST_DELEGATE_OneParam(FInventoryItemRemovedSignature, const int64 /*Item ID*/)
+DECLARE_MULTICAST_DELEGATE_TwoParams(FItemDroppedSignature, const FRPGInventoryEntry* /*Entry*/, int32 /*NumItems*/)
 
 USTRUCT()
 struct FRPGInventoryList : public FFastArraySerializer
@@ -114,6 +115,7 @@ class RPGSYSTEMS_API UInventoryComponent : public UActorComponent
 
 public:
 	FEquipmentItemUsed EquipmentItemDelegate;
+	FItemDroppedSignature ItemDroppedDelegate;
 	
 	UPROPERTY(Replicated,ReplicatedUsing = OnRep_InventoryList)
 	FRPGInventoryList InventoryList;
@@ -131,6 +133,9 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void UseItem(const FRPGInventoryEntry& Entry, int32 NumItems);
+
+	UFUNCTION(BlueprintCallable)
+	void DropItem(const FRPGInventoryEntry& Entry, int32 NumItems);
 	
 	UFUNCTION(BlueprintPure)
 	FMasterItemDefinition GetItemDefinitionByTag(const FGameplayTag& ItemTag) const;
@@ -157,6 +162,9 @@ private:
 	void ServerUseItem(const FRPGInventoryEntry& Entry, int32 NumItems);
 
 	bool ServerUseItem_Validate(const FRPGInventoryEntry& Entry, int32 NumItems);
+
+	UFUNCTION(Server, Reliable)
+	void ServerDropItem(const FRPGInventoryEntry& Entry, int32 NumItems);
 };
 
 

@@ -10,6 +10,7 @@
 #include "Interfaces/RPGAbilitySystemInterface.h"
 #include "RPGPlayerController.generated.h"
 
+ struct FRPGInventoryEntry;
  struct FRPGEquipmentEntry;
  struct FEquipmentEffectPackage;
  class UEquipmentDefinition;
@@ -59,8 +60,6 @@ protected:
 	
 private:
 
-	bool bCallbacksbound = false;
-	
 	URPGAbilitySystemComponent* GetRPGAbilitySystemComponent();
 
 	void BindCallbacksToDependencies();
@@ -71,6 +70,19 @@ private:
 
 	UFUNCTION()
 	void HandleUnEquippedItem(const FRPGEquipmentEntry& UnEquippedEntry);
+	
+	void SpawnDroppedItem(const FRPGInventoryEntry* DroppedEntry, int32 NumItems) const;
+	
+	bool bCallbacksbound = false;
+
+	UPROPERTY(EditDefaultsOnly, Category="Custom Values|Item Spawn")
+	float ItemSpawnFordwardDistance = 250.f;
+
+	UPROPERTY()
+	UInventoryComponent* InventoryComponent;
+
+	UPROPERTY()
+	UEquipmentManagerComponent* EquipmentComponent;
 	
 	UPROPERTY()
 	TObjectPtr<URPGAbilitySystemComponent> RPGAbilitySystemComponent;
