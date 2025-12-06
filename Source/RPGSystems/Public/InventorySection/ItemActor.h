@@ -28,6 +28,9 @@ public:
 	
 	UPROPERTY(Replicated, BlueprintReadOnly)
 	int32 NumItems = 1;
+
+	UPROPERTY(Replicated)
+	uint8 ValidationBits = 0;
 	
 	FEquipmentEffectPackage EffectPackage;
 private:

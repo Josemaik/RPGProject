@@ -16,6 +16,7 @@
 #include "InventorySection/ItemTypesToTables.h"
 #include "Libraries/RPGAbilitySystemLibrary.h"
 #include "Net/UnrealNetwork.h"
+#include "RPGSystems/RPGSystems.h"
 
 namespace FGameplayTags::Static
 {
@@ -374,6 +375,7 @@ void UInventoryComponent::DropItem(const FRPGInventoryEntry& Entry, int32 NumIte
 	}
 
 	ItemDroppedDelegate.Broadcast(&Entry, NumItems);
+	InventoryList.RemoveItem(Entry,NumItems);
 }
 
 void UInventoryComponent::PickupItem(AItemActor* Item)
@@ -459,6 +461,8 @@ void UInventoryComponent::SpawnItem(const FTransform& SpawnTransform, const FRPG
 	if (IsValid(NewActor))
 	{
 		NewActor->SetParams(DroppedEntry, NumItems);
+		NewActor->ValidationBits |= SERVER_BITS;
+		
 		FMasterItemDefinition Item = GetItemDefinitionByTag(DroppedEntry->ItemTag);
 		if (IsValid(Item.ItemMesh.Get()))
 		{
@@ -495,6 +499,11 @@ void UInventoryComponent::ServerUseItem_Implementation(const FRPGInventoryEntry&
 bool UInventoryComponent::ServerUseItem_Validate(const FRPGInventoryEntry& Entry, int32 NumItems)
 {
 	return Entry.IsValid() && InventoryList.HasEnough(Entry.ItemTag, NumItems);
+}
+
+bool UInventoryComponent::ServerPickupItem_Validate(AItemActor* Item)
+{
+	return Item->ValidationBits & SERVER_BITS;
 }
 
 void UInventoryComponent::ServerPickupItem_Implementation(AItemActor* Item)
