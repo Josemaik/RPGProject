@@ -390,6 +390,39 @@ void UInventoryComponent::AddUnEquippedItemEntry(const FGameplayTag& ItemTag,
 	InventoryList.AddUnEquippedItem(ItemTag, EffectPackage);
 }
 
+TArray<FRPGInventoryEntry> UInventoryComponent::GetEntriesByString(const FString& InString)
+{
+	TArray<FRPGInventoryEntry> MatchEntries;
+	for (auto EntryIt = InventoryList.Entries.CreateConstIterator(); EntryIt; ++EntryIt)
+	{
+		const FRPGInventoryEntry& Entry = *EntryIt;
+		if (Entry.ItemName.ToString().Contains(InString))
+		{
+			MatchEntries.Add(Entry);
+		}
+		if (Entry.EffectPackage.Ability.AbilityName.ToString().Contains(InString))
+		{
+			if (!MatchEntries.Contains(Entry))
+			{
+				MatchEntries.Add(Entry);
+			}
+		}
+
+		for (const FEquipmentStatEffectGroup& StatEffect : Entry.EffectPackage.StatEffects)
+		{
+			if (StatEffect.StatEffectName.ToString().Contains(InString))
+			{
+				if (!MatchEntries.Contains(Entry))
+				{
+					MatchEntries.Add(Entry);
+				}
+			}
+		}
+	}
+
+	return MatchEntries;
+}
+
 //////////////////////////////
 //* Server Methods
 //////////////////////////////

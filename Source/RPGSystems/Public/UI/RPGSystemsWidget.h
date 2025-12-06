@@ -9,6 +9,7 @@
 #include "RPGSystemsWidget.generated.h"
 
 struct FRPGInventoryEntry;
+class UEditableText;
 class UItemRowWidget;
 class UInventoryWidgetController;
 class UInventoryComponent;
@@ -31,12 +32,14 @@ class RPGSYSTEMS_API URPGSystemsWidget : public UUserWidget
 public:
 
 	void SetWidgetController(UWidgetController* InWidgetController);
-
+protected:
+	void NativeConstruct() override;
 private:
 	virtual void FinishDestroy() override;
 	//functions
 	void CacheEssentialVars();
 	void BindInventoryItemDelegates();
+	void ClearEntries();
 
 	//callbacks
 	UFUNCTION()
@@ -47,6 +50,9 @@ private:
 
 	UFUNCTION()
 	void HandleInventoryItemRemoved(const int64 ItemID);
+
+	UFUNCTION()
+	void OnSearchBarTextChanged(const FText& InText);
 	
 	UPROPERTY(BlueprintReadOnly, meta=(allowPrivateAccess=true))
 	TObjectPtr<UWidgetController> WidgetController;
@@ -73,7 +79,7 @@ private:
 	UPROPERTY(VisibleAnywhere, meta = (BindWidget), Category = "UI")
 	UBorder* BackgroundBorder;
 
-	UPROPERTY(VisibleAnywhere, meta = (BindWidget), Category = "UI")
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (BindWidget, AllowPrivateAccess), Category = "UI")
 	USizeBox* SizeBox;
 
 	UPROPERTY(VisibleAnywhere, meta = (BindWidget), Category = "UI")
@@ -88,11 +94,15 @@ private:
 	UPROPERTY(VisibleAnywhere, meta = (BindWidget), Category = "UI")
 	UTextBlock* InventoryText;
 
+	UPROPERTY(VisibleAnywhere, meta = (BindWidget), Category = "UI")
+	UEditableText* SearchBar;
+
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, meta = (BindWidget, AllowPrivateAccess = "true"), Category = "UI")
 	UScrollBox* InventoryContent;
 	
 	UPROPERTY(VisibleAnywhere, meta = (BindWidget), Category = "UI")
 	UTextBlock* ItemDescriptionText;
 };
+
 
 

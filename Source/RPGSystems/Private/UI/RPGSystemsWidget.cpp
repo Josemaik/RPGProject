@@ -4,6 +4,7 @@
 #include "UI/RPGSystemsWidget.h"
 
 #include "ContentBrowserDataSource.h"
+#include "Components/EditableText.h"
 #include "Components/ScrollBox.h"
 #include "Components/TextBlock.h"
 #include "Interfaces/InventoryInterface.h"
@@ -17,6 +18,13 @@ void URPGSystemsWidget::SetWidgetController(UWidgetController* InWidgetControlle
 	WidgetController = InWidgetController;
 	CacheEssentialVars();
 	BindInventoryItemDelegates();
+}
+
+void URPGSystemsWidget::NativeConstruct()
+{
+	Super::NativeConstruct();
+
+	SearchBar->OnTextChanged.AddDynamic(this, &ThisClass::OnSearchBarTextChanged);
 }
 
 void URPGSystemsWidget::FinishDestroy()
@@ -51,6 +59,19 @@ void URPGSystemsWidget::BindInventoryItemDelegates()
 {
 	InventoryWidgetController->InventoryEntryDelegate.AddUObject(this,&URPGSystemsWidget::HandleInventoyItemReceived);
 	InventoryWidgetController->OnInventoryItemRemoved.AddUObject(this,&URPGSystemsWidget::HandleInventoryItemRemoved);
+}
+
+void URPGSystemsWidget::ClearEntries()
+{
+	TArray<int64> keys;
+	ActiveItemRowWidgets.GetKeys(keys);
+	
+	for (auto& key : keys)
+	{
+		HandleInventoryItemRemoved(key);
+	}
+
+	ActiveItemRowWidgets.Empty();
 }
 
 void URPGSystemsWidget::HandleInventoyItemReceived(const FRPGInventoryEntry& Entry)
@@ -110,5 +131,22 @@ void URPGSystemsWidget::HandleInventoryItemRemoved(const int64 ItemID)
 		ItemRow->OnUseButtomClickedDelegate.Unbind();
 		ItemRow->RemoveFromParent();
 		ActiveItemRowWidgets.Remove(ItemID);
+	}
+}
+
+void URPGSystemsWidget::OnSearchBarTextChanged(const FText& InText)
+{
+	if (!IsValid(OwningInventory))
+	{
+		return;
+	}
+
+	ClearEntries();
+
+	TArray<FRPGInventoryEntry> SearchedEntries = OwningInventory->GetEntriesByString(InText.ToString());
+
+	for (const FRPGInventoryEntry& Entry : SearchedEntries)
+	{
+		HandleInventoyItemReceived(Entry);
 	}
 }

@@ -38,6 +38,11 @@ struct FRPGInventoryEntry : public FFastArraySerializerItem
 	FEquipmentEffectPackage EffectPackage = FEquipmentEffectPackage();
 
 	FORCEINLINE bool IsValid() const { return ItemID != 0; }
+
+	bool operator==(const FRPGInventoryEntry& Other) const
+	{
+		return Other.ItemID == ItemID;
+	}
 };
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FDirtyInventoryItemsSignature, const FRPGInventoryEntry&  /*Dirty Item*/)
@@ -133,6 +138,9 @@ public:
 	TArray<FRPGInventoryEntry> GetInventoryEntries();
 
 	void AddUnEquippedItemEntry(const FGameplayTag& ItemTag, const FEquipmentEffectPackage& EffectPackage);
+
+	UFUNCTION(BlueprintPure)
+	TArray<FRPGInventoryEntry> GetEntriesByString(const FString& InString);
 private:
 	
 	UPROPERTY(EditDefaultsOnly, Category="Custom Values|Stat Effect")
