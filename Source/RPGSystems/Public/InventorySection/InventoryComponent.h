@@ -11,6 +11,7 @@
 #include "InventoryComponent.generated.h"
 
 
+class AItemActor;
 class UEquipmentStaffEfects;
 class UItemTypesToTables;
 class UInventoryComponent;
@@ -68,7 +69,7 @@ struct FRPGInventoryList : public FFastArraySerializer
 	uint64 GenerateID();
 	void SetStats(UEquipmentStaffEfects* InStats);
 	void RollForStats(const TSubclassOf<UEquipmentDefinition>& EquipmentDefinition, FRPGInventoryEntry* Entry);
-	void AddUnEquippedItem(const FGameplayTag& ItemTag, const FEquipmentEffectPackage& EffectPackage);
+	void AddUnEquippedItem(const FGameplayTag& ItemTag, const FEquipmentEffectPackage& EffectPackage,int32 NumItems = 1);
 	
 	// FFastArraySerializwer Contract
 	void PreReplicatedRemove(const TArrayView<int32> RemovedIndices, int32 FinalSize);
@@ -136,6 +137,9 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void DropItem(const FRPGInventoryEntry& Entry, int32 NumItems);
+
+	UFUNCTION(BlueprintCallable)
+	void PickupItem(AItemActor* Item);
 	
 	UFUNCTION(BlueprintPure)
 	FMasterItemDefinition GetItemDefinitionByTag(const FGameplayTag& ItemTag) const;
@@ -146,6 +150,8 @@ public:
 
 	UFUNCTION(BlueprintPure)
 	TArray<FRPGInventoryEntry> GetEntriesByString(const FString& InString);
+
+	void SpawnItem(const FTransform& SpawnTransform, const FRPGInventoryEntry* Entry, int32 NumItems);
 private:
 	
 	UPROPERTY(EditDefaultsOnly, Category="Custom Values|Stat Effect")
@@ -153,6 +159,9 @@ private:
 	
 	UPROPERTY(EditDefaultsOnly, Category="Custom Values|Item Definitions")
 	TObjectPtr<UItemTypesToTables> InventoryDefinitions;
+
+	UPROPERTY(EditAnywhere, Category="Custom Values|Item Spawn")
+	TSubclassOf<AItemActor> DefaultItemClass;
 	
 	//Server methods
 	UFUNCTION(Server, Reliable)
@@ -165,6 +174,9 @@ private:
 
 	UFUNCTION(Server, Reliable)
 	void ServerDropItem(const FRPGInventoryEntry& Entry, int32 NumItems);
+
+	UFUNCTION(Server, Reliable)
+	void ServerPickupItem(AItemActor* Item);
 };
 
 

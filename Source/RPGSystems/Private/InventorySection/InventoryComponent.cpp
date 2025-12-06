@@ -8,8 +8,11 @@
 #include "NativeGameplayTags.h"
 #include "PropertyCustomizationHelpers.h"
 #include "Data/EquipmentStaffEfects.h"
+#include "Engine/AssetManager.h"
+#include "Engine/StreamableManager.h"
 #include "Equipment/EquipmentDefinition.h"
 #include "Equipment/EquipmentTypes.h"
+#include "InventorySection/ItemActor.h"
 #include "InventorySection/ItemTypesToTables.h"
 #include "Libraries/RPGAbilitySystemLibrary.h"
 #include "Net/UnrealNetwork.h"
@@ -155,14 +158,14 @@ void FRPGInventoryList::RollForStats(const TSubclassOf<UEquipmentDefinition>& Eq
 }
 
 void FRPGInventoryList::AddUnEquippedItem(const FGameplayTag& ItemTag,
-	const FEquipmentEffectPackage& EffectPackage)
+	const FEquipmentEffectPackage& EffectPackage,int32 NumItems)
 {
 	const FMasterItemDefinition Item = OwnerComponent->GetItemDefinitionByTag(ItemTag);
 	
 	FRPGInventoryEntry& NewEntry = Entries.AddDefaulted_GetRef();
 	NewEntry.ItemTag = ItemTag;
 	NewEntry.ItemName = Item.ItemName;
-	NewEntry.Quantity = 1;
+	NewEntry.Quantity = NumItems;
 	NewEntry.ItemID = GenerateID();
 	NewEntry.EffectPackage = EffectPackage;
 	
@@ -373,6 +376,20 @@ void UInventoryComponent::DropItem(const FRPGInventoryEntry& Entry, int32 NumIte
 	ItemDroppedDelegate.Broadcast(&Entry, NumItems);
 }
 
+void UInventoryComponent::PickupItem(AItemActor* Item)
+{
+	if (!IsValid(Item)) return;
+
+	if (!GetOwner()->HasAuthority())
+	{
+		ServerPickupItem(Item);
+		return;
+	}
+
+	InventoryList.AddUnEquippedItem(Item->ItemTag,Item->EffectPackage, Item->NumItems);
+	Item->Destroy();
+}
+
 FMasterItemDefinition UInventoryComponent::GetItemDefinitionByTag(const FGameplayTag& ItemTag) const
 {
 	checkf(InventoryDefinitions, TEXT("No inventory definitions inside component: %s"),*GetNameSafe(this));
@@ -434,6 +451,33 @@ TArray<FRPGInventoryEntry> UInventoryComponent::GetEntriesByString(const FString
 	return MatchEntries;
 }
 
+void UInventoryComponent::SpawnItem(const FTransform& SpawnTransform, const FRPGInventoryEntry* DroppedEntry, int32 NumItems)
+{
+	if (!IsValid(DefaultItemClass)) return;
+	
+	AItemActor* NewActor = GetWorld()->SpawnActorDeferred<AItemActor>(DefaultItemClass, SpawnTransform);
+	if (IsValid(NewActor))
+	{
+		NewActor->SetParams(DroppedEntry, NumItems);
+		FMasterItemDefinition Item = GetItemDefinitionByTag(DroppedEntry->ItemTag);
+		if (IsValid(Item.ItemMesh.Get()))
+		{
+			NewActor->SetMesh(Item.ItemMesh.Get());
+			NewActor->FinishSpawning(SpawnTransform);
+		}
+		else
+		{
+			FStreamableManager& Manager = UAssetManager::GetStreamableManager();
+			Manager.RequestAsyncLoad(Item.ItemMesh.ToSoftObjectPath(),
+				[NewActor, Item, SpawnTransform]
+				{
+					NewActor->SetMesh(Item.ItemMesh.Get());
+					NewActor->FinishSpawning(SpawnTransform);
+				});
+		}
+	}
+}
+
 //////////////////////////////
 //* Server Methods
 //////////////////////////////
@@ -451,6 +495,11 @@ void UInventoryComponent::ServerUseItem_Implementation(const FRPGInventoryEntry&
 bool UInventoryComponent::ServerUseItem_Validate(const FRPGInventoryEntry& Entry, int32 NumItems)
 {
 	return Entry.IsValid() && InventoryList.HasEnough(Entry.ItemTag, NumItems);
+}
+
+void UInventoryComponent::ServerPickupItem_Implementation(AItemActor* Item)
+{
+	PickupItem(Item);
 }
 
 void UInventoryComponent::ServerDropItem_Implementation(const FRPGInventoryEntry& Entry, int32 NumItems)

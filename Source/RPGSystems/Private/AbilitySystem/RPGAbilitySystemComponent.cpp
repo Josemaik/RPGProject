@@ -17,6 +17,25 @@ namespace RPGGameplayTags::Static
 }
 
 
+void URPGAbilitySystemComponent::OnRep_ActivateAbilities()
+{
+	ABILITYLIST_SCOPE_LOCK();
+
+	for (FGameplayAbilitySpec& Spec : GetActivatableAbilities())
+	{
+		if (Spec.IsActive()) continue;
+
+		TArray<UGameplayAbility*> Instances = Spec.GetAbilityInstances();
+		if (URPGGameplayAbility* RPGAbility = Cast<URPGGameplayAbility>(Instances.Last()))
+		{
+			if (RPGAbility->bIsClientPassive)
+			{
+				TryActivateAbility(Spec.Handle);
+			}
+		}
+	}
+}
+
 void URPGAbilitySystemComponent::AddCharacterAbilities(const TArray<TSubclassOf<UGameplayAbility>>& AbilitiesToGrant)
 {
 	for (const TSubclassOf<UGameplayAbility>& Ability : AbilitiesToGrant)

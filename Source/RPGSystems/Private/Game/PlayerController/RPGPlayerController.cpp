@@ -6,16 +6,11 @@
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystem/RPGAbilitySystemComponent.h"
 #include "Blueprint/UserWidget.h"
-#include "Engine/ActorChannel.h"
-#include "Engine/AssetManager.h"
-#include "Engine/StreamableManager.h"
 #include "Equipment/EquipmentManagerComponent.h"
 #include "Game/PlayerState/RPGPlayerState.h"
 #include "Input/RPGInputConfig.h"
 #include "Input/RPGSystemsInputComponent.h"
 #include "InventorySection/InventoryComponent.h"
-#include "InventorySection/ItemActor.h"
-#include "Net/UnrealNetwork.h"
 #include "UI/WidgetController/InventoryWidgetController.h"
 #include "UI/RPGSystemsWidget.h"
 
@@ -166,28 +161,7 @@ void ARPGPlayerController::SpawnDroppedItem(const FRPGInventoryEntry* DroppedEnt
 	FTransform SpawnTransform;
 	SpawnTransform.SetLocation(FordwardLocation);
 
-	AItemActor* NewActor = GetWorld()->SpawnActorDeferred<AItemActor>(AItemActor::StaticClass(), SpawnTransform);
-	if (IsValid(NewActor))
-	{
-		NewActor->SetParams(DroppedEntry, NumItems);
-		FMasterItemDefinition Item = InventoryComponent->GetItemDefinitionByTag(DroppedEntry->ItemTag);
-		if (IsValid(Item.ItemMesh.Get()))
-		{
-			NewActor->SetMesh(Item.ItemMesh.Get());
-			NewActor->FinishSpawning(SpawnTransform);
-		}
-		else
-		{
-			FStreamableManager& Manager = UAssetManager::GetStreamableManager();
-			Manager.RequestAsyncLoad(Item.ItemMesh.ToSoftObjectPath(),
-				[NewActor, Item, SpawnTransform]
-				{
-					NewActor->SetMesh(Item.ItemMesh.Get());
-					NewActor->FinishSpawning(SpawnTransform);
-				});
-		}
-	}
-	
+	InventoryComponent->SpawnItem(SpawnTransform, DroppedEntry, NumItems);
 }
 
 UAbilitySystemComponent* ARPGPlayerController::GetAbilitySystemComponent() const

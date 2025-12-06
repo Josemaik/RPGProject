@@ -21,6 +21,8 @@ public:
 
 	FOnAttributesGiven OnAttributesGiven;
 	FOnEquipmentAbilityGiven OnEquipmentAbilityGiven;
+
+	virtual void OnRep_ActivateAbilities() override;
 	
 	void AddCharacterAbilities(const TArray<TSubclassOf<UGameplayAbility>>& AbilitiesToGrant);
 	void AddCharacterPassiveAbilities(const TArray<TSubclassOf<UGameplayAbility>>& PassivesToGrant);
