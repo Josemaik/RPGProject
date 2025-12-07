@@ -130,17 +130,17 @@ void ARPGPlayerController::BindCallbacksToDependencies()
 void ARPGPlayerController::HandleEquipmentRequested(const TSubclassOf<UEquipmentDefinition>& EquipmentDefinition,
 	const FEquipmentEffectPackage& EffectPackage)
 {
-	if (UEquipmentManagerComponent* Equip = GetEquipmentComponent())
+	if (IsValid(EquipmentComponent))
 	{
-		Equip->EquipItem(EquipmentDefinition, EffectPackage);
+		EquipmentComponent->EquipItem(EquipmentDefinition, EffectPackage);
 	}
 }
 
 void ARPGPlayerController::HandleUnEquippedItem(const FRPGEquipmentEntry& UnEquippedEntry) 
 {
-	if (UInventoryComponent* Inv = GetInventoryComponent())
+	if (IsValid(InventoryComponent))
 	{
-		Inv->AddUnEquippedItemEntry(UnEquippedEntry.EntryTag, UnEquippedEntry.EffectPackage);
+		InventoryComponent->AddUnEquippedItemEntry(UnEquippedEntry.EntryTag, UnEquippedEntry.EffectPackage);
 	}
 }
 

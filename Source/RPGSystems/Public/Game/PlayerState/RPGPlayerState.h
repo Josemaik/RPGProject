@@ -4,9 +4,11 @@
 
 #include "CoreMinimal.h"
 #include "AbilitySystemInterface.h"
+#include "ScalableFloat.h"
 #include "GameFramework/PlayerState.h"
 #include "RPGPlayerState.generated.h"
 
+class UGameplayEffect;
 class UEquipmentManagerComponent;
 class UInventoryComponent;
 class URPGAttributeSet;
@@ -38,7 +40,17 @@ public:
 	
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, meta=(AllowPrivateAccess=true), Replicated, ReplicatedUsing=OnRep_EquipmentComponent)
 	TObjectPtr<UEquipmentManagerComponent> EquipmentComponent;
+
+	void AddToExperience(const FScalableFloat& XPScale);
+	
+	int32 CurrentExperience = 0;
+	int32 PlayerLevel = 1;
+	
+	UPROPERTY(EditDefaultsOnly,Category="Custom Values|Experience")
+	FScalableFloat RequiredLevelUpExperience;
 private:
+	void LevelUp();
+	
 	UFUNCTION()
 	void OnRep_InventoryComponent();
 
@@ -50,6 +62,9 @@ private:
 
 	UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = true))
 	TObjectPtr<URPGAttributeSet> RPGAttributes;
+
+	UPROPERTY(EditDefaultsOnly, Category="Custom Values|Level Up")
+	TSubclassOf<UGameplayEffect> LevelUpEffect;
 
 };
 

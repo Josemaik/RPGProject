@@ -29,4 +29,13 @@ public:
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
 	void SetDynamicProjectile(const FGameplayTag& ProjectileTag, int32 AbilityLevel = 1);
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
+	void AddToExperience(const FScalableFloat& XPScale);
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
+	void AddAttackingActor(AActor* AttackingActor);
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
+	void Death();
 };

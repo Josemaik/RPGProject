@@ -20,6 +20,31 @@ AEnemyBase::AEnemyBase(const FObjectInitializer& ObjectInitializer)
 	RPGAttributeSet = CreateDefaultSubobject<URPGAttributeSet>("AttributeSet");
 }
 
+void AEnemyBase::AddAttackingActor_Implementation(AActor* AttackingActor)
+{
+	if (!AttackingActors.Contains(AttackingActor))
+	{
+		AttackingActors.Emplace(AttackingActor);
+	}
+}
+
+void AEnemyBase::Death_Implementation()
+{
+	if (!HasAuthority()) return;
+
+	if (!AttackingActors.IsEmpty())
+	{
+		for (AActor* Attacker : AttackingActors)
+		{
+			if (IsValid(Attacker))
+			{
+				Execute_AddToExperience(Attacker, AwardedExperienceScale);
+			}
+		}
+	}
+	Destroy();
+}
+
 UAbilitySystemComponent* AEnemyBase::GetAbilitySystemComponent() const
 {
 	return RPGAbilitySystemComponent;
@@ -77,6 +102,8 @@ void AEnemyBase::InitClassDefaults()
 			RPGAbilitySystemComponent->AddCharacterAbilities(SelectedClass->StartingAbilities);
 			RPGAbilitySystemComponent->AddCharacterAbilities(SelectedClass->StartingPassives);
 			RPGAbilitySystemComponent->InitializeDefaultAttributes(SelectedClass->DefaultAttributes);
+			
+			AwardedExperienceScale = SelectedClass->AwardedExperienceScale;
 		}
 	}
 }

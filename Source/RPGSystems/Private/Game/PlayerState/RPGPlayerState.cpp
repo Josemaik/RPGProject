@@ -64,6 +64,34 @@ URPGAttributeSet* ARPGPlayerState::GetRPGAttributeSet() const
 	return RPGAttributes;
 }
 
+void ARPGPlayerState::LevelUp()
+{
+	check(LevelUpEffect);
+
+	if (IsValid(RPGAbilitySystemComp))
+	{
+		FGameplayEffectContextHandle ContextHandle = RPGAbilitySystemComp->MakeEffectContext();
+		FGameplayEffectSpecHandle SpecHandle = RPGAbilitySystemComp->MakeOutgoingSpec(LevelUpEffect, PlayerLevel, ContextHandle);
+		RPGAbilitySystemComp->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
+	}
+}
+
+void ARPGPlayerState::AddToExperience(const FScalableFloat& XPScale)
+{
+	CurrentExperience += XPScale.GetValueAtLevel(PlayerLevel);
+	const float RequiredExperience = RequiredLevelUpExperience.GetValueAtLevel(PlayerLevel);
+
+	GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue,
+	FString::Printf(TEXT("%s Gained %.2f Experience"),*GetOwner()->GetName(),XPScale.GetValueAtLevel(PlayerLevel)));
+	
+	if (CurrentExperience >= RequiredExperience)
+	{
+		PlayerLevel++;
+		CurrentExperience = CurrentExperience - RequiredExperience;
+		LevelUp();
+	}
+}
+
 void ARPGPlayerState::OnRep_InventoryComponent()
 {
 	InventoryComponent->InventoryList.OwningObject = this;

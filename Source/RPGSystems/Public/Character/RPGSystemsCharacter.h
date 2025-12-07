@@ -52,6 +52,7 @@ public:
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 	/*RPG Ability System Interface*/
 	virtual USceneComponent* GetDynamicSpawnPoint_Implementation() override;
+	virtual void AddToExperience_Implementation(const FScalableFloat& XPScale) override;
 	
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
