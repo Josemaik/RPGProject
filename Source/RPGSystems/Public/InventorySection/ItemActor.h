@@ -31,7 +31,8 @@ public:
 
 	UPROPERTY(Replicated)
 	uint8 ValidationBits = 0;
-	
+
+	UPROPERTY(Replicated, BlueprintReadOnly)
 	FEquipmentEffectPackage EffectPackage;
 private:
 

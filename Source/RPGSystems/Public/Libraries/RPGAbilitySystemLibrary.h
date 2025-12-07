@@ -38,6 +38,9 @@ public:
 	
 	template<typename T>
 	static T* GetDataTableRowByTag(UDataTable* DataTable, FGameplayTag Tag);
+
+	UFUNCTION(BlueprintPure)
+	static FGameplayTag GetRandomTagFromContainer(const FGameplayTagContainer& Container);
 };
 
 template <typename T>

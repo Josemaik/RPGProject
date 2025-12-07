@@ -133,7 +133,7 @@ void URPGSystemsWidget::HandleItemDropped(const FRPGInventoryEntry& Entry)
 	if (!IsValid(OwningInventory)) return;
 	
 	OwningInventory->DropItem(Entry,Entry.Quantity);
-	HandleInventoryItemRemoved(Entry.ItemID);
+	//HandleInventoryItemRemoved(Entry.ItemID);
 }
 
 void URPGSystemsWidget::HandleInventoryItemRemoved(const int64 ItemID)

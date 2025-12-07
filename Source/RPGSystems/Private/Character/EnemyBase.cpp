@@ -5,6 +5,8 @@
 #include "AbilitySystem/RPGAbilitySystemComponent.h"
 #include "AbilitySystem/Attributes/RPGAttributeSet.h"
 #include "Data/CharacterClassInfo.h"
+#include "Data/LootSpawnInfo.h"
+#include "InventorySection/InventoryComponent.h"
 #include "Libraries/RPGAbilitySystemLibrary.h"
 #include "Net/UnrealNetwork.h"
 
@@ -18,6 +20,8 @@ AEnemyBase::AEnemyBase(const FObjectInitializer& ObjectInitializer)
 	RPGAbilitySystemComponent->SetReplicationMode(EGameplayEffectReplicationMode::Minimal);
 
 	RPGAttributeSet = CreateDefaultSubobject<URPGAttributeSet>("AttributeSet");
+
+	InventoryComp = CreateDefaultSubobject<UInventoryComponent>("InventoryComponent");
 }
 
 void AEnemyBase::AddAttackingActor_Implementation(AActor* AttackingActor)
@@ -42,6 +46,7 @@ void AEnemyBase::Death_Implementation()
 			}
 		}
 	}
+	SpawnLoot();
 	Destroy();
 }
 
@@ -148,6 +153,54 @@ void AEnemyBase::BroadcastInitialValues()
 
 	OnHealthChanged(RPGAttributeSet->GetHealth(), RPGAttributeSet->GetMaxHealth());
 	OnShieldChanged(RPGAttributeSet->GetShield(), RPGAttributeSet->GetMaxShield());
+}
+
+void AEnemyBase::SpawnLoot()
+{
+	check(InventoryComp);
+	check(LootSpawnInfo);
+
+	FGameplayTagContainer AllLootTags;
+	const UGameplayTagsManager& TagsManager = UGameplayTagsManager::Get();
+
+	for (const FGameplayTag& CategoryTag : LootCategoryTags)
+	{
+		AllLootTags.AppendTags(TagsManager.RequestGameplayTagChildren(CategoryTag));
+	}
+
+	for (const FGameplayTag& SpecificTag : SpecificLootTags)
+	{
+		AllLootTags.AddTag(SpecificTag);
+	}
+
+	bool bShouldSpawn = true;
+	while (bShouldSpawn)
+	{
+		const FGameplayTag& RandomTag = URPGAbilitySystemLibrary::GetRandomTagFromContainer(AllLootTags);
+		
+		for (const auto& Pair : LootSpawnInfo->TaggedLootTables)
+		{
+			if (RandomTag.MatchesTag(Pair.Key))
+			{
+				if (const FPossibleLootParams* PossibleLoot = URPGAbilitySystemLibrary::GetDataTableRowByTag<FPossibleLootParams>(Pair.Value, RandomTag))
+				{
+					if (FMath::FRandRange(0.f, 1.f) < PossibleLoot->ProbabilityToSelect)
+					{
+						const int32 RandomNumItems = FMath::RandRange(PossibleLoot->MinNumItems, PossibleLoot->MaxNumItems);
+						if (const FRPGInventoryEntry* Result = InventoryComp->InventoryList.AddItem(PossibleLoot->ResultingItemtag, RandomNumItems))
+						{
+							InventoryComp->SpawnItem(GetActorTransform(), Result, Result->Quantity);
+							bShouldSpawn = false;
+							break;
+						}
+						break;
+					}
+					break;
+				}
+				break;
+			}
+		}
+	}
 }
 
 void AEnemyBase::OnRep_InitAttributes()

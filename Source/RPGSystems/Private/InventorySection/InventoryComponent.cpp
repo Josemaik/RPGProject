@@ -6,7 +6,6 @@
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemComponent.h"
 #include "NativeGameplayTags.h"
-#include "PropertyCustomizationHelpers.h"
 #include "Data/EquipmentStaffEfects.h"
 #include "Engine/AssetManager.h"
 #include "Engine/StreamableManager.h"
@@ -27,7 +26,7 @@ namespace FGameplayTags::Static
 //* UInventoryList Methods
 ///////////////////////////////
 
-void FRPGInventoryList::AddItem(const FGameplayTag& ItemTag, int32 NumItems)
+FRPGInventoryEntry* FRPGInventoryList::AddItem(const FGameplayTag& ItemTag, int32 NumItems)
 {
 	if (ItemTag.MatchesTag(FGameplayTags::Static::Category_Equipment))
 	{
@@ -35,22 +34,10 @@ void FRPGInventoryList::AddItem(const FGameplayTag& ItemTag, int32 NumItems)
 	}
 	else
 	{
-		for (auto EntryIt = Entries.CreateIterator(); EntryIt; ++EntryIt)
-		{
-			FRPGInventoryEntry& Entry = *EntryIt;
-
-			if (Entry.ItemTag.MatchesTagExact(ItemTag))
-			{
-				Entry.Quantity += NumItems;
-
-				MarkItemDirty(Entry);
-				if (OwnerComponent->GetOwner()->HasAuthority())
-				{
-					DirtyItemDelegate.Broadcast(Entry);
-				}
-				return;
-			}
-		}
+		 if (FRPGInventoryEntry* StackedEntry = TryStackItem(ItemTag, NumItems))
+		 {
+			 return StackedEntry;
+		 }
 	}
 	
 	const FMasterItemDefinition Item = OwnerComponent->GetItemDefinitionByTag(ItemTag);
@@ -72,6 +59,8 @@ void FRPGInventoryList::AddItem(const FGameplayTag& ItemTag, int32 NumItems)
 	{
 		DirtyItemDelegate.Broadcast(NewEntry);
 	}
+
+	return &NewEntry;
 }
 
 void FRPGInventoryList::RollForStats(const TSubclassOf<UEquipmentDefinition>& EquipmentDefinition,
@@ -90,8 +79,7 @@ void FRPGInventoryList::RollForStats(const TSubclassOf<UEquipmentDefinition>& Eq
 		bool bShouldRoll = true;
 		while (bShouldRoll)
 		{
-			const int32 RandomIndex = FMath::RandRange(0, EquipmentCDO->PossibleAbilityRoles.Num() - 1);
-			const FGameplayTag& RandomTag = EquipmentCDO->PossibleAbilityRoles.GetByIndex(RandomIndex);
+			const FGameplayTag& RandomTag = URPGAbilitySystemLibrary::GetRandomTagFromContainer(EquipmentCDO->PossibleAbilityRolls);
 
 			for (const auto& Pair :StatEffects->MasterStatMap)
 			{
@@ -113,11 +101,10 @@ void FRPGInventoryList::RollForStats(const TSubclassOf<UEquipmentDefinition>& Eq
 	
 	const int32 NumStatsToRoll = FMath::RandRange(EquipmentCDO->MinPossibleStats, EquipmentCDO->MaxPossibleStats);
 	int32 StatRollIndex = 0;
-	FGameplayTagContainer PossibleStatContainer = EquipmentCDO->PossibleStatsRoles;
+	FGameplayTagContainer PossibleStatContainer = EquipmentCDO->PossibleStatsRolls;
 	while (StatRollIndex < NumStatsToRoll)
 	{
-		const int32 RandomIndex = FMath::RandRange(0, PossibleStatContainer.Num() - 1);
-		const FGameplayTag& RandomTag = PossibleStatContainer.GetByIndex(RandomIndex);
+		const FGameplayTag& RandomTag = URPGAbilitySystemLibrary::GetRandomTagFromContainer(EquipmentCDO->PossibleStatsRolls);
 
 		for (const auto& Pair : StatEffects->MasterStatMap)
 		{
@@ -158,9 +145,35 @@ void FRPGInventoryList::RollForStats(const TSubclassOf<UEquipmentDefinition>& Eq
 	}
 }
 
-void FRPGInventoryList::AddUnEquippedItem(const FGameplayTag& ItemTag,
-	const FEquipmentEffectPackage& EffectPackage,int32 NumItems)
+FRPGInventoryEntry* FRPGInventoryList::TryStackItem(const FGameplayTag& ItemTag, int32 NumItems)
 {
+	for (auto EntryIt = Entries.CreateIterator(); EntryIt; ++EntryIt)
+	{
+		FRPGInventoryEntry& Entry = *EntryIt;
+
+		if (Entry.ItemTag.MatchesTagExact(ItemTag))
+		{
+			Entry.Quantity += NumItems;
+
+			MarkItemDirty(Entry);
+			if (OwnerComponent->GetOwner()->HasAuthority())
+			{
+				DirtyItemDelegate.Broadcast(Entry);
+			}
+			return &Entry;
+		}
+	}
+	return nullptr;
+}
+
+void FRPGInventoryList::AddUnEquippedItem(const FGameplayTag& ItemTag,
+                                          const FEquipmentEffectPackage& EffectPackage,int32 NumItems)
+{
+	if (!ItemTag.MatchesTag(FGameplayTags::Static::Category_Equipment))
+	{   //if not an equipment try to stack
+		if (TryStackItem(ItemTag, NumItems)) return;
+	}
+	
 	const FMasterItemDefinition Item = OwnerComponent->GetItemDefinitionByTag(ItemTag);
 	
 	FRPGInventoryEntry& NewEntry = Entries.AddDefaulted_GetRef();

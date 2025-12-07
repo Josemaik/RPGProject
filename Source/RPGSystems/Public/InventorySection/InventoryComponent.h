@@ -23,10 +23,10 @@ struct FRPGInventoryEntry : public FFastArraySerializerItem
 {
 	GENERATED_BODY()
 
-	UPROPERTY(BlueprintReadOnly)
-	FGameplayTag ItemTag = FGameplayTag();
+	UPROPERTY(BlueprintReadWrite)
+	FGameplayTag ItemTag = FGameplayTag::EmptyTag;
 
-	UPROPERTY(BlueprintReadOnly)
+	UPROPERTY(BlueprintReadWrite)
 	FText ItemName = FText();
 	
 	UPROPERTY(BlueprintReadOnly)
@@ -35,7 +35,7 @@ struct FRPGInventoryEntry : public FFastArraySerializerItem
 	UPROPERTY(BlueprintReadOnly)
 	int64 ItemID = 0;
 
-	UPROPERTY(BlueprintReadOnly)
+	UPROPERTY(BlueprintReadWrite)
 	FEquipmentEffectPackage EffectPackage = FEquipmentEffectPackage();
 
 	FORCEINLINE bool IsValid() const { return ItemID != 0; }
@@ -63,12 +63,13 @@ struct FRPGInventoryList : public FFastArraySerializer
 	OwnerComponent(InOwnerComponent)
 	{}
 
-	void AddItem(const FGameplayTag& ItemTag, int32 NumItems = 1);
+	FRPGInventoryEntry* AddItem(const FGameplayTag& ItemTag, int32 NumItems = 1);
 	void RemoveItem(const FRPGInventoryEntry& Entry, int32 NumItems = 1);
 	bool HasEnough(const FGameplayTag& ItemTag, int32 NumItems = 1);
 	uint64 GenerateID();
 	void SetStats(UEquipmentStaffEfects* InStats);
 	void RollForStats(const TSubclassOf<UEquipmentDefinition>& EquipmentDefinition, FRPGInventoryEntry* Entry);
+	FRPGInventoryEntry* TryStackItem(const FGameplayTag& ItemTag, int32 NumItems);
 	void AddUnEquippedItem(const FGameplayTag& ItemTag, const FEquipmentEffectPackage& EffectPackage,int32 NumItems = 1);
 	
 	// FFastArraySerializwer Contract

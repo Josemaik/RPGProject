@@ -9,6 +9,8 @@
 #include "Interfaces/RPGAbilitySystemInterface.h"
 #include "EnemyBase.generated.h"
 
+class ULootSpawnInfo;
+class UInventoryComponent;
 class URPGAttributeSet;
 class URPGAbilitySystemComponent;
 /**
@@ -39,6 +41,8 @@ protected:
 	virtual void BroadcastInitialValues() override;
 private:
 
+	void SpawnLoot();
+	
 	UPROPERTY(ReplicatedUsing=OnRep_InitAttributes)
 	bool bInitAttributes = false;
 	
@@ -47,6 +51,18 @@ private:
 
 	UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = true))
 	TObjectPtr<URPGAttributeSet> RPGAttributeSet;
+
+	UPROPERTY(VisibleAnywhere, meta = (AllowPrivateAccess = true))
+	TObjectPtr<UInventoryComponent> InventoryComp;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Custom Values|Loot")
+	TObjectPtr<ULootSpawnInfo> LootSpawnInfo;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Custom Values|Loot")
+	FGameplayTagContainer LootCategoryTags;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Custom Values|Loot")
+	FGameplayTagContainer SpecificLootTags;
 
 	FScalableFloat AwardedExperienceScale;
 

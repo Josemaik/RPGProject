@@ -52,13 +52,13 @@ public:
 	int32 MaxPossibleStats = 1;
 
 	UPROPERTY(EditDefaultsOnly, Category="Custom Values|Stats")
-	FGameplayTagContainer PossibleStatsRoles;
+	FGameplayTagContainer PossibleStatsRolls;
 
 	UPROPERTY(EditDefaultsOnly, Category="Custom Values|Actors")
 	TArray<FEquipmentActorsToSpawn> ActorsToSpawn;
 
 	UPROPERTY(EditDefaultsOnly, Category="Custom Values|Ability")
-	FGameplayTagContainer PossibleAbilityRoles;
+	FGameplayTagContainer PossibleAbilityRolls;
 
 	UPROPERTY(EditDefaultsOnly, Category="Custom Values|Ability")
 	float ProbabilityToRollAbility = 0.f;
