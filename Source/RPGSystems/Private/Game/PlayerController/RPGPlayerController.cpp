@@ -54,6 +54,26 @@ void ARPGPlayerController::SetupInputComponent()
 	RPGInputComp->BindAbilityActions(RPGInputConfig, this, &ThisClass::AbilityInputPressed, &ThisClass::AbilityInputReleased);
 }
 
+void ARPGPlayerController::InitPlayerState()
+{
+	Super::InitPlayerState();
+
+	if (ARPGPlayerState* RPGPlayerState = Cast<ARPGPlayerState>(PlayerState))
+	{
+		RPGAbilitySystemComponent = RPGPlayerState->GetRPGAbilitySystemComponent();
+	}
+}
+
+void ARPGPlayerController::OnRep_PlayerState()
+{
+	Super::OnRep_PlayerState();
+
+	if (ARPGPlayerState* RPGPlayerState = Cast<ARPGPlayerState>(PlayerState))
+	{
+		RPGAbilitySystemComponent = RPGPlayerState->GetRPGAbilitySystemComponent();
+	}
+}
+
 void ARPGPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
@@ -65,7 +85,7 @@ void ARPGPlayerController::BeginPlay()
 
 void ARPGPlayerController::AbilityInputPressed(FGameplayTag InputTag)
 {
-	if (!IsValid(GetRPGAbilitySystemComponent()))
+	if (!IsValid(RPGAbilitySystemComponent))
 	{
 		return;
 	}
@@ -75,25 +95,12 @@ void ARPGPlayerController::AbilityInputPressed(FGameplayTag InputTag)
 
 void ARPGPlayerController::AbilityInputReleased(FGameplayTag InputTag)
 {
-	if (!IsValid(GetRPGAbilitySystemComponent()))
+	if (!IsValid(RPGAbilitySystemComponent))
 	{
 		return;
 	}
 
 	RPGAbilitySystemComponent->AbilityInputReleased(InputTag);
-}
-
-URPGAbilitySystemComponent* ARPGPlayerController::GetRPGAbilitySystemComponent()
-{
-	if (!IsValid(RPGAbilitySystemComponent))
-	{
-		if (const ARPGPlayerState* RPGPlayerState = GetPlayerState<ARPGPlayerState>())
-		{
-			RPGAbilitySystemComponent = RPGPlayerState->GetRPGAbilitySystemComponent();
-		}
-	}
-
-	return RPGAbilitySystemComponent;
 }
 
 void ARPGPlayerController::BindCallbacksToDependencies()
@@ -166,7 +173,7 @@ void ARPGPlayerController::SpawnDroppedItem(const FRPGInventoryEntry* DroppedEnt
 
 UAbilitySystemComponent* ARPGPlayerController::GetAbilitySystemComponent() const
 {
-	return UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(GetPawn());
+	return RPGAbilitySystemComponent;
 }
 
 void ARPGPlayerController::SetDynamicProjectile_Implementation(const FGameplayTag& ProjectileTag,int32 AbilityLevel)

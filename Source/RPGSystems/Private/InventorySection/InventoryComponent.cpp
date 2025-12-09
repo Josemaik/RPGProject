@@ -130,11 +130,12 @@ void FRPGInventoryList::RollForStats(const TSubclassOf<UEquipmentDefinition>& Eq
 	FGameplayTagContainer AllPossiblePrefixes;
 	AllPossiblePrefixes.AppendTags(URPGAbilitySystemLibrary::GetAllChildrenTagsOfCategories(EquipmentCDO->PossibleStatsRolls.PrefixCategoryTags));
 	AllPossiblePrefixes.AppendTags(EquipmentCDO->PossibleStatsRolls.SpecificPrefixTags);
-
+	AllPossiblePrefixes.RemoveTags(EquipmentCDO->PossibleStatsRolls.PrefixExclusionTags);
+	
 	FGameplayTagContainer AllPossibleSuffixes;
 	AllPossibleSuffixes.AppendTags(URPGAbilitySystemLibrary::GetAllChildrenTagsOfCategories(EquipmentCDO->PossibleStatsRolls.SuffixCategoryTags));
 	AllPossibleSuffixes.AppendTags(EquipmentCDO->PossibleStatsRolls.SpecificSuffixTags);
-	
+	AllPossibleSuffixes.RemoveTags(EquipmentCDO->PossibleStatsRolls.SuffixExclusionTags);
 	
 	const int32 NumStatsToRoll = FMath::RandRange(EquipmentCDO->MinPossibleStats, EquipmentCDO->MaxPossibleStats);
 	int32 StatRollIndex = 0;
@@ -145,7 +146,7 @@ void FRPGInventoryList::RollForStats(const TSubclassOf<UEquipmentDefinition>& Eq
 			RollPrefixOrSuffix(Prefix, StatEffects, Entry, AllPossiblePrefixes);
 		} else if (Entry->EffectPackage.Suffixes.Num() < Entry->EffectPackage.MaxNumSuffixes)
 		{
-			RollPrefixOrSuffix(Suffix, StatEffects, Entry, AllPossiblePrefixes);
+			RollPrefixOrSuffix(Suffix, StatEffects, Entry, AllPossibleSuffixes);
 		}
 		else if (Entry->EffectPackage.Prefixes.Num() < Entry->EffectPackage.MaxNumPrefixes)
 		{

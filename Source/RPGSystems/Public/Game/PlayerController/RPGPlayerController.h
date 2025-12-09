@@ -41,6 +41,8 @@ public:
 	virtual UEquipmentManagerComponent* GetEquipmentComponent_Implementation() const;
 	
 	virtual void SetupInputComponent() override;
+	virtual void InitPlayerState() override;
+	virtual void OnRep_PlayerState() override;
 	
 	/*Implements ability system interface*/
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
@@ -59,8 +61,6 @@ protected:
 	void AbilityInputReleased(FGameplayTag InputTag);
 	
 private:
-
-	URPGAbilitySystemComponent* GetRPGAbilitySystemComponent();
 
 	void BindCallbacksToDependencies();
 
