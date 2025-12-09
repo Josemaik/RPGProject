@@ -4,6 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "AbilitySystemComponent.h"
+#include "Engine/StreamableManager.h"
+#include "Equipment/EquipmentTypes.h"
 #include "RPGAbilitySystemComponent.generated.h"
 
 struct FRPGEquipmentEntry;
@@ -34,6 +36,10 @@ public:
 	void SetDynamicProjectile(const FGameplayTag& ProjectileTag,int32 AbilityLevel = 1);
 
 	void AddEquipmentEffects(FRPGEquipmentEntry* EquipmentEntry);
+	void AddSingleEquipmentEffect(FRPGEquipmentEntry* EquipmentEntry, FStreamableManager& Manager,
+	                              TWeakObjectPtr<URPGAbilitySystemComponent> WeakThis,
+	                              FGameplayEffectContextHandle ContextHandle,
+	                              const FEquipmentStatEffectGroup& ImplicitStat);
 	void RemoveEquipmentEffects(FRPGEquipmentEntry* EquipmentEntry);
 	void AddEquipmentAbility(FRPGEquipmentEntry* EquipmentEntry);
 	void RemoveEquipmentAbility(const FRPGEquipmentEntry* EquipmentEntry);

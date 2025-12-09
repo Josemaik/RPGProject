@@ -98,47 +98,106 @@ void FRPGInventoryList::RollForStats(const TSubclassOf<UEquipmentDefinition>& Eq
 			}
 		}
 	}
+
+	FGameplayTag ImplicitTag = EquipmentCDO->PossibleStatsRolls.ImplicitTag;
+	if (ImplicitTag.IsValid())
+	{
+		for (const auto& Pair: StatEffects->MasterStatMap)
+		{
+			if (ImplicitTag.MatchesTag(Pair.Key))
+			{
+				if (const FEquipmentStatEffectGroup* ValidStat = URPGAbilitySystemLibrary::GetDataTableRowByTag<FEquipmentStatEffectGroup>(Pair.Value,
+					EquipmentCDO->PossibleStatsRolls.ImplicitTag))
+				{
+					FEquipmentStatEffectGroup NewStat = *ValidStat;
+
+					NewStat.CurrentValue = ValidStat->bFractionalStat ? FMath::FRandRange(ValidStat->MinStatLevel, ValidStat->MaxStatLevel) :
+						FMath::TruncToInt(FMath::FRandRange(ValidStat->MinStatLevel, ValidStat->MaxStatLevel));
+
+					Entry->EffectPackage.Implicit = NewStat;
+				}
+			}
+		}
+	}
+
+	FGameplayTagContainer AllPossiblePrefixes;
+	AllPossiblePrefixes.AppendTags(URPGAbilitySystemLibrary::GetAllChildrenTagsOfCategories(EquipmentCDO->PossibleStatsRolls.PrefixCategoryTags));
+	AllPossiblePrefixes.AppendTags(EquipmentCDO->PossibleStatsRolls.SpecificPrefixTags);
+
+	FGameplayTagContainer AllPossibleSuffixes;
+	AllPossibleSuffixes.AppendTags(URPGAbilitySystemLibrary::GetAllChildrenTagsOfCategories(EquipmentCDO->PossibleStatsRolls.SuffixCategoryTags));
+	AllPossibleSuffixes.AppendTags(EquipmentCDO->PossibleStatsRolls.SpecificSuffixTags);
+	
 	
 	const int32 NumStatsToRoll = FMath::RandRange(EquipmentCDO->MinPossibleStats, EquipmentCDO->MaxPossibleStats);
 	int32 StatRollIndex = 0;
-	FGameplayTagContainer PossibleStatContainer = EquipmentCDO->PossibleStatsRolls;
 	while (StatRollIndex < NumStatsToRoll)
 	{
-		const FGameplayTag& RandomTag = URPGAbilitySystemLibrary::GetRandomTagFromContainer(EquipmentCDO->PossibleStatsRolls);
-
-		for (const auto& Pair : StatEffects->MasterStatMap)
+		if (FMath::RandBool() && Entry->EffectPackage.Prefixes.Num() < Entry->EffectPackage.MaxNumPrefixes)
 		{
-			if (RandomTag.MatchesTag(Pair.Key))
+			RollPrefixOrSuffix(Prefix, StatEffects, Entry, AllPossiblePrefixes);
+		} else if (Entry->EffectPackage.Suffixes.Num() < Entry->EffectPackage.MaxNumSuffixes)
+		{
+			RollPrefixOrSuffix(Suffix, StatEffects, Entry, AllPossiblePrefixes);
+		}
+		else if (Entry->EffectPackage.Prefixes.Num() < Entry->EffectPackage.MaxNumPrefixes)
+		{
+			RollPrefixOrSuffix(Prefix, StatEffects, Entry, AllPossiblePrefixes);
+		}
+		++StatRollIndex;
+	}	
+}
+
+void FRPGInventoryList::RollPrefixOrSuffix(EEquipmentStatsGroup StatGroup, UEquipmentStaffEfects* StatEffects,
+	FRPGInventoryEntry* Entry, FGameplayTagContainer& PossibleStatContainer)
+{
+	const FGameplayTag& RandomTag = URPGAbilitySystemLibrary::GetRandomTagFromContainer(PossibleStatContainer);
+
+	for (const auto& Pair : StatEffects->MasterStatMap)
+	{
+		if (RandomTag.MatchesTag(Pair.Key))
+		{
+			if (const FEquipmentStatEffectGroup* PossibleStat = URPGAbilitySystemLibrary::GetDataTableRowByTag<FEquipmentStatEffectGroup>(Pair.Value, RandomTag))
 			{
-				if (const FEquipmentStatEffectGroup* PossibleStat = URPGAbilitySystemLibrary::GetDataTableRowByTag<FEquipmentStatEffectGroup>(Pair.Value, RandomTag))
+				if (FMath::FRandRange(0.f, 1.f) < PossibleStat->ProbabilityToSelect)
 				{
-					if (FMath::FRandRange(0.f, 1.f) < PossibleStat->ProbabilityToSelect)
+					FEquipmentStatEffectGroup NewStat = *PossibleStat;
+
+					NewStat.CurrentValue = PossibleStat->bFractionalStat ? FMath::FRandRange(PossibleStat->MinStatLevel, PossibleStat->MaxStatLevel) :
+					FMath::TruncToInt(FMath::FRandRange(PossibleStat->MinStatLevel, PossibleStat->MaxStatLevel));
+
+					switch (StatGroup)
 					{
-						FEquipmentStatEffectGroup NewStat = *PossibleStat;
-
-						NewStat.CurrentValue = PossibleStat->bFractionalStat ? FMath::FRandRange(PossibleStat->MinStatLevel, PossibleStat->MaxStatLevel) :
-						FMath::TruncToInt(FMath::FRandRange(PossibleStat->MinStatLevel, PossibleStat->MaxStatLevel));
-
-						Entry->EffectPackage.StatEffects.Add(NewStat);
-						++StatRollIndex;
-						
-						// make unique stats
-						PossibleStatContainer.RemoveTag(RandomTag); 
-						FName RandomTagName = RandomTag.GetTagLeafName(); //Stats.LowLevel.Health => Health
-						FGameplayTagContainer TagsToRemove;
-						
-						for (const FGameplayTag& Tag : PossibleStatContainer)
+						case Prefix:
 						{
-							if (Tag.GetTagLeafName() == RandomTagName)
-							{
-								TagsToRemove.AddTag(Tag);
-							}
+							Entry->EffectPackage.Prefixes.Add(NewStat);
+							break;
 						}
-						
-						PossibleStatContainer.RemoveTags(TagsToRemove);
-						
-						break;
+						case Suffix:
+						{
+							Entry->EffectPackage.Suffixes.Add(NewStat);
+							break;
+						}
+						default:{}
 					}
+					
+					
+					// make unique stats
+					PossibleStatContainer.RemoveTag(RandomTag); 
+					FName RandomTagName = RandomTag.GetTagLeafName(); //Stats.LowLevel.Health => Health
+					FGameplayTagContainer TagsToRemove;
+					
+					for (const FGameplayTag& Tag : PossibleStatContainer)
+					{
+						if (Tag.GetTagLeafName() == RandomTagName)
+						{
+							TagsToRemove.AddTag(Tag);
+						}
+					}
+					
+					PossibleStatContainer.RemoveTags(TagsToRemove);
+					
+					break;
 				}
 			}
 		}
@@ -451,7 +510,29 @@ TArray<FRPGInventoryEntry> UInventoryComponent::GetEntriesByString(const FString
 			}
 		}
 
-		for (const FEquipmentStatEffectGroup& StatEffect : Entry.EffectPackage.StatEffects)
+		if (Entry.EffectPackage.Implicit.StatEffectTag.IsValid())
+		{
+			if (Entry.EffectPackage.Implicit.StatEffectName.ToString().Contains(InString))
+			{
+				if (!MatchEntries.Contains(Entry))
+				{
+					MatchEntries.Add(Entry);
+				}
+			}
+		}
+
+		for (const FEquipmentStatEffectGroup& StatEffect : Entry.EffectPackage.Prefixes)
+		{
+			if (StatEffect.StatEffectName.ToString().Contains(InString))
+			{
+				if (!MatchEntries.Contains(Entry))
+				{
+					MatchEntries.Add(Entry);
+				}
+			}
+		}
+
+		for (const FEquipmentStatEffectGroup& StatEffect : Entry.EffectPackage.Suffixes)
 		{
 			if (StatEffect.StatEffectName.ToString().Contains(InString))
 			{

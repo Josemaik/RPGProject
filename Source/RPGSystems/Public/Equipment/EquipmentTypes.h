@@ -12,6 +12,14 @@
 class UGameplayAbility;
 class UGameplayEffect;
 
+UENUM()
+enum EEquipmentStatsGroup
+{
+	ESG_None,
+	Prefix,
+	Suffix,
+};
+
 USTRUCT(BlueprintType)
 struct FEquipmentGrantedHandles
 {
@@ -99,8 +107,20 @@ struct FEquipmentEffectPackage
 	GENERATED_BODY()
 
 	UPROPERTY(BlueprintReadOnly)
-	TArray<FEquipmentStatEffectGroup> StatEffects = TArray<FEquipmentStatEffectGroup>();
+	FEquipmentStatEffectGroup Implicit = FEquipmentStatEffectGroup();
+
+	UPROPERTY(BlueprintReadOnly)
+	TArray<FEquipmentStatEffectGroup> Prefixes = TArray<FEquipmentStatEffectGroup>();
+
+	UPROPERTY(BlueprintReadOnly)
+	TArray<FEquipmentStatEffectGroup> Suffixes = TArray<FEquipmentStatEffectGroup>();
 
 	UPROPERTY(BlueprintReadOnly)
 	FEquipmentAbilityGroup Ability = FEquipmentAbilityGroup();
+
+	UPROPERTY(BlueprintReadOnly)
+	int32 MaxNumPrefixes = 3;
+
+	UPROPERTY(BlueprintReadOnly)
+	int32 MaxNumSuffixes = 3;
 };

@@ -22,6 +22,26 @@ struct FEquipmentActorsToSpawn
 	FName AttachName = FName("");
 };
 
+USTRUCT(BlueprintType)
+struct FPossibleEquipmentStats
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditDefaultsOnly)
+	FGameplayTag ImplicitTag = FGameplayTag::EmptyTag;
+
+	UPROPERTY(EditDefaultsOnly)
+	FGameplayTagContainer PrefixCategoryTags = FGameplayTagContainer::EmptyContainer;
+
+	UPROPERTY(EditDefaultsOnly)
+	FGameplayTagContainer SpecificPrefixTags = FGameplayTagContainer::EmptyContainer;
+
+	UPROPERTY(EditDefaultsOnly)
+	FGameplayTagContainer SuffixCategoryTags = FGameplayTagContainer::EmptyContainer;
+
+	UPROPERTY(EditDefaultsOnly)
+	FGameplayTagContainer SpecificSuffixTags = FGameplayTagContainer::EmptyContainer;
+};
 
 /**
  * 
@@ -52,7 +72,7 @@ public:
 	int32 MaxPossibleStats = 1;
 
 	UPROPERTY(EditDefaultsOnly, Category="Custom Values|Stats")
-	FGameplayTagContainer PossibleStatsRolls;
+	FPossibleEquipmentStats PossibleStatsRolls;
 
 	UPROPERTY(EditDefaultsOnly, Category="Custom Values|Actors")
 	TArray<FEquipmentActorsToSpawn> ActorsToSpawn;

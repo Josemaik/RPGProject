@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "EquipmentTypes.h"
+#include "GameplayAbilitySpec.h"
 #include "GameplayTagContainer.h"
 #include "Components/ActorComponent.h"
 #include "Net/Serialization/FastArraySerializer.h"
@@ -36,7 +37,7 @@ struct FRPGEquipmentEntry : public FFastArraySerializerItem
 
 	bool HasStats() const
 	{
-		return !EffectPackage.StatEffects.IsEmpty();
+		return !EffectPackage.Prefixes.IsEmpty() || !EffectPackage.Suffixes.IsEmpty();
 	}
 
 	bool HasAbility() const
@@ -81,6 +82,7 @@ struct FRPGEquipmentList : public FFastArraySerializer
 	UEquipmentInstance* AddEntry(const TSubclassOf<UEquipmentDefinition>& InEquipmentDefinition,const FEquipmentEffectPackage& EffectPackage);
 	void RemoveEntry(UEquipmentInstance* InEquipmentInstance);
 	void BindAbilitySystemDelegates();
+	bool CheckAbilitySingleEffect(FGameplayAbilitySpec& Spec, const FEquipmentStatEffectGroup& StatEffect);
 	void CheckAbilityLevels(UAbilitySystemComponent* ASC, FRPGEquipmentEntry* EquipmentEntry,bool bAsync);
 	
 	// FFastArraySerializer Contract

@@ -69,6 +69,7 @@ struct FRPGInventoryList : public FFastArraySerializer
 	uint64 GenerateID();
 	void SetStats(UEquipmentStaffEfects* InStats);
 	void RollForStats(const TSubclassOf<UEquipmentDefinition>& EquipmentDefinition, FRPGInventoryEntry* Entry);
+	void RollPrefixOrSuffix(EEquipmentStatsGroup StatGroup, UEquipmentStaffEfects* StatEffects, FRPGInventoryEntry* Entry, FGameplayTagContainer& PossibleStatContainer);
 	FRPGInventoryEntry* TryStackItem(const FGameplayTag& ItemTag, int32 NumItems);
 	void AddUnEquippedItem(const FGameplayTag& ItemTag, const FEquipmentEffectPackage& EffectPackage,int32 NumItems = 1);
 	

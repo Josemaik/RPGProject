@@ -124,18 +124,34 @@ void FRPGEquipmentList::CheckAbilityLevels(UAbilitySystemComponent* ASC, FRPGEqu
 				const FRPGEquipmentEntry& CurrentEntry = *EntryIt;
 				
 				if (!bAsync && CurrentEntry.EntryTag.MatchesTag(EquipmentEntry->EntryTag)) continue;
-				
-				for (const FEquipmentStatEffectGroup& StatEffect: CurrentEntry.EffectPackage.StatEffects)
+
+				if (CurrentEntry.EffectPackage.Implicit.StatEffectTag.IsValid())
 				{
-					if (!StatEffect.ContextTag.IsValid()) return;
-					if (Spec.GetDynamicSpecSourceTags().HasTagExact(StatEffect.ContextTag))
-					{
-						Spec.Level = FMath::Clamp(Spec.Level + StatEffect.CurrentValue, 1.f, Spec.Level + StatEffect.CurrentValue);
-					}
+					const FEquipmentStatEffectGroup& ImplicitStat = CurrentEntry.EffectPackage.Implicit;
+					if (CheckAbilitySingleEffect(Spec, ImplicitStat)) return;
+				}
+				
+				for (const FEquipmentStatEffectGroup& StatEffect: CurrentEntry.EffectPackage.Prefixes)
+				{
+					if (CheckAbilitySingleEffect(Spec, StatEffect)) return;
+				}
+				for (const FEquipmentStatEffectGroup& StatEffect: CurrentEntry.EffectPackage.Suffixes)
+				{
+					if (CheckAbilitySingleEffect(Spec, StatEffect)) return;
 				}
 			}
 		}
 	}
+}
+
+bool FRPGEquipmentList::CheckAbilitySingleEffect(FGameplayAbilitySpec& Spec, const FEquipmentStatEffectGroup& StatEffect)
+{
+	if (!StatEffect.ContextTag.IsValid()) return true;
+	if (Spec.GetDynamicSpecSourceTags().HasTagExact(StatEffect.ContextTag))
+	{
+		Spec.Level = FMath::Clamp(Spec.Level + StatEffect.CurrentValue, 1.f, Spec.Level + StatEffect.CurrentValue);
+	}
+	return false;
 }
 
 
