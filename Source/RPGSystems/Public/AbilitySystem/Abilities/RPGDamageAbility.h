@@ -18,12 +18,14 @@ class RPGSYSTEMS_API URPGDamageAbility : public URPGGameplayAbility
 public:
 
 	void CaptureDamageEffectInfo(AActor* TargetActor, FDamageEffectInfo& OutInfo);
+	
+	UPROPERTY(EditDefaultsOnly, Category="Custom Values|Damage")
+	FScalableFloat MinDamageCoefficient;
 
+	UPROPERTY(EditDefaultsOnly, Category="Custom Values|Damage")
+	FScalableFloat MaxDamageCoefficient;
 private:
 
 	UPROPERTY(EditDefaultsOnly, Category="Custom Values|Damage Effect")
 	TSubclassOf<UGameplayEffect> DamageEffect;
-
-	UPROPERTY(EditDefaultsOnly, Category="Custom Values|Damage Effect")
-	FScalableFloat BaseDamage;
 };

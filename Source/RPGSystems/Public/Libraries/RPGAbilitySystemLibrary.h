@@ -44,6 +44,9 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	static FGameplayTagContainer GetAllChildrenTagsOfCategories(const FGameplayTagContainer& CategoryTags);
+
+	UFUNCTION(blueprintPure)
+	static FGameplayTagContainer GetDamageTypeTags();
 };
 
 template <typename T>

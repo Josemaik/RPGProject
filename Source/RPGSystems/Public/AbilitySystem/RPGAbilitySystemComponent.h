@@ -36,6 +36,10 @@ public:
 	void SetDynamicProjectile(const FGameplayTag& ProjectileTag,int32 AbilityLevel = 1);
 
 	void AddEquipmentEffects(FRPGEquipmentEntry* EquipmentEntry);
+	void AddSingleAttribute(FRPGEquipmentEntry* EquipmentEntry, FStreamableManager& Manager,
+	                        TWeakObjectPtr<URPGAbilitySystemComponent> WeakThis,
+	                        FGameplayEffectContextHandle ContextHandle,
+	                        const FEquipmentStatEffectGroup& ImplicitStat);
 	void AddSingleEquipmentEffect(FRPGEquipmentEntry* EquipmentEntry, FStreamableManager& Manager,
 	                              TWeakObjectPtr<URPGAbilitySystemComponent> WeakThis,
 	                              FGameplayEffectContextHandle ContextHandle,

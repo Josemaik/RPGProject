@@ -94,6 +94,9 @@ struct FDamageEffectInfo
 	TSubclassOf<UGameplayEffect> DamageEffect = nullptr;
 
 	UPROPERTY(BlueprintReadWrite)
+	FGameplayTagContainer AbilityDynamicTags = FGameplayTagContainer::EmptyContainer;
+
+	UPROPERTY(BlueprintReadWrite)
 	TObjectPtr<UAbilitySystemComponent> SourceASC = nullptr;
 
 	UPROPERTY(BlueprintReadWrite)

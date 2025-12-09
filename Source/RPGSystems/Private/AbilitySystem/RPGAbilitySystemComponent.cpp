@@ -151,6 +151,12 @@ void URPGAbilitySystemComponent::AddEquipmentEffects(FRPGEquipmentEntry* Equipme
 	TWeakObjectPtr<URPGAbilitySystemComponent> WeakThis(this);
 	const FGameplayEffectContextHandle ContextHandle = MakeEffectContext();
 
+	const FEquipmentStatEffectGroup& BaseDamageStat = EquipmentEntry->EffectPackage.BaseDamage;
+	if (BaseDamageStat.StatEffectTag.IsValid())
+	{
+		AddSingleAttribute(EquipmentEntry,Manager,WeakThis,ContextHandle, BaseDamageStat);
+	}
+	
 	const FEquipmentStatEffectGroup& ImplicitStat = EquipmentEntry->EffectPackage.Implicit;
 
 	if (ImplicitStat.StatEffectTag.IsValid())
@@ -173,24 +179,7 @@ void URPGAbilitySystemComponent::AddSingleEquipmentEffect(FRPGEquipmentEntry* Eq
 {
 	if (ImplicitStat.StatEffectTag.MatchesTag(RPGGameplayTags::Static::StatEffect_Category_Attribute))
 	{
-		if (IsValid(ImplicitStat.EffectClass.Get()))
-		{
-			const FGameplayEffectSpecHandle SpecHandle = MakeOutgoingSpec(ImplicitStat.EffectClass.Get(),ImplicitStat.CurrentValue, ContextHandle);
-			const FActiveGameplayEffectHandle ActiveHandle = ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
-
-			EquipmentEntry->GrantedHandles.AddEffectHandle(ActiveHandle);
-		}
-		else
-		{
-			Manager.RequestAsyncLoad(ImplicitStat.EffectClass.ToSoftObjectPath(),
-									 [WeakThis,ImplicitStat,ContextHandle,EquipmentEntry]()
-									 {
-										 const FGameplayEffectSpecHandle SpecHandle = WeakThis->MakeOutgoingSpec(ImplicitStat.EffectClass.Get(),ImplicitStat.CurrentValue, ContextHandle);
-										 const FActiveGameplayEffectHandle ActiveHandle = WeakThis->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
-
-										 EquipmentEntry->GrantedHandles.AddEffectHandle(ActiveHandle);
-									 });
-		}	
+		AddSingleAttribute(EquipmentEntry, Manager, WeakThis, ContextHandle, ImplicitStat);	
 	} else if (ImplicitStat.StatEffectTag.MatchesTag(RPGGameplayTags::Static::StatEffect_Category_Ability))
 	{
 		for (FGameplayAbilitySpec& Spec : GetActivatableAbilities())
@@ -200,6 +189,28 @@ void URPGAbilitySystemComponent::AddSingleEquipmentEffect(FRPGEquipmentEntry* Eq
 				Spec.Level = FMath::Clamp(Spec.Level + ImplicitStat.CurrentValue, 1.f, Spec.Level + ImplicitStat.CurrentValue);
 			}
 		}
+	}
+}
+
+void URPGAbilitySystemComponent::AddSingleAttribute(FRPGEquipmentEntry* EquipmentEntry, FStreamableManager& Manager, TWeakObjectPtr<URPGAbilitySystemComponent> WeakThis, const FGameplayEffectContextHandle ContextHandle, const FEquipmentStatEffectGroup& ImplicitStat)
+{
+	if (IsValid(ImplicitStat.EffectClass.Get()))
+	{
+		const FGameplayEffectSpecHandle SpecHandle = MakeOutgoingSpec(ImplicitStat.EffectClass.Get(),ImplicitStat.CurrentValue, ContextHandle);
+		const FActiveGameplayEffectHandle ActiveHandle = ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
+
+		EquipmentEntry->GrantedHandles.AddEffectHandle(ActiveHandle);
+	}
+	else
+	{
+		Manager.RequestAsyncLoad(ImplicitStat.EffectClass.ToSoftObjectPath(),
+								 [WeakThis,ImplicitStat,ContextHandle,EquipmentEntry]()
+		 {
+			 const FGameplayEffectSpecHandle SpecHandle = WeakThis->MakeOutgoingSpec(ImplicitStat.EffectClass.Get(),ImplicitStat.CurrentValue, ContextHandle);
+			 const FActiveGameplayEffectHandle ActiveHandle = WeakThis->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
+
+			 EquipmentEntry->GrantedHandles.AddEffectHandle(ActiveHandle);
+		 });
 	}
 }
 
@@ -286,19 +297,27 @@ void URPGAbilitySystemComponent::RemoveEquipmentAbility(const FRPGEquipmentEntry
 FGameplayAbilitySpecHandle URPGAbilitySystemComponent::GrantEquipmentAbility(
 	const FRPGEquipmentEntry* EquipmentEntry)
 {
-	FGameplayAbilitySpec AbilitySpec = FGameplayAbilitySpec(EquipmentEntry->EffectPackage.Ability.AbilityClass.Get(),
-		EquipmentEntry->EffectPackage.Ability.AbilityLevel);
+	FEquipmentAbilityGroup Ability = EquipmentEntry->EffectPackage.Ability;
+	
+	FGameplayAbilitySpec AbilitySpec = FGameplayAbilitySpec(Ability.AbilityClass.Get(),Ability.AbilityLevel);
 
-	AbilitySpec.GetDynamicSpecSourceTags().AddTag(EquipmentEntry->EffectPackage.Ability.AbilityTag);
+	AbilitySpec.GetDynamicSpecSourceTags().AddTag(Ability.AbilityTag);
+	AbilitySpec.GetDynamicSpecSourceTags().AppendTags(Ability.AbilityContextTags);
 	
 	if (URPGGameplayAbility* RPGAbility = Cast<URPGGameplayAbility>(AbilitySpec.Ability))
 	{
 		AbilitySpec.GetDynamicSpecSourceTags().AddTag(RPGAbility->InputTag);
 	}
 
+	if (URPGDamageAbility* DamageAbility = Cast<URPGDamageAbility>(AbilitySpec.Ability))
+	{
+		DamageAbility->MinDamageCoefficient = Ability.MinDamageCoefficient;
+		DamageAbility->MaxDamageCoefficient = Ability.MaxDamageCoefficient;
+	}
+
 	if (UProjectileAbility* ProjectileAbility = Cast<UProjectileAbility>(AbilitySpec.Ability))
 	{
-		ProjectileAbility->ProjectileToSpawnTag = EquipmentEntry->EffectPackage.Ability.ContextTag;
+		ProjectileAbility->ProjectileToSpawnTag = Ability.ContextTag;
 	}
 
 	return GiveAbility(AbilitySpec);

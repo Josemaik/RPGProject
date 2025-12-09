@@ -3,9 +3,11 @@
 
 #include "AbilitySystem/ExecCalc/ExecCalcDamage.h"
 
+#include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystem/RPGAbilityTypes.h"
 #include "AbilitySystem/RPGGameplayTags.h"
 #include "AbilitySystem/Attributes/RPGAttributeSet.h"
+#include "Libraries/RPGAbilitySystemLibrary.h"
 
 struct RPGDamageStatics
 {
@@ -53,6 +55,9 @@ void UExecCalcDamage::Execute_Implementation(const FGameplayEffectCustomExecutio
 {
 	const FGameplayEffectSpec& EffectSpec = ExecutionParams.GetOwningSpec();
 
+	UAbilitySystemComponent* SourceASC = ExecutionParams.GetSourceAbilitySystemComponent();
+	UAbilitySystemComponent* TargetASC = ExecutionParams.GetTargetAbilitySystemComponent();
+
 	FAggregatorEvaluateParameters EvaluateParams;
 	EvaluateParams.TargetTags = EffectSpec.CapturedTargetTags.GetAggregatedTags();
 	EvaluateParams.SourceTags = EffectSpec.CapturedSourceTags.GetAggregatedTags();
@@ -61,8 +66,8 @@ void UExecCalcDamage::Execute_Implementation(const FGameplayEffectCustomExecutio
 	FRPGGameplayEffectContext* RPGContext = FRPGGameplayEffectContext::GetEffectContext(EffectContextHandle);
 	
 	//Get row damage value
-	float Damage = EffectSpec.GetSetByCallerMagnitude(RPGGameplayTags::Combat::Data_Damage);
-	Damage = FMath::Max<float>(Damage, 0.0f);
+	// float Damage = EffectSpec.GetSetByCallerMagnitude(RPGGameplayTags::Combat::Data_Damage);
+	// Damage = FMath::Max<float>(Damage, 0.0f);
 
 	//Source Captures
 	float CritChance = 0.f;
@@ -82,9 +87,44 @@ void UExecCalcDamage::Execute_Implementation(const FGameplayEffectCustomExecutio
 	ExecutionParams.AttemptCalculateCapturedAttributeMagnitude(DamageStatics().DamageReductionDef, EvaluateParams, DamageReduction);
 	DamageReduction = FMath::Max(DamageReduction, 0.f);
 	// Calculation
+	float Damage = 0.f;
 
+	float DamageCoefficient = EffectSpec.GetSetByCallerMagnitude(RPGGameplayTags::Combat::Data_Damage);
+	DamageCoefficient = FMath::Max(DamageCoefficient, 0.f);
+
+	FGameplayTagContainer DamageTypesEvaluationTags = EffectSpec.GetDynamicAssetTags();
+	DamageTypesEvaluationTags.AppendTags(*EvaluateParams.SourceTags);
+
+	for (const FGameplayTag& DamageTypeTag : URPGAbilitySystemLibrary::GetDamageTypeTags())
+	{
+		bool bOutSuccess = false;
+
+		DamageTypesEvaluationTags.AddTag(DamageTypeTag);
+
+		const float DamageValue = UAbilitySystemBlueprintLibrary::EvaluateAttributeValueWithTags(SourceASC, URPGAttributeSet::GetOutgoingAbilityDamageAttribute(),
+			DamageTypesEvaluationTags, *EvaluateParams.TargetTags, bOutSuccess);
+
+		if (DamageValue > 0.f)
+		{
+			const float ResistanceValue = UAbilitySystemBlueprintLibrary::EvaluateAttributeValueWithTags(TargetASC, URPGAttributeSet::GetAbilityDamageResistanceAttribute(),
+			DamageTypesEvaluationTags, *EvaluateParams.TargetTags, bOutSuccess);
+
+			float TotalDamage = DamageValue * DamageCoefficient;
+			TotalDamage *= (100.f - ResistanceValue) / 100.f;
+
+			Damage += TotalDamage;
+			
+			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Cyan,
+FString::Printf(TEXT("Damage type %s, Damage dealt %.2f"), *DamageTypeTag.ToString(), TotalDamage));
+		}
+		
+
+		DamageTypesEvaluationTags.RemoveTag(DamageTypeTag);
+
+	}
+	
 	const bool bCriticalHit = FMath::RandRange(0, 100) < CritChance;
-	Damage = bCriticalHit ? Damage + (CritDamage * 0.5f) : Damage;
+	Damage = bCriticalHit ? Damage * (1 + (CritDamage / 100)) : Damage;
 	RPGContext->SetIsCriticalHit(bCriticalHit);
 	
 	float OutShield = 0.f;

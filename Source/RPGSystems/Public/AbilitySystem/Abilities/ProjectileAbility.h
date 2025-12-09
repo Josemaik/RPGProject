@@ -30,7 +30,8 @@ public:
 	FGameplayTag ProjectileToSpawnTag;
 private:
 	void ReduceMana() const;
-	
+
+	UFUNCTION(BlueprintCallable)
 	void SpawnProjectile();
 
 	UPROPERTY()

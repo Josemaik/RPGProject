@@ -7,6 +7,10 @@ namespace RPGGameplayTags::Combat
 {
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Data_Damage, "Combat.Data.Damage", "Set by Caller Data Tag For Combat");
 	//UE_DEFINE_GAMEPLAY_TAG_STATIC(Projectile_Basic, "Projectile.Basic");
+	namespace DamageTypes
+	{
+		UE_DEFINE_GAMEPLAY_TAG_COMMENT(DamageTypeParent, "Combat.DamageType", "Primary Parent For Damage Types")
+	}
 }
 
 namespace RPGGameplayTags::Player::State

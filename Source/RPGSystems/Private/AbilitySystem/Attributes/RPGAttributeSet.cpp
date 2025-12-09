@@ -21,6 +21,8 @@ void URPGAttributeSet::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty
 	DOREPLIFETIME_CONDITION_NOTIFY(URPGAttributeSet, CritChance, COND_None, REPNOTIFY_Always);
 	DOREPLIFETIME_CONDITION_NOTIFY(URPGAttributeSet, CritDamage, COND_None, REPNOTIFY_Always);
 	DOREPLIFETIME_CONDITION_NOTIFY(URPGAttributeSet, MovementSpeed, COND_None, REPNOTIFY_Always)
+	DOREPLIFETIME_CONDITION_NOTIFY(URPGAttributeSet, OutgoingAbilityDamage, COND_None, REPNOTIFY_Always);
+	DOREPLIFETIME_CONDITION_NOTIFY(URPGAttributeSet, AbilityDamageResistance, COND_None, REPNOTIFY_Always);
 }
 
 void URPGAttributeSet::PostGameplayEffectExecute(const struct FGameplayEffectModCallbackData& Data)
@@ -133,5 +135,15 @@ void URPGAttributeSet::OnRep_MaxMana(const FGameplayAttributeData& OldMaxMana)
 void URPGAttributeSet::OnRep_MovementSpeed(const FGameplayAttributeData& OldMovementSpeed)
 {
 	GAMEPLAYATTRIBUTE_REPNOTIFY(URPGAttributeSet, MovementSpeed, OldMovementSpeed);
+}
+
+void URPGAttributeSet::OnRep_OutgoingAbilityDamage(const FGameplayAttributeData& OldOutgoingAbilityDamage)
+{
+	GAMEPLAYATTRIBUTE_REPNOTIFY(URPGAttributeSet, OutgoingAbilityDamage, OldOutgoingAbilityDamage);
+}
+
+void URPGAttributeSet::OnRep_AbilityDamageResistance(const FGameplayAttributeData& OldAbilityDamageResistance)
+{
+	GAMEPLAYATTRIBUTE_REPNOTIFY(URPGAttributeSet, AbilityDamageResistance, OldAbilityDamageResistance);
 }
 

@@ -97,7 +97,7 @@ void UProjectileAbility::ReduceMana() const
 	}
 		
 	UAbilitySystemComponent* OwnerASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(AvatarActorFromInfo);
-	if (!IsValid(OwnerASC))
+	if (!IsValid(OwnerASC) || !IsValid(ManaReductionEffect))
 	{
 		return;
 	}
