@@ -19,7 +19,7 @@ public:
 	UAbilityTask_InteractTrace();
 
 	UFUNCTION(BlueprintCallable, meta = (DefaultToSelf = "OwningAbility", HidePin = "OwningAbility", BlueprintInternalUseOnly = true))
-	static UAbilityTask_InteractTrace* InteractTrace(UGameplayAbility* OwningAbility);
+	static UAbilityTask_InteractTrace* InteractTrace(UGameplayAbility* OwningAbility, float InMaxInteractRange = 500.f);
 
 	virtual void Activate() override;
 	virtual void TickTask(float DeltaTime) override;
@@ -27,7 +27,12 @@ private:
 	UPROPERTY()
 	TObjectPtr<APlayerController> PlayerController;
 
+	UPROPERTY()
+	TObjectPtr<AActor> AvatarActor;
+	
 	FHitResult InteractTraceHit;
+
+	float MaxInteractDistance;
 
 	TScriptInterface<IInteractableInterface> ThisFrameInteractActor;
 	TScriptInterface<IInteractableInterface> LastFrameInteractActor;

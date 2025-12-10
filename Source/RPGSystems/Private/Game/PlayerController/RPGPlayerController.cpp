@@ -18,6 +18,7 @@
 ARPGPlayerController::ARPGPlayerController()
 {
 	bReplicates = true;
+	bEnableClickEvents = true;
 }
 
 UInventoryComponent* ARPGPlayerController::GetInventoryComponent_Implementation() const

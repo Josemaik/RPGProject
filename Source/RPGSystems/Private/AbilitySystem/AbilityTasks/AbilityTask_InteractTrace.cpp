@@ -11,9 +11,13 @@ UAbilityTask_InteractTrace::UAbilityTask_InteractTrace()
 	bTickingTask = true;
 }
 
-UAbilityTask_InteractTrace* UAbilityTask_InteractTrace::InteractTrace(UGameplayAbility* OwningAbility)
+UAbilityTask_InteractTrace* UAbilityTask_InteractTrace::InteractTrace(UGameplayAbility* OwningAbility,float InMaxInteractRange)
 {
-	return NewAbilityTask<UAbilityTask_InteractTrace>(OwningAbility);
+	//return NewAbilityTask<UAbilityTask_InteractTrace>(OwningAbility);
+	UAbilityTask_InteractTrace* MyObj = NewAbilityTask<UAbilityTask_InteractTrace>(OwningAbility);
+	MyObj->MaxInteractDistance = InMaxInteractRange;
+	MyObj->AvatarActor = MyObj->GetAvatarActor();
+	return MyObj;
 }
 
 void UAbilityTask_InteractTrace::Activate()
@@ -28,18 +32,25 @@ void UAbilityTask_InteractTrace::Activate()
 
 void UAbilityTask_InteractTrace::TickTask(float DeltaTime)
 {
-	if (!IsValid(PlayerController))
+	if (!IsValid(PlayerController) || !IsValid(AvatarActor))
 	{
 		EndTask();
 	}
 	Super::TickTask(DeltaTime);
 	PlayerController->GetHitResultUnderCursor(ECC_Visibility,false,InteractTraceHit);
 
-	ThisFrameInteractActor = InteractTraceHit.GetActor();
+	AActor* HitActor = InteractTraceHit.GetActor();
+	ThisFrameInteractActor = HitActor;
 	
 	if (ThisFrameInteractActor)
 	{
-		if (ThisFrameInteractActor != LastFrameInteractActor)
+		const FVector InteractableLocation = HitActor->GetActorLocation();
+		const FVector PlayerLocation = AvatarActor->GetActorLocation();
+		if (FVector::Dist(InteractableLocation, PlayerLocation) >= MaxInteractDistance)
+		{
+			ThisFrameInteractActor = nullptr;
+		}
+		else if (ThisFrameInteractActor != LastFrameInteractActor)
 		{
 			//ThisFrameInteractActor->BeginInteraact(PlayerController);
 			IInteractableInterface::Execute_BeginInteract(ThisFrameInteractActor.GetObject(),PlayerController);
