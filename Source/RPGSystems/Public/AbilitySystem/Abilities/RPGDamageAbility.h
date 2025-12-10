@@ -16,6 +16,7 @@ class RPGSYSTEMS_API URPGDamageAbility : public URPGGameplayAbility
 	GENERATED_BODY()
 
 public:
+	virtual void OnGiveAbility(const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilitySpec& Spec) override;
 
 	void CaptureDamageEffectInfo(AActor* TargetActor, FDamageEffectInfo& OutInfo);
 	
