@@ -9,6 +9,7 @@
 #include "Logging/LogMacros.h"
 #include "RPGSystemsCharacter.generated.h"
 
+class URPGMotionWarpingComponent;
 class URPGAttributeSet;
 class URPGAbilitySystemComponent;
 class USpringArmComponent;
@@ -42,6 +43,9 @@ class ARPGSystemsCharacter : public ACharacterBase,public IAbilitySystemInterfac
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* LookAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Motion, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<URPGMotionWarpingComponent> MotionWarpingComponent;
+
 public:
 	ARPGSystemsCharacter(const FObjectInitializer& ObjectInitializer);
 	
@@ -73,7 +77,39 @@ protected:
 	virtual void BeginPlay() override;
 	
 private:
+	
+	UFUNCTION(BlueprintCallable)
+	void Vault();
 
+	void VaultMotionWarp();
+
+	UFUNCTION()
+	void OnVaultCompleted(UAnimMontage* Montage, bool bInterrupted);
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"),Category="Custom Values|Animation")
+	UAnimMontage* VaultMontage;
+	
+	//Vaulting
+	const float VaultZOffsetFirstTrace = 30.f;
+	const float VaultZOffsetSecondTrace = 50.f;
+	const int32 NumTracesFirstCheck = 3;
+	const int32 NumTracesSecondCheck = 6;
+	const float MaxDetectionDistance = 180.f;
+	const float LandingZOffset = 50.f;
+	const FVector ZOffsetVector = FVector(0, 0, 100.f);
+	
+	FVector VaultStartPos = FVector::ZeroVector;
+	FVector VaultMiddlePos = FVector::ZeroVector;
+	FVector VaultLandPos = FVector::ZeroVector;
+
+	bool CanWarp = false;
+	
+	UPROPERTY()
+	float VaultSphereRadiusFirstCheck;
+	UPROPERTY()
+	float VaultSphereRadiusSecondCheck;
+	
+	
 	UPROPERTY(VisibleAnywhere, meta=(AllowPrivateAccess=true))
 	TObjectPtr<USceneComponent> DynamicProjectileSpawnPoint;
 	

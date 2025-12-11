@@ -16,7 +16,10 @@
 #include "Character/Components/RPGCharacterMovement.h"
 #include "Data/CharacterClassInfo.h"
 #include "Game/PlayerState/RPGPlayerState.h"
+#include "Kismet/KismetMathLibrary.h"
+#include "Kismet/KismetSystemLibrary.h"
 #include "Libraries/RPGAbilitySystemLibrary.h"
+#include "Character/Components/RPGMotionWarpingComponent.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
@@ -61,7 +64,11 @@ ARPGSystemsCharacter::ARPGSystemsCharacter(const FObjectInitializer& ObjectIniti
 	DynamicProjectileSpawnPoint = CreateDefaultSubobject<USceneComponent>(TEXT("DynamicProjectileSpawnPoint"));
 	DynamicProjectileSpawnPoint->SetupAttachment(GetRootComponent());
 
+	MotionWarpingComponent = CreateDefaultSubobject<URPGMotionWarpingComponent>(TEXT("MotionWarpingComponent"));
+	
 	GetCharacterMovement()->NavAgentProps.bCanCrouch = true;
+	VaultSphereRadiusFirstCheck = 5.f;
+	VaultSphereRadiusSecondCheck = 10.f;
 }
 
 void ARPGSystemsCharacter::PossessedBy(AController* NewController) //server
@@ -272,4 +279,153 @@ void ARPGSystemsCharacter::Look(const FInputActionValue& Value)
 		AddControllerYawInput(LookAxisVector.X);
 		AddControllerPitchInput(LookAxisVector.Y);
 	}
+}
+//////////////////////////////////
+/// Vaulting
+/// 
+void ARPGSystemsCharacter::Vault()
+{
+	TArray<AActor*> ActorsToIgnore;
+	ActorsToIgnore.Add(this);
+	FHitResult OutHitFirstCheck;
+	for (int i = 0; i < NumTracesFirstCheck;i++)
+	{
+		
+		FVector StartLocation = GetActorLocation() + FVector(0, 0, i * VaultZOffsetFirstTrace);
+		FVector EndLocation = StartLocation + GetActorForwardVector() * MaxDetectionDistance;
+		
+		bool bShereHit = UKismetSystemLibrary::SphereTraceSingle(
+			this,
+			StartLocation,
+			EndLocation,
+			VaultSphereRadiusFirstCheck,
+			TraceTypeQuery1,
+			false,
+			ActorsToIgnore,
+			EDrawDebugTrace::ForDuration,
+			OutHitFirstCheck,
+			true,
+			FLinearColor::Red,
+			FLinearColor::Green,
+			5.f
+			);
+		
+		if (bShereHit)
+		{
+			break;
+		}
+	}
+		
+	for (int j = 0; j < NumTracesSecondCheck;j++)
+	{
+		FHitResult OutHit;
+		FVector ForwardOffset = GetActorForwardVector() * (j * VaultZOffsetSecondTrace);
+		GEngine->AddOnScreenDebugMessage(-1,5.f,FColor::Red,
+			FString::Printf(TEXT("checks: %d"),j));
+		FVector HitLocationZOffset = OutHitFirstCheck.Location + ZOffsetVector;
+		FVector StartLocationSecondCheck = HitLocationZOffset + ForwardOffset;
+		FVector EndLocationSecondCheck = StartLocationSecondCheck - ZOffsetVector;
+		
+		bool bSecondCheckHit = UKismetSystemLibrary::SphereTraceSingle(
+			this,
+			StartLocationSecondCheck,
+			EndLocationSecondCheck,
+			VaultSphereRadiusSecondCheck,
+			TraceTypeQuery1,
+			false,
+			ActorsToIgnore,
+			EDrawDebugTrace::ForDuration,
+			OutHit,
+			true,
+			FLinearColor::Red,
+			FLinearColor::Green,
+			5.f
+			);
+		if (bSecondCheckHit)
+		{
+			if (j == 0)
+			{
+				VaultStartPos = OutHit.Location;
+				UKismetSystemLibrary::DrawDebugSphere(
+					this,VaultStartPos,VaultSphereRadiusSecondCheck,12,
+					FColor::Purple,10.f,2.f);
+			}
+			VaultMiddlePos = OutHit.Location;
+			UKismetSystemLibrary::DrawDebugSphere(
+					this,VaultMiddlePos,VaultSphereRadiusSecondCheck,12,
+					FColor::Yellow,10.f,2.f);
+			CanWarp = true;
+		}
+		else
+		{
+			FHitResult OutHitThirdCheck;
+			FVector DirectionWithOffset = GetActorForwardVector() * 80.f;
+			FVector StartLocationThirdCheck = OutHit.TraceStart + DirectionWithOffset;
+			FVector EndLocationThirdCheck = StartLocationThirdCheck - FVector(0,0,1000);
+			bool bLineTraceHit = UKismetSystemLibrary::LineTraceSingle(this,StartLocationThirdCheck,EndLocationThirdCheck,
+				TraceTypeQuery1,false,ActorsToIgnore,EDrawDebugTrace::ForDuration,OutHitThirdCheck,
+				true,FColor::Blue,FColor::Red,5.f);
+			if (bLineTraceHit)
+			{
+				VaultLandPos = OutHitThirdCheck.Location;
+				break;
+			}
+		}
+	}
+	
+	VaultMotionWarp();
+}
+
+void ARPGSystemsCharacter::VaultMotionWarp()
+{
+	USkeletalMeshComponent* MeshRef = GetMesh();
+	if (!IsValid(MeshRef))
+	{
+		return;
+	}
+	
+	float MeshZWorldLocation = MeshRef->GetComponentLocation().Z;
+	float MinZOffset = MeshZWorldLocation - LandingZOffset;
+	float MaxZOffset = MeshZWorldLocation + LandingZOffset;
+	
+	if (CanWarp && VaultLandPos.Z >=  MinZOffset && VaultLandPos.Z <= MaxZOffset)
+	{
+		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+		if (!IsValid(AnimInstance) || !IsValid(VaultMontage))
+		{
+			return;
+		}
+		
+		GetCharacterMovement()->SetMovementMode(MOVE_Flying);
+		SetActorEnableCollision(false);
+		
+		FMotionWarpingTarget TargetStart;
+		TargetStart.Location = VaultStartPos;
+		TargetStart.Name = FName("VaultStart");
+		TargetStart.Rotation = GetActorRotation();
+		MotionWarpingComponent->AddOrUpdateWarpTarget(TargetStart);
+		FMotionWarpingTarget TargetMiddle;
+		TargetMiddle.Location = VaultMiddlePos;
+		TargetMiddle.Name = FName("VaultMiddle");
+		TargetMiddle.Rotation = GetActorRotation();
+		MotionWarpingComponent->AddOrUpdateWarpTarget(TargetMiddle);
+		FMotionWarpingTarget TargetLand;
+		TargetLand.Location = VaultLandPos;
+		TargetLand.Name = FName("VaultLand");
+		TargetLand.Rotation = GetActorRotation();
+		MotionWarpingComponent->AddOrUpdateWarpTarget(TargetLand);
+
+		AnimInstance->OnMontageEnded.AddDynamic(this, &ARPGSystemsCharacter::OnVaultCompleted);
+		AnimInstance->Montage_Play(VaultMontage);
+	}
+}
+
+void ARPGSystemsCharacter::OnVaultCompleted(UAnimMontage* Montage, bool bInterrupted)
+{
+	GetCharacterMovement()->SetMovementMode(MOVE_Walking);
+	SetActorEnableCollision(true);
+	CanWarp = false;
+	VaultLandPos = FVector(0, 0, 20000);
+	
+	GetMesh()->GetAnimInstance()->OnMontageEnded.RemoveDynamic(this, &ARPGSystemsCharacter::OnVaultCompleted);
 }
