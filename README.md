@@ -24,7 +24,7 @@ Multiplayer RPG prototype made with Gameplay Ability System in UE5.4
     </td>
     <td>
       <h3>Drag & Drop Items</h3>
-      <video src="https://github.com/user-attachments/assets/5060a4c-259b-4967-8235-6fe723f97766" width="300" controls></video>
+      <video src="https://github.com/user-attachments/assets/e150c5cc-9a23-41fe-a203-c329a3c94175" width="300" controls></video>
       <p><b>Drag & Drop Items</b></p>
     </td>
   </tr>
