@@ -103,6 +103,9 @@ void URPGSystemsWidget::HandleInventoyItemReceived(const FRPGInventoryEntry& Ent
 	InventoryContent->AddChild(CurrentItemRowWidget);
 	
 	ActiveItemRowWidgets.Add(Entry.ItemID,CurrentItemRowWidget);
+
+	//the last item added udpate description text
+	//HandleItemRowClicked(Entry);
 	
 	CurrentItemRowWidget->OnUseButtomClickedDelegate.BindLambda(
 		[this](const FRPGInventoryEntry& Entry)
