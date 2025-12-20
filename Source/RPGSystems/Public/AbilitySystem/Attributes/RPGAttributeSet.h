@@ -61,6 +61,14 @@ public:
     FGameplayAttributeData MaxMana;
     ATTRIBUTE_ACCESSORS(URPGAttributeSet, MaxMana)
 
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_Stamina)
+	FGameplayAttributeData Stamina;
+	ATTRIBUTE_ACCESSORS(URPGAttributeSet, Stamina)
+
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_MaxStamina)
+	FGameplayAttributeData MaxStamina;
+	ATTRIBUTE_ACCESSORS(URPGAttributeSet, MaxStamina)
+
 	UPROPERTY(BlueprintReadOnly, ReplicatedUsing= OnRep_MovementSpeed)
 	FGameplayAttributeData MovementSpeed;
 	ATTRIBUTE_ACCESSORS(URPGAttributeSet, MovementSpeed)
@@ -108,6 +116,12 @@ private:
 	UFUNCTION()
 	void OnRep_MaxMana(const FGameplayAttributeData& OldMaxmana);
 
+	UFUNCTION()
+	void OnRep_Stamina(const FGameplayAttributeData& OldStamina);
+
+	UFUNCTION()
+	void OnRep_MaxStamina(const FGameplayAttributeData& OldMaxStamina);
+	
 	UFUNCTION()
 	void OnRep_MovementSpeed(const FGameplayAttributeData& OldMovementSpeed);
 

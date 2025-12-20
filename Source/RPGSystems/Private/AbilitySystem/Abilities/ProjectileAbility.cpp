@@ -53,7 +53,6 @@ void UProjectileAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle
 	FTimerDelegate TimerDelegate;
 	TimerDelegate.BindUObject(this, &UProjectileAbility::EndAbility, Handle, ActorInfo, ActivationInfo, false, false);
 	GetWorld()->GetTimerManager().SetTimer(TimerHandle,TimerDelegate, 0.25f, false);
-	
 }
 
 void UProjectileAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,

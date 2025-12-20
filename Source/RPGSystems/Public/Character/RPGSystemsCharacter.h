@@ -42,7 +42,13 @@ class ARPGSystemsCharacter : public ACharacterBase,public IAbilitySystemInterfac
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* LookAction;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* VaultAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* AssasinationAction;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Motion, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<URPGMotionWarpingComponent> MotionWarpingComponent;
 
@@ -64,6 +70,8 @@ protected:
 
 	/** Called for movement input */
 	void Move(const FInputActionValue& Value);
+	void Jump() override;
+	void StopJumping() override;
 
 	/** Called for looking input */
 	void Look(const FInputActionValue& Value);
@@ -79,7 +87,7 @@ protected:
 private:
 	
 	UFUNCTION(BlueprintCallable)
-	void Vault();
+	void TryVault();
 
 	void VaultMotionWarp();
 
@@ -102,7 +110,7 @@ private:
 	FVector VaultMiddlePos = FVector::ZeroVector;
 	FVector VaultLandPos = FVector::ZeroVector;
 
-	bool CanWarp = false;
+	bool CanVault = false;
 	
 	UPROPERTY()
 	float VaultSphereRadiusFirstCheck;

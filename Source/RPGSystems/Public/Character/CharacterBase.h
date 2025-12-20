@@ -24,7 +24,9 @@ public:
 
 	UFUNCTION(BlueprintImplementableEvent)
 	void OnShieldChanged(float CurrentShield, float MaxShield);
-	
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void OnStaminaChanged(float CurrentStamina, float MaxStamina);
 protected:
 	
 	virtual void BeginPlay() override;

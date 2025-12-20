@@ -37,6 +37,8 @@ void UAbilityTask_WaitCrouchClearance::TickTask(float DeltaTime)
 	TArray<AActor*> IgnoreActors;
 	IgnoreActors.Add(AvatarActor);
 
+	FHitResult TraceHit;
+	//improve adding a custom channel to avoid pawns
 	UKismetSystemLibrary::SphereTraceSingle(
 		this,
 		AvatarActor->GetActorLocation(),
@@ -49,6 +51,12 @@ void UAbilityTask_WaitCrouchClearance::TickTask(float DeltaTime)
 		TraceHit,
 		true);
 
+	if (bShowDebug && IsValid(TraceHit.GetActor()))
+	{
+		GEngine->AddOnScreenDebugMessage(-1,3.f,FColor::Red,
+			FString::Printf(TEXT("Overlaping with: %s + %s"),*TraceHit.GetActor()->GetActorNameOrLabel(),
+				*TraceHit.Component.Get()->GetName())); 
+	}
 	//if there is no blocking collision above us within radius, then we have clearance to stop crouching
 	if (!TraceHit.bBlockingHit)
 	{

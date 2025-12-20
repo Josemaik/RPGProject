@@ -108,6 +108,10 @@ void URPGAbilitySystemComponent::AbilityInputReleased(const FGameplayTag& InputT
 		if (Spec.GetDynamicSpecSourceTags().HasTagExact(InputTag))
 		{
 			UGameplayAbility* PrimaryInstance = Spec.GetPrimaryInstance();
+			if (!IsValid(PrimaryInstance))
+			{
+				return;
+			}
 			InvokeReplicatedEvent(EAbilityGenericReplicatedEvent::InputReleased, Spec.Handle,
 					PrimaryInstance->GetCurrentActivationInfo().GetActivationPredictionKey());
 		}

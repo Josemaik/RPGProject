@@ -191,6 +191,11 @@ void ARPGSystemsCharacter::BindCallbacksToDependencies()
 		{
 			GetCharacterMovement()->MaxWalkSpeed = Data.NewValue;
 		});
+	RPGAbilitySystemComp->GetGameplayAttributeValueChangeDelegate(RPGAttributes->GetStaminaAttribute()).AddLambda(
+		[this] (const FOnAttributeChangeData& Data)
+		{
+			OnStaminaChanged(Data.NewValue, RPGAttributes->GetMaxStamina());
+		});
 }
 
 void ARPGSystemsCharacter::BroadcastInitialValues()
@@ -204,6 +209,7 @@ void ARPGSystemsCharacter::BroadcastInitialValues()
 	OnManaChanged(RPGAttributes->GetMana(), RPGAttributes->GetMaxMana());
 	OnShieldChanged(RPGAttributes->GetShield(), RPGAttributes->GetMaxShield());
 	GetCharacterMovement()->MaxWalkSpeed = RPGAttributes->GetMovementSpeed();
+	OnStaminaChanged(RPGAttributes->GetStamina(), RPGAttributes->GetMaxStamina());
 }
 
 void ARPGSystemsCharacter::BeginPlay()
@@ -230,14 +236,20 @@ void ARPGSystemsCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent)) {
 		
 		// Jumping
-		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ACharacter::Jump);
-		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
+		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ARPGSystemsCharacter::Jump);
+		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ARPGSystemsCharacter::StopJumping);
 
 		// Moving
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ARPGSystemsCharacter::Move);
 
 		// Looking
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ARPGSystemsCharacter::Look);
+
+		//Vault
+		EnhancedInputComponent->BindAction(VaultAction, ETriggerEvent::Started,this,&ARPGSystemsCharacter::TryVault);
+
+		//Assasination
+		EnhancedInputComponent->BindAction(AssasinationAction, ETriggerEvent::Started,this,&ARPGSystemsCharacter::TryVault);
 	}
 	else
 	{
@@ -268,6 +280,19 @@ void ARPGSystemsCharacter::Move(const FInputActionValue& Value)
 	}
 }
 
+void ARPGSystemsCharacter::Jump()
+{
+	TryVault();
+	if (!CanVault)
+		Super::Jump();
+}
+
+void ARPGSystemsCharacter::StopJumping()
+{
+	if (bPressedJump)
+		Super::StopJumping();
+}
+
 void ARPGSystemsCharacter::Look(const FInputActionValue& Value)
 {
 	// input is a Vector2D
@@ -283,7 +308,7 @@ void ARPGSystemsCharacter::Look(const FInputActionValue& Value)
 //////////////////////////////////
 /// Vaulting
 /// 
-void ARPGSystemsCharacter::Vault()
+void ARPGSystemsCharacter::TryVault()
 {
 	TArray<AActor*> ActorsToIgnore;
 	ActorsToIgnore.Add(this);
@@ -354,7 +379,6 @@ void ARPGSystemsCharacter::Vault()
 			UKismetSystemLibrary::DrawDebugSphere(
 					this,VaultMiddlePos,VaultSphereRadiusSecondCheck,12,
 					FColor::Yellow,10.f,2.f);
-			CanWarp = true;
 		}
 		else
 		{
@@ -368,12 +392,12 @@ void ARPGSystemsCharacter::Vault()
 			if (bLineTraceHit)
 			{
 				VaultLandPos = OutHitThirdCheck.Location;
+				CanVault = true;
+				VaultMotionWarp();
 				break;
 			}
 		}
 	}
-	
-	VaultMotionWarp();
 }
 
 void ARPGSystemsCharacter::VaultMotionWarp()
@@ -388,7 +412,7 @@ void ARPGSystemsCharacter::VaultMotionWarp()
 	float MinZOffset = MeshZWorldLocation - LandingZOffset;
 	float MaxZOffset = MeshZWorldLocation + LandingZOffset;
 	
-	if (CanWarp && VaultLandPos.Z >=  MinZOffset && VaultLandPos.Z <= MaxZOffset)
+	if (CanVault && VaultLandPos.Z >=  MinZOffset && VaultLandPos.Z <= MaxZOffset)
 	{
 		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 		if (!IsValid(AnimInstance) || !IsValid(VaultMontage))
@@ -424,7 +448,7 @@ void ARPGSystemsCharacter::OnVaultCompleted(UAnimMontage* Montage, bool bInterru
 {
 	GetCharacterMovement()->SetMovementMode(MOVE_Walking);
 	SetActorEnableCollision(true);
-	CanWarp = false;
+	CanVault = false;
 	VaultLandPos = FVector(0, 0, 20000);
 	
 	GetMesh()->GetAnimInstance()->OnMontageEnded.RemoveDynamic(this, &ARPGSystemsCharacter::OnVaultCompleted);

@@ -36,7 +36,8 @@ private:
 
 	UPROPERTY()
 	TObjectPtr<AActor> AvatarActorFromInfo;
-	
+
+	UPROPERTY(EditDefaultsOnly)
 	FProjectileParams CurrentProjectileParams;
 
 	UPROPERTY(EditDefaultsOnly, Category="Custom Values|Projectile")

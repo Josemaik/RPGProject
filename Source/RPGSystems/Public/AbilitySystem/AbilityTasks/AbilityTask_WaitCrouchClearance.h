@@ -31,8 +31,8 @@ private:
 	UPROPERTY()
 	TObjectPtr<AActor> AvatarActor;
 	
-	FHitResult TraceHit;
+	//FHitResult TraceHit;
 	float TargetHeightOffset = 0.f;
-	float SphereTraceRadius = 30.f;
+	float SphereTraceRadius = 5.f;
 	bool bShowDebug = false;
 };
