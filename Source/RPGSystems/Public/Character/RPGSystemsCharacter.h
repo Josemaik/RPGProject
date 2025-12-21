@@ -48,6 +48,9 @@ class ARPGSystemsCharacter : public ACharacterBase,public IAbilitySystemInterfac
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* AssasinationAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* SprintAction;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Motion, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<URPGMotionWarpingComponent> MotionWarpingComponent;
@@ -73,6 +76,9 @@ protected:
 	void Jump() override;
 	void StopJumping() override;
 
+	/*Called for sprint input*/
+	void Sprint();
+	
 	/** Called for looking input */
 	void Look(const FInputActionValue& Value);
 
@@ -85,7 +91,8 @@ protected:
 	virtual void BeginPlay() override;
 	
 private:
-	
+
+	/*Move to Component***********************/
 	UFUNCTION(BlueprintCallable)
 	void TryVault();
 
@@ -116,7 +123,9 @@ private:
 	float VaultSphereRadiusFirstCheck;
 	UPROPERTY()
 	float VaultSphereRadiusSecondCheck;
-	
+	/****************************************/
+
+	virtual void Death_Implementation() override;
 	
 	UPROPERTY(VisibleAnywhere, meta=(AllowPrivateAccess=true))
 	TObjectPtr<USceneComponent> DynamicProjectileSpawnPoint;

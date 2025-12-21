@@ -39,5 +39,4 @@ protected:
 	
 	UPROPERTY(EditAnywhere,Category="Custom Values|Character Info")
 	FGameplayTag CharacterTag;
-
 };

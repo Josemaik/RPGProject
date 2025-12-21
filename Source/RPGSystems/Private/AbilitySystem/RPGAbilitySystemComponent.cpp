@@ -69,6 +69,18 @@ void URPGAbilitySystemComponent::InitializeDefaultAttributes(const TSubclassOf<U
 	OnAttributesGiven.Broadcast();
 }
 
+void URPGAbilitySystemComponent::InitializeDefaultInfiniteEffects(
+	const TArray<TSubclassOf<UGameplayEffect>>& StartingInfiniteEffects)
+{
+	if (StartingInfiniteEffects.IsEmpty()) return;
+	const FGameplayEffectContextHandle ContextHandle = MakeEffectContext();
+	for (const TSubclassOf<UGameplayEffect>& Effect : StartingInfiniteEffects)
+	{
+		const FGameplayEffectSpecHandle SpecHandle = MakeOutgoingSpec(Effect, 1.f, ContextHandle);
+		ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
+	}
+}
+
 void URPGAbilitySystemComponent::AbilityInputPressed(const FGameplayTag& InputTag)
 {
 	if (!InputTag.IsValid())

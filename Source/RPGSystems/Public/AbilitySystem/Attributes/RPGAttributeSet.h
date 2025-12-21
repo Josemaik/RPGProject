@@ -86,7 +86,6 @@ public:
 	ATTRIBUTE_ACCESSORS(URPGAttributeSet,IncomingDamage);
 	
 private:
-
 	void HandleIncomingDamage(const FGameplayEffectModCallbackData& Data);
 	
 	UFUNCTION()

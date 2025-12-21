@@ -74,6 +74,8 @@ void ARPGPlayerState::LevelUp()
 		FGameplayEffectSpecHandle SpecHandle = RPGAbilitySystemComp->MakeOutgoingSpec(LevelUpEffect, PlayerLevel, ContextHandle);
 		RPGAbilitySystemComp->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
 	}
+
+	OnLevelUp(PlayerLevel);
 }
 
 void ARPGPlayerState::AddToExperience(const FScalableFloat& XPScale)
@@ -90,6 +92,8 @@ void ARPGPlayerState::AddToExperience(const FScalableFloat& XPScale)
 		CurrentExperience = CurrentExperience - RequiredExperience;
 		LevelUp();
 	}
+
+	OnExperienceChanged(CurrentExperience,RequiredExperience);
 }
 
 void ARPGPlayerState::OnRep_InventoryComponent()

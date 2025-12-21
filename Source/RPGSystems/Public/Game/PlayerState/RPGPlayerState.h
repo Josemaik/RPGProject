@@ -38,11 +38,17 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess=true), Replicated, ReplicatedUsing=OnRep_InventoryComponent)
 	TObjectPtr<UInventoryComponent> InventoryComponent;
 	
-	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, meta=(AllowPrivateAccess=true), Replicated, ReplicatedUsing=OnRep_EquipmentComponent)
+	UPROPERTY(VisibleAnywhere, meta=(AllowPrivateAccess=true), Replicated, ReplicatedUsing=OnRep_EquipmentComponent)
 	TObjectPtr<UEquipmentManagerComponent> EquipmentComponent;
 
 	void AddToExperience(const FScalableFloat& XPScale);
 	
+	UFUNCTION(BlueprintImplementableEvent)
+	void OnLevelUp(int32 CurrentLevel);
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void OnExperienceChanged(int32 NewExperience, int32 RequiredExperience);
+
 	int32 CurrentExperience = 0;
 	int32 PlayerLevel = 1;
 	
@@ -50,6 +56,7 @@ public:
 	FScalableFloat RequiredLevelUpExperience;
 private:
 	void LevelUp();
+
 	
 	UFUNCTION()
 	void OnRep_InventoryComponent();

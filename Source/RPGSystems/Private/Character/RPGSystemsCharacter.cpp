@@ -20,6 +20,7 @@
 #include "Kismet/KismetSystemLibrary.h"
 #include "Libraries/RPGAbilitySystemLibrary.h"
 #include "Character/Components/RPGMotionWarpingComponent.h"
+#include "Kismet/GameplayStatics.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
@@ -160,6 +161,7 @@ void ARPGSystemsCharacter::InitClassDefaults()
 	RPGAbilitySystemComp->AddCharacterAbilities(SelectedClassInfo->StartingAbilities);
 	RPGAbilitySystemComp->AddCharacterPassiveAbilities(SelectedClassInfo->StartingPassives);
 	RPGAbilitySystemComp->InitializeDefaultAttributes(SelectedClassInfo->DefaultAttributes);
+	RPGAbilitySystemComp->InitializeDefaultInfiniteEffects(SelectedClassInfo->StartingInfiniteEffects);
 }
 
 void ARPGSystemsCharacter::BindCallbacksToDependencies()
@@ -242,6 +244,9 @@ void ARPGSystemsCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 		// Moving
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ARPGSystemsCharacter::Move);
 
+		//Sprint
+		EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Started, this, &ARPGSystemsCharacter::Sprint);
+
 		// Looking
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ARPGSystemsCharacter::Look);
 
@@ -291,6 +296,16 @@ void ARPGSystemsCharacter::StopJumping()
 {
 	if (bPressedJump)
 		Super::StopJumping();
+}
+
+void ARPGSystemsCharacter::Sprint()
+{
+	FTimerHandle SprintTimerHandle;
+	GetWorld()->GetTimerManager().SetTimer(SprintTimerHandle, []()
+	{
+		//Decrease Stamina
+		
+	},0.1f,true);
 }
 
 void ARPGSystemsCharacter::Look(const FInputActionValue& Value)
@@ -452,4 +467,20 @@ void ARPGSystemsCharacter::OnVaultCompleted(UAnimMontage* Montage, bool bInterru
 	VaultLandPos = FVector(0, 0, 20000);
 	
 	GetMesh()->GetAnimInstance()->OnMontageEnded.RemoveDynamic(this, &ARPGSystemsCharacter::OnVaultCompleted);
+}
+
+void ARPGSystemsCharacter::Death_Implementation()
+{
+	//GetWorld()->GetFirstPlayerController()
+	APlayerController* PlayerController = UGameplayStatics::GetPlayerController(GetWorld(), 0);
+	if (!IsValid(PlayerController))
+	{
+		return;
+	}
+	
+	DisableInput(PlayerController);
+	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::Type::NoCollision);
+	GetMesh()->SetCollisionEnabled(ECollisionEnabled::Type::QueryAndPhysics);
+	GetMesh()->SetSimulatePhysics(true);
 }

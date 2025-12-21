@@ -20,6 +20,9 @@ struct FCharacterClassDefaultInfo
 	TSubclassOf<UGameplayEffect> DefaultAttributes;
 
 	UPROPERTY(EditDefaultsOnly)
+	TArray<TSubclassOf<UGameplayEffect>> StartingInfiniteEffects;
+
+	UPROPERTY(EditDefaultsOnly)
 	TArray<TSubclassOf<UGameplayAbility>> StartingAbilities;
 
 	UPROPERTY(EditDefaultsOnly)
