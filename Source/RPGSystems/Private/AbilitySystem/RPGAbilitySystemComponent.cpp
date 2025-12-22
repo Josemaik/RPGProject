@@ -289,19 +289,22 @@ void URPGAbilitySystemComponent::AddEquipmentAbility(FRPGEquipmentEntry* Equipme
 	FStreamableManager& Manager = UAssetManager::GetStreamableManager();
 	TWeakObjectPtr<URPGAbilitySystemComponent> WeakThis(this);
 	
-	if (IsValid(EquipmentEntry->EffectPackage.Ability.AbilityClass.Get()))
-	{	
-		EquipmentEntry->GrantedHandles.GrantedAbility = GrantEquipmentAbility(EquipmentEntry);
-		OnEquipmentAbilityGiven.Broadcast(EquipmentEntry,false);
-	}
-	else
+	for (FEquipmentAbilityGroup& AbilityGroup: EquipmentEntry->EffectPackage.Abilities)
 	{
-		Manager.RequestAsyncLoad(EquipmentEntry->EffectPackage.Ability.AbilityClass.ToSoftObjectPath(),
-			[WeakThis, EquipmentEntry]()
-			{
-				EquipmentEntry->GrantedHandles.GrantedAbility = WeakThis->GrantEquipmentAbility(EquipmentEntry);
-				WeakThis->OnEquipmentAbilityGiven.Broadcast(EquipmentEntry,true);
-			});
+		if (IsValid(AbilityGroup.AbilityClass.Get()))
+		{	
+			EquipmentEntry->GrantedHandles.GrantedAbility = GrantEquipmentAbility(AbilityGroup);
+			OnEquipmentAbilityGiven.Broadcast(EquipmentEntry,false);
+		}
+		else
+		{
+			Manager.RequestAsyncLoad(AbilityGroup.AbilityClass.ToSoftObjectPath(),
+				[WeakThis, EquipmentEntry,AbilityGroup]()
+				{
+					EquipmentEntry->GrantedHandles.GrantedAbility = WeakThis->GrantEquipmentAbility(AbilityGroup);
+					WeakThis->OnEquipmentAbilityGiven.Broadcast(EquipmentEntry,true);
+				});
+		}
 	}
 }
 
@@ -311,9 +314,9 @@ void URPGAbilitySystemComponent::RemoveEquipmentAbility(const FRPGEquipmentEntry
 }
 
 FGameplayAbilitySpecHandle URPGAbilitySystemComponent::GrantEquipmentAbility(
-	const FRPGEquipmentEntry* EquipmentEntry)
+	const FEquipmentAbilityGroup& Ability)
 {
-	FEquipmentAbilityGroup Ability = EquipmentEntry->EffectPackage.Ability;
+	//FEquipmentAbilityGroup Ability = EquipmentEntry->EffectPackage.Ability;
 	
 	FGameplayAbilitySpec AbilitySpec = FGameplayAbilitySpec(Ability.AbilityClass.Get(),Ability.AbilityLevel);
 

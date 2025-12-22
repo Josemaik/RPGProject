@@ -4,6 +4,7 @@
 #include "Equipment/EquipmentInstance.h"
 
 
+#include "Character/RPGSystemsCharacter.h"
 #include "Engine/AssetManager.h"
 #include "Engine/StreamableManager.h"
 #include "Equipment/EquipmentActor.h"
@@ -19,9 +20,9 @@ void UEquipmentInstance::OnUnEquipped()
 {
 }
 
-void UEquipmentInstance::SpawnEquipmentActors(const TArray<FEquipmentActorsToSpawn>& ActorsToSpawn)
+void UEquipmentInstance::SpawnEquipmentActors(const TArray<FEquipmentActorsToSpawn>& ActorsToSpawn,FGameplayTag SlotTag)
 {
-	if (ACharacter* OwningCharacter = GetCharacter())
+	if (ARPGSystemsCharacter* OwningCharacter = Cast<ARPGSystemsCharacter>(GetCharacter()))
 	{
 		FStreamableManager& Manager = UAssetManager::GetStreamableManager();
 		TWeakObjectPtr<UEquipmentInstance> WeakThis(this);
@@ -35,12 +36,21 @@ void UEquipmentInstance::SpawnEquipmentActors(const TArray<FEquipmentActorsToSpa
 				NewActor->FinishSpawning(FTransform::Identity);
 				NewActor->AttachToComponent(OwningCharacter->GetMesh(), FAttachmentTransformRules::KeepRelativeTransform, ActorToSpawn.AttachName);
 
+				if (SlotTag.MatchesTagExact(FGameplayTag::RequestGameplayTag("Equipment.Slot.RightHand")))
+				{
+					OwningCharacter->SetRightHandEquipment(NewActor);
+				}
+				else
+				{
+					OwningCharacter->SetLeftHandEquipment(NewActor);
+				}
+				
 				SpawnedActors.Emplace(NewActor);
 			}
 			else
 			{
 				Manager.RequestAsyncLoad(ActorToSpawn.EquipmentClass.ToSoftObjectPath(),
-					[WeakThis,ActorToSpawn, OwningCharacter]
+					[WeakThis,ActorToSpawn, OwningCharacter,SlotTag]
 					{
 						if (!WeakThis.IsValid())
 							return;
@@ -50,6 +60,15 @@ void UEquipmentInstance::SpawnEquipmentActors(const TArray<FEquipmentActorsToSpa
 						NewActor->FinishSpawning(FTransform::Identity);
 						NewActor->AttachToComponent(OwningCharacter->GetMesh(), FAttachmentTransformRules::KeepRelativeTransform, ActorToSpawn.AttachName);
 
+						if (SlotTag.MatchesTagExact(FGameplayTag::RequestGameplayTag("Equipment.Slot.RightHand")))
+						{
+							OwningCharacter->SetRightHandEquipment(NewActor);
+						}
+						else
+						{
+							OwningCharacter->SetLeftHandEquipment(NewActor);
+						}
+						
 						WeakThis->SpawnedActors.Emplace(NewActor);
 					});
 			}

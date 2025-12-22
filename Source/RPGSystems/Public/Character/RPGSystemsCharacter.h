@@ -16,6 +16,7 @@ class USpringArmComponent;
 class UCameraComponent;
 class UInputMappingContext;
 class UInputAction;
+class AEquipmentActor;
 struct FInputActionValue;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
@@ -69,6 +70,12 @@ public:
 	
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
+
+	/*equipment instances*/
+	AEquipmentActor* GetRightHandEquipmentActor() const { return RightHandEquipment; }
+	AEquipmentActor* GetLeftHandEquipmentActor() const { return LeftHandEquipment; }
+	void SetRightHandEquipment(AEquipmentActor* NewRightHandEquipment) { RightHandEquipment = NewRightHandEquipment; }
+	void SetLeftHandEquipment(AEquipmentActor* NewLeftHandEquipment) { LeftHandEquipment = NewLeftHandEquipment; }
 protected:
 
 	/** Called for movement input */
@@ -124,6 +131,13 @@ private:
 	UPROPERTY()
 	float VaultSphereRadiusSecondCheck;
 	/****************************************/
+
+	UPROPERTY()
+	AEquipmentActor* RightHandEquipment;
+
+	UPROPERTY()
+	AEquipmentActor* LeftHandEquipment;
+
 
 	virtual void Death_Implementation() override;
 	

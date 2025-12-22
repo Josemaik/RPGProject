@@ -43,7 +43,11 @@ struct FRPGEquipmentEntry : public FFastArraySerializerItem
 
 	bool HasAbility() const
 	{
-		return EffectPackage.Ability.AbilityTag.IsValid();
+		for (auto& Ability : EffectPackage.Abilities)
+		{
+			if (Ability.AbilityTag.IsValid()) return true;
+		}
+		return false;
 	}
 private:
 

@@ -109,5 +109,8 @@ public:
 	float ProbabilityToRollAbility = 0.f;
 
 	UPROPERTY(EditDefaultsOnly, Category="Custom Values|Ability")
-	bool bForceAbilityRoll = false;
+	float MinNumRollAbilities = 1.f;
+	
+	UPROPERTY(EditDefaultsOnly, Category="Custom Values|Ability")
+	bool bForceRollAllAbilities = false;
 };

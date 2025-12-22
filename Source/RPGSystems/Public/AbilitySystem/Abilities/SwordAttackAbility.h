@@ -6,6 +6,7 @@
 #include "RPGGameplayAbility.h"
 #include "SwordAttackAbility.generated.h"
 
+class UAbilityTask_SwordTrace;
 class UAbilityTask_WaitInputPress;
 class UAbilityTask_WaitGameplayEvent;
 /**
@@ -19,13 +20,15 @@ public:
 	USwordAttackAbility();
 protected:
 	virtual void OnGiveAbility(const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilitySpec& Spec) override;
-	void SetupInput();
-	void SetupComboEvents();
-	void PlayFirstAttack();
 	virtual void ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData) override;
 	virtual void EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled) override;
 private:
-
+	/*Combo functions*/
+	void SetupInput();
+	void SetupComboEvents();
+	void ManageComboLogic();
+	void ChooseAttack();
+	
 	UFUNCTION()
 	void PlayCombo(FGameplayEventData Payload);
 
@@ -35,8 +38,7 @@ private:
 	UFUNCTION()
 	void OnInputPressed(float TimeWait);
 	
-	void ChooseAttack();
-
+	/*Combo Data*/
 	UPROPERTY()
 	TObjectPtr<UAnimInstance> AnimInstance;
 
@@ -48,6 +50,9 @@ private:
 
 	UPROPERTY()
 	TObjectPtr<UAbilityTask_WaitInputPress> WaitInputPressedEvent;
+	
+	UPROPERTY()
+	TObjectPtr<UAbilityTask_SwordTrace> ShordTraceTask;
 	
 	int32 AttackIndex;
 	bool CanAttack = true;

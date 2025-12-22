@@ -7,6 +7,7 @@
 #include "EquipmentInstance.generated.h"
 
 struct FEquipmentActorsToSpawn;
+struct FGameplayTag;
 /**
  * 
  */
@@ -18,7 +19,7 @@ public:
 	virtual void OnEquipped();
 	virtual void OnUnEquipped();
 
-	void SpawnEquipmentActors(const TArray<FEquipmentActorsToSpawn>& ActorsToSpawn);
+	void SpawnEquipmentActors(const TArray<FEquipmentActorsToSpawn>& ActorsToSpawn,FGameplayTag SlotTag);
 	void DestroySpawnedActors();
 
 private:

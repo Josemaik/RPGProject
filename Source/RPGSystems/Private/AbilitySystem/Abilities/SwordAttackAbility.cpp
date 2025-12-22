@@ -7,6 +7,7 @@
 #include "Abilities/Tasks/AbilityTask_WaitGameplayEvent.h"
 #include "Abilities/Tasks/AbilityTask_WaitInputPress.h"
 #include "AbilitySystem/RPGGameplayTags.h"
+#include "AbilitySystem/AbilityTasks/AbilityTask_SwordTrace.h"
 
 USwordAttackAbility::USwordAttackAbility()
 {
@@ -35,11 +36,17 @@ void USwordAttackAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handl
 	
 	AnimInstance = ActorInfo->GetAnimInstance();
 
+	ShordTraceTask = UAbilityTask_SwordTrace::ShordTrace(this,12.f);
+	if (IsValid(ShordTraceTask))
+	{
+		ShordTraceTask->Activate();
+	}
+	
 	SetupInput();
 	
 	SetupComboEvents();
 	
-	PlayFirstAttack();
+	ManageComboLogic();
 }
 
 void USwordAttackAbility::EndAbility(const FGameplayAbilitySpecHandle Handle,
@@ -86,7 +93,7 @@ void USwordAttackAbility::SetupComboEvents()
 	WaitEndComboEvent->ReadyForActivation();
 }
 
-void USwordAttackAbility::PlayFirstAttack()
+void USwordAttackAbility::ManageComboLogic()
 {
 	if (CanAttack) 
 	{
@@ -124,7 +131,7 @@ void USwordAttackAbility::StopCombo(FGameplayEventData Payload)
 void USwordAttackAbility::OnInputPressed(float TimeWait)
 {
 	GEngine->AddOnScreenDebugMessage(-1,3.f,FColor::Green,"Input Pressed");
-	PlayFirstAttack();
+	ManageComboLogic();
 	SetupInput();
 }
 

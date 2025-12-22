@@ -52,7 +52,7 @@ UEquipmentInstance* FRPGEquipmentList::AddEntry(const TSubclassOf<UEquipmentDefi
 	NewEntry.EffectPackage = EffectPackage;
 	NewEntry.Instance = NewObject<UEquipmentInstance>(OwnerComponent->GetOwner(), InstanceType);
 
-	NewEntry.Instance->SpawnEquipmentActors(EquipmentCTO->ActorsToSpawn);
+	NewEntry.Instance->SpawnEquipmentActors(EquipmentCTO->ActorsToSpawn,EquipmentCTO->SlotTag);
 	
 	if (NewEntry.HasAbility())
 	{
@@ -117,28 +117,32 @@ void FRPGEquipmentList::CheckAbilityLevels(UAbilitySystemComponent* ASC, FRPGEqu
 {
 	for (FGameplayAbilitySpec& Spec : ASC->GetActivatableAbilities())
 	{
-		if (Spec.GetDynamicSpecSourceTags().HasTagExact(EquipmentEntry->EffectPackage.Ability.AbilityTag))
+		for (FEquipmentAbilityGroup& AbilityGroup : EquipmentEntry->EffectPackage.Abilities)
 		{
-			for (auto EntryIt = Entries.CreateIterator(); EntryIt; ++EntryIt)
+			if (Spec.GetDynamicSpecSourceTags().HasTagExact(AbilityGroup.AbilityTag))
 			{
-				const FRPGEquipmentEntry& CurrentEntry = *EntryIt;
-				
-				if (!bAsync && CurrentEntry.EntryTag.MatchesTag(EquipmentEntry->EntryTag)) continue;
+				for (auto EntryIt = Entries.CreateIterator(); EntryIt; ++EntryIt)
+				{
+					const FRPGEquipmentEntry& CurrentEntry = *EntryIt;
+					
+					if (!bAsync && CurrentEntry.EntryTag.MatchesTag(EquipmentEntry->EntryTag)) continue;
 
-				if (CurrentEntry.EffectPackage.Implicit.StatEffectTag.IsValid())
-				{
-					const FEquipmentStatEffectGroup& ImplicitStat = CurrentEntry.EffectPackage.Implicit;
-					if (CheckAbilitySingleEffect(Spec, ImplicitStat)) return;
+					if (CurrentEntry.EffectPackage.Implicit.StatEffectTag.IsValid())
+					{
+						const FEquipmentStatEffectGroup& ImplicitStat = CurrentEntry.EffectPackage.Implicit;
+						if (CheckAbilitySingleEffect(Spec, ImplicitStat)) return;
+					}
+					
+					for (const FEquipmentStatEffectGroup& StatEffect: CurrentEntry.EffectPackage.Prefixes)
+					{
+						if (CheckAbilitySingleEffect(Spec, StatEffect)) return;
+					}
+					for (const FEquipmentStatEffectGroup& StatEffect: CurrentEntry.EffectPackage.Suffixes)
+					{
+						if (CheckAbilitySingleEffect(Spec, StatEffect)) return;
+					}
 				}
-				
-				for (const FEquipmentStatEffectGroup& StatEffect: CurrentEntry.EffectPackage.Prefixes)
-				{
-					if (CheckAbilitySingleEffect(Spec, StatEffect)) return;
-				}
-				for (const FEquipmentStatEffectGroup& StatEffect: CurrentEntry.EffectPackage.Suffixes)
-				{
-					if (CheckAbilitySingleEffect(Spec, StatEffect)) return;
-				}
+				break;
 			}
 		}
 	}

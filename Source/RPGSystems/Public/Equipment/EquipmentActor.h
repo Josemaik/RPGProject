@@ -15,7 +15,7 @@ public:
 	
 	AEquipmentActor();
 
-private:
+protected:
 	UPROPERTY(VisibleAnywhere, meta = (AllowPrivateAccess = true))
 	TObjectPtr<USceneComponent> RootScene;
 

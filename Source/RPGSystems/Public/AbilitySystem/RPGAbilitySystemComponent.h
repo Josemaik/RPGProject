@@ -55,7 +55,7 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Custom Values|Projectile Ability");
 	TSubclassOf<UGameplayAbility> DynamicProjectileAbility;
 
-	FGameplayAbilitySpecHandle GrantEquipmentAbility(const FRPGEquipmentEntry* EquipmentEntry);
+	FGameplayAbilitySpecHandle GrantEquipmentAbility(const FEquipmentAbilityGroup& Ability);
 	
 	UFUNCTION(Server, Reliable)
 	void ServerSetDynamicProjectile(const FGameplayTag& ProjectileTag,int32 AbilityLevel);

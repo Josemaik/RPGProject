@@ -127,7 +127,7 @@ struct FEquipmentEffectPackage
 	TArray<FEquipmentStatEffectGroup> Suffixes = TArray<FEquipmentStatEffectGroup>();
 
 	UPROPERTY(BlueprintReadOnly)
-	FEquipmentAbilityGroup Ability = FEquipmentAbilityGroup();
+	TArray<FEquipmentAbilityGroup> Abilities = TArray<FEquipmentAbilityGroup>();
 
 	UPROPERTY(BlueprintReadOnly)
 	int32 MaxNumPrefixes = 3;

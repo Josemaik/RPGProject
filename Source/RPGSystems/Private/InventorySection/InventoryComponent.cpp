@@ -81,9 +81,23 @@ void FRPGInventoryList::RollForStats(const TSubclassOf<UEquipmentDefinition>& Eq
 		Entry->EffectPackage.BaseDamage.CurrentValue = EquipmentCDO->BaseDamage.EffectLevel;
 	}
 	
-	if (EquipmentCDO->bForceAbilityRoll || FMath::FRandRange(0.f, 1.f) < EquipmentCDO->ProbabilityToRollAbility)
+	if (EquipmentCDO->bForceRollAllAbilities)
+	{
+		for (FGameplayTag GameplayTag : EquipmentCDO->PossibleAbilityRolls)
+		{
+			for (const auto& Pair :StatEffects->MasterStatMap)
+			{
+				if (const FEquipmentAbilityGroup* PossibleAbility = URPGAbilitySystemLibrary::GetDataTableRowByTag<FEquipmentAbilityGroup>(Pair.Value, GameplayTag))
+				{
+					Entry->EffectPackage.Abilities.Add(*PossibleAbility);
+				}
+			}
+		}
+	}
+	else
 	{
 		bool bShouldRoll = true;
+		int32 NumRollAbilities = 0;
 		while (bShouldRoll)
 		{
 			const FGameplayTag& RandomTag = URPGAbilitySystemLibrary::GetRandomTagFromContainer(EquipmentCDO->PossibleAbilityRolls);
@@ -96,8 +110,12 @@ void FRPGInventoryList::RollForStats(const TSubclassOf<UEquipmentDefinition>& Eq
 					{
 						if (FMath::RandRange(0.f, 1.f) <= PossibleAbility->ProabilityToSelect)
 						{
-							Entry->EffectPackage.Ability = *PossibleAbility;
-							bShouldRoll = false;
+							Entry->EffectPackage.Abilities.Add(*PossibleAbility);
+							NumRollAbilities++;
+							if (NumRollAbilities >= EquipmentCDO->MinNumRollAbilities)
+							{
+								bShouldRoll = false;
+							}
 							break;
 						}
 					}
@@ -105,6 +123,7 @@ void FRPGInventoryList::RollForStats(const TSubclassOf<UEquipmentDefinition>& Eq
 			}
 		}
 	}
+		
 
 	FGameplayTag ImplicitTag = EquipmentCDO->PossibleStatsRolls.ImplicitTag;
 	if (ImplicitTag.IsValid())
@@ -510,11 +529,16 @@ TArray<FRPGInventoryEntry> UInventoryComponent::GetEntriesByString(const FString
 		{
 			MatchEntries.Add(Entry);
 		}
-		if (Entry.EffectPackage.Ability.AbilityName.ToString().Contains(InString))
+		
+		for (const FEquipmentAbilityGroup& AbilityGroup : Entry.EffectPackage.Abilities)
 		{
-			if (!MatchEntries.Contains(Entry))
+			if (AbilityGroup.AbilityName.ToString().Contains(InString))
 			{
-				MatchEntries.Add(Entry);
+				if (!MatchEntries.Contains(Entry))
+				{
+					MatchEntries.Add(Entry);
+					break;
+				}
 			}
 		}
 
