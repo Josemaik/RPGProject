@@ -11,6 +11,11 @@ namespace RPGGameplayTags::Combat
 	{
 		UE_DEFINE_GAMEPLAY_TAG_COMMENT(DamageTypeParent, "Combat.DamageType", "Primary Parent For Damage Types")
 	}
+	namespace ComboStates
+	{
+		UE_DEFINE_GAMEPLAY_TAG_COMMENT(Start, "Combat.Event.SwordComboStart","Combo has started");
+		UE_DEFINE_GAMEPLAY_TAG_COMMENT(End, "Combat.Event.SwordComboEnd", "Combo has ended");
+	}
 }
 
 namespace RPGGameplayTags::Player::State
