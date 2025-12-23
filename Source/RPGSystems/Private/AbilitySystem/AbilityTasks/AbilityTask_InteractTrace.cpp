@@ -15,8 +15,11 @@ UAbilityTask_InteractTrace* UAbilityTask_InteractTrace::InteractTrace(UGameplayA
 {
 	//return NewAbilityTask<UAbilityTask_InteractTrace>(OwningAbility);
 	UAbilityTask_InteractTrace* MyObj = NewAbilityTask<UAbilityTask_InteractTrace>(OwningAbility);
+	
+	MyObj->Ability = OwningAbility;
 	MyObj->MaxInteractDistance = InMaxInteractRange;
 	MyObj->AvatarActor = MyObj->GetAvatarActor();
+	
 	return MyObj;
 }
 

@@ -76,6 +76,8 @@ public:
 	AEquipmentActor* GetLeftHandEquipmentActor() const { return LeftHandEquipment; }
 	void SetRightHandEquipment(AEquipmentActor* NewRightHandEquipment) { RightHandEquipment = NewRightHandEquipment; }
 	void SetLeftHandEquipment(AEquipmentActor* NewLeftHandEquipment) { LeftHandEquipment = NewLeftHandEquipment; }
+
+	UArrowComponent* GetKickSphereTracePoint() const { return KickSphereTracePoint; }
 protected:
 
 	/** Called for movement input */
@@ -143,6 +145,9 @@ private:
 	
 	UPROPERTY(VisibleAnywhere, meta=(AllowPrivateAccess=true))
 	TObjectPtr<USceneComponent> DynamicProjectileSpawnPoint;
+
+	UPROPERTY(EditDefaultsOnly, Category=Scene, meta=(AllowPrivateAccess=true))
+	TObjectPtr<UArrowComponent> KickSphereTracePoint;
 	
 	UPROPERTY(BlueprintReadOnly,meta =(AllowPrivateAccess=true))
 	TObjectPtr<URPGAbilitySystemComponent> RPGAbilitySystemComp;

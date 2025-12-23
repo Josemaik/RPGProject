@@ -20,6 +20,7 @@
 #include "Kismet/KismetSystemLibrary.h"
 #include "Libraries/RPGAbilitySystemLibrary.h"
 #include "Character/Components/RPGMotionWarpingComponent.h"
+#include "Components/ArrowComponent.h"
 #include "Kismet/GameplayStatics.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
@@ -64,6 +65,8 @@ ARPGSystemsCharacter::ARPGSystemsCharacter(const FObjectInitializer& ObjectIniti
 
 	DynamicProjectileSpawnPoint = CreateDefaultSubobject<USceneComponent>(TEXT("DynamicProjectileSpawnPoint"));
 	DynamicProjectileSpawnPoint->SetupAttachment(GetRootComponent());
+	KickSphereTracePoint = CreateDefaultSubobject<UArrowComponent>(TEXT("KickSphereTrace"));
+	KickSphereTracePoint->SetupAttachment(GetRootComponent());
 
 	MotionWarpingComponent = CreateDefaultSubobject<URPGMotionWarpingComponent>(TEXT("MotionWarpingComponent"));
 	

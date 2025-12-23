@@ -11,8 +11,11 @@
 
 void UAbilityTask_SwordTrace::Activate()
 {
+	if (!IsValid(Ability)) return;
+	
 	AActor* Avatar = Ability->GetAvatarActorFromActorInfo();
 	if (!IsValid(Avatar)) return;
+	
 	ARPGSystemsCharacter* Character = Cast<ARPGSystemsCharacter>(Avatar);
 	if (!IsValid(Character)) return;
 	
@@ -23,7 +26,7 @@ void UAbilityTask_SwordTrace::Activate()
 	ButtomPointArrow = Cast<UArrowComponent>(Sword->GetSwordButtomPoint());
 	
 	TraceCheckDelegate.BindUObject(this,&UAbilityTask_SwordTrace::TraceCheck);
-	GetWorld()->GetTimerManager().SetTimer(TraceCheckTimer,TraceCheckDelegate,0.1f,true);
+	GetWorld()->GetTimerManager().SetTimer(TraceCheckTimer,TraceCheckDelegate,0.001f,true);
 }
 
 void UAbilityTask_SwordTrace::OnDestroy(bool bInOwnerFinished)
@@ -37,7 +40,8 @@ void UAbilityTask_SwordTrace::OnDestroy(bool bInOwnerFinished)
 UAbilityTask_SwordTrace* UAbilityTask_SwordTrace::ShordTrace(UGameplayAbility* OwningAbility,float SphereRadius)
 {
 	UAbilityTask_SwordTrace* MyObj = NewAbilityTask<UAbilityTask_SwordTrace>(OwningAbility);
-	
+
+	MyObj->Ability = OwningAbility;
 	MyObj->SphereRadius = SphereRadius;
 
 	return MyObj;
@@ -58,7 +62,7 @@ void UAbilityTask_SwordTrace::TraceCheck()
 		GetWorld(),
 		StartLocation,
 		EndLocation,
-		12.f,
+		SphereRadius,
 		TraceTypeQuery1,
 		false,
 		ActorsToIgnore,
@@ -68,4 +72,16 @@ void UAbilityTask_SwordTrace::TraceCheck()
 		FLinearColor::Red,
 		FLinearColor::Green,
 		0.1f);
+	
+	if (bSphereHasHit)
+	{
+		//Hitactor.getactor y ver si tiene ASC ,si tiene aplico damage effect
+		// if (UAbilitySystemComponent* TargetASC = UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(OtherActor))
+		// {
+		// 	DamageEffectInfo.TargetASC = TargetASC;
+		// 	URPGAbilitySystemLibrary::ApplyDamageEffect(DamageEffectInfo);
+		//
+		// 	Destroy();
+		// }
+	}
 }

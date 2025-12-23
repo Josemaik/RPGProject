@@ -4,11 +4,9 @@
 #include "Character/Animation/AnimNotifies/AnimNotify_SwordComboContinue.h"
 
 #include "AbilitySystemComponent.h"
+#include "AbilitySystemGlobals.h"
 #include "Abilities/GameplayAbilityTypes.h"
-#include "AbilitySystem/RPGAbilitySystemComponent.h"
 #include "AbilitySystem/RPGGameplayTags.h"
-#include "GameFramework/Character.h"
-#include "GameFramework/PlayerState.h"
 
 void UAnimNotify_SwordComboContinue::Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation)
 {
@@ -18,25 +16,14 @@ void UAnimNotify_SwordComboContinue::Notify(USkeletalMeshComponent* MeshComp, UA
 		return;
 	}
 
-	ACharacter* Avatar = Cast<ACharacter>(Owner);
-	if (!IsValid(Avatar))
-	{
-		return;
-	}
-	
-	APlayerState* PlayerState = Avatar->GetPlayerState();
-	if (!IsValid(PlayerState))
-	{
-		return;
-	}
-	UAbilitySystemComponent* ASC = PlayerState->FindComponentByClass<URPGAbilitySystemComponent>();
+	UAbilitySystemComponent* ASC = UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(Owner);
 	if (!IsValid(ASC))
 	{
 		return;
 	}
 
 	FGameplayEventData EventData;
-	EventData.EventTag = RPGGameplayTags::Combat::ComboStates::Start;
+	EventData.EventTag = RPGGameplayTags::Combat::Events::Melee::StartCombo;
 
 	ASC->HandleGameplayEvent(EventData.EventTag, &EventData);
 }

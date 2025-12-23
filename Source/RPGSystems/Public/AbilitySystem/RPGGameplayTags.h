@@ -14,10 +14,20 @@ namespace RPGGameplayTags::Combat
 		UE_DECLARE_GAMEPLAY_TAG_EXTERN(DamageTypeParent);
 	}
 
-	namespace ComboStates
+	namespace Events
 	{
-		UE_DECLARE_GAMEPLAY_TAG_EXTERN(Start);
-		UE_DECLARE_GAMEPLAY_TAG_EXTERN(End);
+		namespace Melee
+		{
+			UE_DECLARE_GAMEPLAY_TAG_EXTERN(StartCombo);
+			UE_DECLARE_GAMEPLAY_TAG_EXTERN(EndCombo);
+			UE_DECLARE_GAMEPLAY_TAG_EXTERN(HitStart);
+			UE_DECLARE_GAMEPLAY_TAG_EXTERN(HitEnd);
+		}
+
+		namespace Actions
+		{
+			UE_DECLARE_GAMEPLAY_TAG_EXTERN(KickHit);
+		}
 	}
 }
 

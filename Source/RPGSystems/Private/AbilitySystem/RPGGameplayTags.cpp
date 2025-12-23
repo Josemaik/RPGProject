@@ -11,10 +11,20 @@ namespace RPGGameplayTags::Combat
 	{
 		UE_DEFINE_GAMEPLAY_TAG_COMMENT(DamageTypeParent, "Combat.DamageType", "Primary Parent For Damage Types")
 	}
-	namespace ComboStates
+	namespace Events
 	{
-		UE_DEFINE_GAMEPLAY_TAG_COMMENT(Start, "Combat.Event.SwordComboStart","Combo has started");
-		UE_DEFINE_GAMEPLAY_TAG_COMMENT(End, "Combat.Event.SwordComboEnd", "Combo has ended");
+		namespace Melee
+		{
+			UE_DEFINE_GAMEPLAY_TAG_COMMENT(StartCombo, "Combat.Event.SwordComboStart","Combo has started");
+			UE_DEFINE_GAMEPLAY_TAG_COMMENT(EndCombo, "Combat.Event.SwordComboEnd", "Combo has ended");
+			UE_DEFINE_GAMEPLAY_TAG_COMMENT(HitStart, "Combat.Event.HitStart", "Start Check hits");
+			UE_DEFINE_GAMEPLAY_TAG_COMMENT(HitEnd, "Combat.Event.HitEnd", "End Check hits");
+		}
+
+		namespace Actions
+		{
+			UE_DEFINE_GAMEPLAY_TAG_COMMENT(KickHit, "Combat.Event.Kick","kick has been thrown");
+		}
 	}
 }
 
