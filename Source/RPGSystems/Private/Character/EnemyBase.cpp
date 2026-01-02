@@ -4,9 +4,13 @@
 #include "Character/EnemyBase.h"
 #include "AbilitySystem/RPGAbilitySystemComponent.h"
 #include "AbilitySystem/Attributes/RPGAttributeSet.h"
+#include "Components/CapsuleComponent.h"
+#include "Components/WidgetComponent.h"
 #include "Data/CharacterClassInfo.h"
 #include "Data/LootSpawnInfo.h"
 #include "InventorySection/InventoryComponent.h"
+#include "Kismet/GameplayStatics.h"
+#include "Kismet/KismetSystemLibrary.h"
 #include "Libraries/RPGAbilitySystemLibrary.h"
 #include "Net/UnrealNetwork.h"
 
@@ -18,10 +22,16 @@ AEnemyBase::AEnemyBase(const FObjectInitializer& ObjectInitializer)
 	RPGAbilitySystemComponent = CreateDefaultSubobject<URPGAbilitySystemComponent>("AbilitySystemComponent");
 	RPGAbilitySystemComponent->SetIsReplicated(true);
 	RPGAbilitySystemComponent->SetReplicationMode(EGameplayEffectReplicationMode::Minimal);
-
+	
 	RPGAttributeSet = CreateDefaultSubobject<URPGAttributeSet>("AttributeSet");
 
 	InventoryComp = CreateDefaultSubobject<UInventoryComponent>("InventoryComponent");
+
+	OverHeadBar = CreateDefaultSubobject<UWidgetComponent>("OverHeadWidget");
+	OverHeadBar->SetupAttachment(GetCapsuleComponent());
+	OverHeadBar->SetWidgetSpace(EWidgetSpace::Screen);
+	OverHeadBar->SetDrawAtDesiredSize(true);
+	OverHeadBar->SetRelativeLocation(FVector(0.f, 0.f, 110.f));
 }
 
 void AEnemyBase::AddAttackingActor_Implementation(AActor* AttackingActor)
@@ -46,6 +56,30 @@ void AEnemyBase::Death_Implementation()
 			}
 		}
 	}
+
+	GetWorld()->GetTimerManager().SetTimer(
+		RagDollTimerHandle1,
+		this,
+		&AEnemyBase::EnterRagdoll,
+		0.5f,
+		false
+	);
+}
+void AEnemyBase::EnterRagdoll()
+{
+	GetMesh()->SetSimulatePhysics(true);
+	
+	GetWorld()->GetTimerManager().SetTimer(
+		SpawnLootTimerHandle,
+		this,
+		&AEnemyBase::OnRagdollFinished,
+		2.5f,
+		false
+	);
+}
+
+void AEnemyBase::OnRagdollFinished()
+{
 	SpawnLoot();
 	Destroy();
 }
@@ -62,12 +96,82 @@ void AEnemyBase::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& Out
 	DOREPLIFETIME(AEnemyBase, bInitAttributes);
 }
 
+void AEnemyBase::SetOverHeadBar()
+{
+	if (!IsValid(OverHeadBar) || !IsValid(OverHeadWidgetClass))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("OverHeadBar component is null"));
+		return;
+	}
+	
+	OverHeadBar->SetWidgetClass(OverHeadWidgetClass);
+	OverHeadBar->InitWidget();
+
+	UUserWidget* Widget = OverHeadBar->GetUserWidgetObject();
+	if (!IsValid(Widget))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("OverHeadBar widget not created yet"));
+		return;
+	}
+
+	OverHeadBarWidget = Widget;
+	InitializeHealthBar();
+}
+
+void AEnemyBase::RegisterCombatEvents()
+{
+	if (RPGAbilitySystemComponent)
+	{
+		RPGAbilitySystemComponent
+			->RegisterGameplayTagEvent(
+				FGameplayTag::RequestGameplayTag("Combat.Event.State.HitReact"),
+				EGameplayTagEventType::NewOrRemoved)
+			.AddUObject(this, &AEnemyBase::OnHitReactTagChanged);
+	}
+	
+	USkeletalMeshComponent* MeshComponent = GetMesh();
+	if (!IsValid(MeshComponent)) return;
+	AnimInstanceReference = MeshComponent->GetAnimInstance();
+}
+
 void AEnemyBase::BeginPlay()
 {
 	Super::BeginPlay();
 
 	BindCallbacksToDependencies();
 	InitAbilityActorInfo();
+	RegisterCombatEvents();
+	SetOverHeadBar();
+
+
+	PlayerRef = UGameplayStatics::GetPlayerCharacter(GetWorld(),0);
+}
+
+void AEnemyBase::OnHitReactTagChanged(
+	const FGameplayTag Tag, int32 NewCount)
+{
+	if (NewCount > 0)
+	{
+		if (HitReactMontages.IsEmpty())
+		{
+			return;
+		}
+
+		const int32 RandomIndex = FMath::RandRange(0, HitReactMontages.Num() - 1);
+		UAnimMontage* HitReactMontage = HitReactMontages[RandomIndex];
+
+		if (!IsValid(HitReactMontage) || !IsValid(AnimInstanceReference))
+		{
+			return;
+		}
+
+		AnimInstanceReference->Montage_Play(HitReactMontage);
+
+		if (!IsValid(PlayerRef)) return;
+		FVector LaunchVelocity = PlayerRef->GetActorForwardVector() * LAUNCHIMPULSEONHIT;
+		
+		LaunchCharacter(LaunchVelocity,false,false);
+	}
 }
 
 void AEnemyBase::InitAbilityActorInfo()
@@ -192,6 +296,10 @@ void AEnemyBase::SpawnLoot()
 			}
 		}
 	}
+}
+
+void AEnemyBase::InitializeHealthBar_Implementation()
+{
 }
 
 void AEnemyBase::OnRep_InitAttributes()

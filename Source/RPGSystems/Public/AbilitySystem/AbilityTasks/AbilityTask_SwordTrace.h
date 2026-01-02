@@ -6,6 +6,8 @@
 #include "Abilities/Tasks/AbilityTask.h"
 #include "AbilityTask_SwordTrace.generated.h"
 
+DECLARE_DELEGATE_TwoParams(FOnHitActor, AActor*,const FVector&)
+
 class UArrowComponent;
 /**
  * 
@@ -20,6 +22,8 @@ public:
 	
 	UFUNCTION(BlueprintCallable, meta = (DefaultToSelf = "OwningAbility", HidePin = "OwningAbility", BlueprintInternalUseOnly = true))
 	static UAbilityTask_SwordTrace* ShordTrace(UGameplayAbility* OwningAbility, float SphereRadius = 12.f);
+
+	FOnHitActor OnHitActorDelegate;
 private:
 	UFUNCTION()
 	void TraceCheck();
@@ -33,6 +37,8 @@ private:
 	FTimerHandle TraceCheckTimer;
 	FTimerDelegate TraceCheckDelegate;
 
+	TSet<TWeakObjectPtr<AActor>> HitActors;
+	
 	float SphereRadius;
 };
 

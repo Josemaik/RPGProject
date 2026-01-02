@@ -6,6 +6,7 @@
 #include "Abilities/Tasks/AbilityTask.h"
 #include "AbilityTask_KickTrace.generated.h"
 
+DECLARE_DELEGATE_TwoParams(FOnHitActor, AActor*,const FVector&)
 /**
  * 
  */
@@ -17,6 +18,8 @@ public:
 	UFUNCTION(BlueprintCallable, meta = (DefaultToSelf = "OwningAbility", HidePin = "OwningAbility", BlueprintInternalUseOnly = true))
 	static UAbilityTask_KickTrace* KickTrace(UGameplayAbility* OwningAbility, float SphereRadius = 25.f);
 	virtual void Activate() override;
+
+	FOnHitActor OnHitActorDelegate;
 protected:	
 	virtual void OnDestroy(bool bInOwnerFinished) override;
 private:

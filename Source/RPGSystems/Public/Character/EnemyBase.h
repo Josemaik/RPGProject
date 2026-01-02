@@ -9,6 +9,7 @@
 #include "Interfaces/RPGAbilitySystemInterface.h"
 #include "EnemyBase.generated.h"
 
+class UWidgetComponent;
 class ULootSpawnInfo;
 class UInventoryComponent;
 class URPGAttributeSet;
@@ -31,7 +32,9 @@ public:
 	
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
-	
+
+	UFUNCTION(BlueprintNativeEvent)
+	void InitializeHealthBar();
 protected:
 
 	virtual void BeginPlay() override;
@@ -40,8 +43,21 @@ protected:
 	virtual void BindCallbacksToDependencies() override;
 	virtual void BroadcastInitialValues() override;
 private:
-
+	void SetOverHeadBar();
+	void RegisterCombatEvents();
 	void SpawnLoot();
+	
+	UFUNCTION()
+	void OnRep_InitAttributes();
+
+	UFUNCTION()
+	void OnHitReactTagChanged(const FGameplayTag Tag, int32 NewCount);
+
+	UFUNCTION()
+	void EnterRagdoll();
+
+	UFUNCTION()
+	void OnRagdollFinished();
 	
 	UPROPERTY(ReplicatedUsing=OnRep_InitAttributes)
 	bool bInitAttributes = false;
@@ -55,6 +71,12 @@ private:
 	UPROPERTY(VisibleAnywhere, meta = (AllowPrivateAccess = true))
 	TObjectPtr<UInventoryComponent> InventoryComp;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "UI", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UWidgetComponent> OverHeadBar;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="UI",meta = (AllowPrivateAccess = "true"))
+	TSubclassOf<UUserWidget> OverHeadWidgetClass;
+
 	UPROPERTY(EditDefaultsOnly, Category = "Custom Values|Loot")
 	TObjectPtr<ULootSpawnInfo> LootSpawnInfo;
 
@@ -64,13 +86,27 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Custom Values|Loot")
 	FGameplayTagContainer SpecificLootTags;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Custom Values|Animation")
+	TArray<TObjectPtr<UAnimMontage>> HitReactMontages;
+	
 	FScalableFloat AwardedExperienceScale;
 
 	UPROPERTY()
 	TArray<TObjectPtr<AActor>> AttackingActors;
 
-	UFUNCTION()
-	void OnRep_InitAttributes();
+	UPROPERTY(BlueprintReadOnly,meta=(allowPrivateAccess=true))
+	TObjectPtr<UUserWidget> OverHeadBarWidget;
+
+	UPROPERTY()
+	TObjectPtr<UAnimInstance> AnimInstanceReference;
+
+	UPROPERTY()
+	TObjectPtr<ACharacter> PlayerRef;
+
+	FTimerHandle SpawnLootTimerHandle;
+	FTimerHandle RagDollTimerHandle1;
+
+	const float LAUNCHIMPULSEONHIT = 700.f;
 };
 
 

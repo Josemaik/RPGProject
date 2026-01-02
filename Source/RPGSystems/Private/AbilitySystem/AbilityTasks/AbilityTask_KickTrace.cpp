@@ -53,6 +53,14 @@ void UAbilityTask_KickTrace::Activate()
 		FLinearColor::Blue,
 		FLinearColor::Yellow,
 		4.f);
+
+	if (bSphereHasHit)
+	{
+		AActor* HitActor = OutHit.GetActor();
+		if (!IsValid(HitActor)) return;
+		
+		OnHitActorDelegate.ExecuteIfBound(HitActor,OutHit.Location);
+	}
 	
 	EndTask();
 }

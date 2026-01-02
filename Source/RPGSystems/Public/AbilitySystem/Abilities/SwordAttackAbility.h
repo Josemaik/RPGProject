@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "RPGDamageAbility.h"
 #include "RPGGameplayAbility.h"
 #include "SwordAttackAbility.generated.h"
 
@@ -14,7 +15,7 @@ class UAbilityTask_WaitGameplayEvent;
  * 
  */
 UCLASS()
-class RPGSYSTEMS_API USwordAttackAbility : public URPGGameplayAbility
+class RPGSYSTEMS_API USwordAttackAbility : public URPGDamageAbility
 {
 	GENERATED_BODY()
 public:
@@ -44,11 +45,13 @@ private:
 	void OnHitEventEnd(FGameplayEventData Payload);
 
 	UFUNCTION()
-	void OnKickHitEventEnd(FGameplayEventData Payload);
+	void OnKickHitEvent(FGameplayEventData Payload);
 
 	UFUNCTION()
 	void OnInputPressed(float TimeWait);
-	
+
+	UFUNCTION()
+	void OnHitActor(AActor* HitActor,const FVector& HitLocation);
 	
 	/*Animation Data*/
 	UPROPERTY()
@@ -65,7 +68,9 @@ private:
 	
 	UPROPERTY(EditDefaultsOnly, Category="Custom Values|Animation")
 	TObjectPtr<UAnimMontage> Attack4;
-	
+
+	UPROPERTY(EditDefaultsOnly, Category = "Custom Values|CameraShake")
+	TSubclassOf<UCameraShakeBase> SwordHitCameraShakeClass;
 	
 	//Gameplay Events
 	UPROPERTY()
@@ -91,6 +96,10 @@ private:
 	
 	UPROPERTY()
 	TObjectPtr<UAbilityTask_KickTrace> KickHitTrace;
+
+	/*Gameplay Effects*/
+	UPROPERTY(EditDefaultsOnly, Category="Custom Values|Effects")
+	TSubclassOf<UGameplayEffect> OnHitEffect;
 	
 	int32 AttackIndex;
 	bool CanAttack = true;

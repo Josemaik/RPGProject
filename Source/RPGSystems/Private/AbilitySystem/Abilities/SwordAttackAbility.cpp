@@ -3,11 +3,16 @@
 
 #include "AbilitySystem/Abilities/SwordAttackAbility.h"
 
+#include "AbilitySystemComponent.h"
+#include "AbilitySystemGlobals.h"
 #include "Abilities/Tasks/AbilityTask_WaitGameplayEvent.h"
 #include "Abilities/Tasks/AbilityTask_WaitInputPress.h"
+#include "AbilitySystem/RPGAbilityTypes.h"
 #include "AbilitySystem/RPGGameplayTags.h"
 #include "AbilitySystem/AbilityTasks/AbilityTask_KickTrace.h"
 #include "AbilitySystem/AbilityTasks/AbilityTask_SwordTrace.h"
+#include "Kismet/GameplayStatics.h"
+#include "Libraries/RPGAbilitySystemLibrary.h"
 
 USwordAttackAbility::USwordAttackAbility()
 {
@@ -75,7 +80,7 @@ void USwordAttackAbility::SetupEventsTasks()
 	WaitEndHitTrace->ReadyForActivation();
 
 	WaitKickHit = UAbilityTask_WaitGameplayEvent::WaitGameplayEvent(this,RPGGameplayTags::Combat::Events::Actions::KickHit);
-	WaitKickHit->EventReceived.AddDynamic(this, &USwordAttackAbility::OnKickHitEventEnd);
+	WaitKickHit->EventReceived.AddDynamic(this, &USwordAttackAbility::OnKickHitEvent);
 	WaitKickHit->ReadyForActivation();
 }
 
@@ -116,19 +121,40 @@ void USwordAttackAbility::StopCombo(FGameplayEventData Payload)
 void USwordAttackAbility::OnHitEventStart(FGameplayEventData Payload)
 {
 	ShordTraceTask = UAbilityTask_SwordTrace::ShordTrace(this,12.f);
+	ShordTraceTask->OnHitActorDelegate.BindUObject(this,&USwordAttackAbility::OnHitActor);
 	if (!IsValid(ShordTraceTask)) return;
 	ShordTraceTask->Activate();
 }
 
+void USwordAttackAbility::OnHitActor(AActor* HitActor,const FVector& HitLocation)
+{
+	if (UAbilitySystemComponent* TargetASC = UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(HitActor))
+	{
+		FDamageEffectInfo DamageEffectInfo;
+		CaptureDamageEffectInfo(HitActor, DamageEffectInfo);
+		URPGAbilitySystemLibrary::ApplyDamageEffect(DamageEffectInfo);
+		
+		GEngine->AddOnScreenDebugMessage(-1,3.f,FColor::Magenta,"Sword hit enemy");
+
+		FGameplayEffectContextHandle ContextHandle = TargetASC->MakeEffectContext();
+		FGameplayEffectSpecHandle SpecHandle = TargetASC->MakeOutgoingSpec(OnHitEffect, DamageEffectInfo.AbilityLevel, ContextHandle);
+		TargetASC->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
+
+		UGameplayStatics::PlayWorldCameraShake(GetWorld(),SwordHitCameraShakeClass,HitLocation,0.f,2000.f,1.f);
+	}
+}
+
 void USwordAttackAbility::OnHitEventEnd(FGameplayEventData Payload)
 {
+	if (!IsValid(ShordTraceTask)) return;
 	ShordTraceTask->EndTask();
 }
 
-void USwordAttackAbility::OnKickHitEventEnd(FGameplayEventData Payload)
+void USwordAttackAbility::OnKickHitEvent(FGameplayEventData Payload)
 {
 	GEngine->AddOnScreenDebugMessage(-1,3.f,FColor::Red,"KickTrace Activate");
 	KickHitTrace = UAbilityTask_KickTrace::KickTrace(this,25.f);
+	KickHitTrace->OnHitActorDelegate.BindUObject(this,&USwordAttackAbility::OnHitActor);
 	if (!IsValid(KickHitTrace)) return;
 	KickHitTrace->Activate();
 }

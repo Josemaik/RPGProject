@@ -33,7 +33,7 @@ void UAbilityTask_SwordTrace::OnDestroy(bool bInOwnerFinished)
 {
 	TraceCheckDelegate.Unbind();
 	GetWorld()->GetTimerManager().ClearTimer(TraceCheckTimer);
-	
+	HitActors.Empty();
 	Super::OnDestroy(bInOwnerFinished);
 }
 
@@ -75,13 +75,10 @@ void UAbilityTask_SwordTrace::TraceCheck()
 	
 	if (bSphereHasHit)
 	{
-		//Hitactor.getactor y ver si tiene ASC ,si tiene aplico damage effect
-		// if (UAbilitySystemComponent* TargetASC = UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(OtherActor))
-		// {
-		// 	DamageEffectInfo.TargetASC = TargetASC;
-		// 	URPGAbilitySystemLibrary::ApplyDamageEffect(DamageEffectInfo);
-		//
-		// 	Destroy();
-		// }
+		AActor* HitActor = OutHit.GetActor();
+		if (!IsValid(HitActor) || HitActors.Contains(HitActor)) return;
+
+		HitActors.Add(HitActor);
+		OnHitActorDelegate.ExecuteIfBound(HitActor,OutHit.Location);
 	}
 }
