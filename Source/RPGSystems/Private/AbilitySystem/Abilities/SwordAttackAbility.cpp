@@ -162,6 +162,7 @@ void USwordAttackAbility::OnKickHitEvent(FGameplayEventData Payload)
 void USwordAttackAbility::OnInputPressed(float TimeWait)
 {
 	ManageComboLogic();
+	WaitInputPressedEvent->EndTask();
 	SetupInputTask();
 }
 

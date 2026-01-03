@@ -386,6 +386,13 @@ void ARPGSystemsCharacter::TryVault()
 			);
 		if (bSecondCheckHit)
 		{
+			if (OutHit.bStartPenetrating)
+			{
+				CanVault = false;
+				VaultLandPos = FVector(0, 0, 20000);
+				break;
+			}
+			
 			if (j == 0)
 			{
 				VaultStartPos = OutHit.Location;

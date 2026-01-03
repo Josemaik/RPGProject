@@ -215,6 +215,7 @@ void AEnemyBase::InitClassDefaults()
 			AwardedExperienceScale = SelectedClass->AwardedExperienceScale;
 		}
 	}
+	RPGAbilitySystemComponent->AddLooseGameplayTag(CharacterTag);
 }
 
 void AEnemyBase::BindCallbacksToDependencies()

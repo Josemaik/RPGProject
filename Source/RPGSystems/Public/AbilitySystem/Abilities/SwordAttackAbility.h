@@ -35,7 +35,7 @@ private:
 	UFUNCTION()
 	void PlayCombo(FGameplayEventData Payload);
 
-	UFUNCTION()
+	UFUNCTION(BlueprintCallable,meta=(allowPrivateAccess=true))
 	void StopCombo(FGameplayEventData Payload);
 	
 	UFUNCTION()
@@ -103,7 +103,10 @@ private:
 	
 	int32 AttackIndex;
 	bool CanAttack = true;
+	
+	UPROPERTY(BlueprintReadOnly,meta=(AllowPrivateAccess=true))
 	bool IsAttacking = false;
+	
 	bool saveAttack = false;
 };
 
