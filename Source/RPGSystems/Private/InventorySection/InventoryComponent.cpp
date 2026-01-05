@@ -10,6 +10,7 @@
 #include "Engine/AssetManager.h"
 #include "Engine/StreamableManager.h"
 #include "Equipment/EquipmentDefinition.h"
+#include "Equipment/EquipmentGenerator.h"
 #include "Equipment/EquipmentTypes.h"
 #include "InventorySection/ItemActor.h"
 #include "InventorySection/ItemTypesToTables.h"
@@ -50,7 +51,7 @@ FRPGInventoryEntry* FRPGInventoryList::AddItem(const FGameplayTag& ItemTag, int3
 
 	if (NewEntry.ItemTag.MatchesTag(FGameplayTags::Static::Category_Equipment) && IsValid(WeakStats.Get()))
 	{
-		RollForStats(Item.EquipmentItemProps.EquipmentClass, &NewEntry);
+		UEquipmentGenerator::RollForStats(NewEntry.EffectPackage,Item.EquipmentItemProps.EquipmentClass,WeakStats.Get());
 	}
 	
 	
@@ -61,174 +62,6 @@ FRPGInventoryEntry* FRPGInventoryList::AddItem(const FGameplayTag& ItemTag, int3
 	}
 
 	return &NewEntry;
-}
-
-void FRPGInventoryList::RollForStats(const TSubclassOf<UEquipmentDefinition>& EquipmentDefinition,
-	FRPGInventoryEntry* Entry)
-{
-	if (!IsValid(EquipmentDefinition))
-	{
-		return;
-	}
-	
-	UEquipmentStaffEfects* StatEffects = WeakStats.Get();
-	const UEquipmentDefinition* EquipmentCDO = GetDefault<UEquipmentDefinition>(EquipmentDefinition);
-
-	if (EquipmentCDO->BaseDamage.DamageTypeTag.IsValid())
-	{
-		Entry->EffectPackage.BaseDamage.StatEffectTag = EquipmentCDO->BaseDamage.DamageTypeTag;
-		Entry->EffectPackage.BaseDamage.EffectClass = EquipmentCDO->BaseDamage.EffectClass;
-		Entry->EffectPackage.BaseDamage.CurrentValue = EquipmentCDO->BaseDamage.EffectLevel;
-	}
-	
-	if (EquipmentCDO->bForceRollAllAbilities)
-	{
-		for (FGameplayTag GameplayTag : EquipmentCDO->PossibleAbilityRolls)
-		{
-			for (const auto& Pair :StatEffects->MasterStatMap)
-			{
-				if (const FEquipmentAbilityGroup* PossibleAbility = URPGAbilitySystemLibrary::GetDataTableRowByTag<FEquipmentAbilityGroup>(Pair.Value, GameplayTag))
-				{
-					Entry->EffectPackage.Abilities.Add(*PossibleAbility);
-				}
-			}
-		}
-	}
-	else
-	{
-		bool bShouldRoll = true;
-		int32 NumRollAbilities = 0;
-		while (bShouldRoll)
-		{
-			const FGameplayTag& RandomTag = URPGAbilitySystemLibrary::GetRandomTagFromContainer(EquipmentCDO->PossibleAbilityRolls);
-
-			for (const auto& Pair :StatEffects->MasterStatMap)
-			{
-				if (RandomTag.MatchesTag(Pair.Key))
-				{
-					if (const FEquipmentAbilityGroup* PossibleAbility = URPGAbilitySystemLibrary::GetDataTableRowByTag<FEquipmentAbilityGroup>(Pair.Value, RandomTag))
-					{
-						if (FMath::RandRange(0.f, 1.f) <= PossibleAbility->ProabilityToSelect)
-						{
-							Entry->EffectPackage.Abilities.Add(*PossibleAbility);
-							NumRollAbilities++;
-							if (NumRollAbilities >= EquipmentCDO->MinNumRollAbilities)
-							{
-								bShouldRoll = false;
-							}
-							break;
-						}
-					}
-				}
-			}
-		}
-	}
-		
-
-	FGameplayTag ImplicitTag = EquipmentCDO->PossibleStatsRolls.ImplicitTag;
-	if (ImplicitTag.IsValid())
-	{
-		for (const auto& Pair: StatEffects->MasterStatMap)
-		{
-			if (ImplicitTag.MatchesTag(Pair.Key))
-			{
-				if (const FEquipmentStatEffectGroup* ValidStat = URPGAbilitySystemLibrary::GetDataTableRowByTag<FEquipmentStatEffectGroup>(Pair.Value,
-					EquipmentCDO->PossibleStatsRolls.ImplicitTag))
-				{
-					FEquipmentStatEffectGroup NewStat = *ValidStat;
-
-					NewStat.CurrentValue = ValidStat->bFractionalStat ? FMath::FRandRange(ValidStat->MinStatLevel, ValidStat->MaxStatLevel) :
-						FMath::TruncToInt(FMath::FRandRange(ValidStat->MinStatLevel, ValidStat->MaxStatLevel));
-
-					Entry->EffectPackage.Implicit = NewStat;
-				}
-			}
-		}
-	}
-
-	FGameplayTagContainer AllPossiblePrefixes;
-	AllPossiblePrefixes.AppendTags(URPGAbilitySystemLibrary::GetAllChildrenTagsOfCategories(EquipmentCDO->PossibleStatsRolls.PrefixCategoryTags));
-	AllPossiblePrefixes.AppendTags(EquipmentCDO->PossibleStatsRolls.SpecificPrefixTags);
-	AllPossiblePrefixes.RemoveTags(EquipmentCDO->PossibleStatsRolls.PrefixExclusionTags);
-	
-	FGameplayTagContainer AllPossibleSuffixes;
-	AllPossibleSuffixes.AppendTags(URPGAbilitySystemLibrary::GetAllChildrenTagsOfCategories(EquipmentCDO->PossibleStatsRolls.SuffixCategoryTags));
-	AllPossibleSuffixes.AppendTags(EquipmentCDO->PossibleStatsRolls.SpecificSuffixTags);
-	AllPossibleSuffixes.RemoveTags(EquipmentCDO->PossibleStatsRolls.SuffixExclusionTags);
-	
-	const int32 NumStatsToRoll = FMath::RandRange(EquipmentCDO->MinPossibleStats, EquipmentCDO->MaxPossibleStats);
-	int32 StatRollIndex = 0;
-	while (StatRollIndex < NumStatsToRoll)
-	{
-		if (FMath::RandBool() && Entry->EffectPackage.Prefixes.Num() < Entry->EffectPackage.MaxNumPrefixes)
-		{
-			RollPrefixOrSuffix(Prefix, StatEffects, Entry, AllPossiblePrefixes);
-		} else if (Entry->EffectPackage.Suffixes.Num() < Entry->EffectPackage.MaxNumSuffixes)
-		{
-			RollPrefixOrSuffix(Suffix, StatEffects, Entry, AllPossibleSuffixes);
-		}
-		else if (Entry->EffectPackage.Prefixes.Num() < Entry->EffectPackage.MaxNumPrefixes)
-		{
-			RollPrefixOrSuffix(Prefix, StatEffects, Entry, AllPossiblePrefixes);
-		}
-		++StatRollIndex;
-	}	
-}
-
-void FRPGInventoryList::RollPrefixOrSuffix(EEquipmentStatsGroup StatGroup, UEquipmentStaffEfects* StatEffects,
-	FRPGInventoryEntry* Entry, FGameplayTagContainer& PossibleStatContainer)
-{
-	const FGameplayTag& RandomTag = URPGAbilitySystemLibrary::GetRandomTagFromContainer(PossibleStatContainer);
-
-	for (const auto& Pair : StatEffects->MasterStatMap)
-	{
-		if (RandomTag.MatchesTag(Pair.Key))
-		{
-			if (const FEquipmentStatEffectGroup* PossibleStat = URPGAbilitySystemLibrary::GetDataTableRowByTag<FEquipmentStatEffectGroup>(Pair.Value, RandomTag))
-			{
-				if (FMath::FRandRange(0.f, 1.f) < PossibleStat->ProbabilityToSelect)
-				{
-					FEquipmentStatEffectGroup NewStat = *PossibleStat;
-
-					NewStat.CurrentValue = PossibleStat->bFractionalStat ? FMath::FRandRange(PossibleStat->MinStatLevel, PossibleStat->MaxStatLevel) :
-					FMath::TruncToInt(FMath::FRandRange(PossibleStat->MinStatLevel, PossibleStat->MaxStatLevel));
-
-					switch (StatGroup)
-					{
-						case Prefix:
-						{
-							Entry->EffectPackage.Prefixes.Add(NewStat);
-							break;
-						}
-						case Suffix:
-						{
-							Entry->EffectPackage.Suffixes.Add(NewStat);
-							break;
-						}
-						default:{}
-					}
-					
-					
-					// make unique stats
-					PossibleStatContainer.RemoveTag(RandomTag); 
-					FName RandomTagName = RandomTag.GetTagLeafName(); //Stats.LowLevel.Health => Health
-					FGameplayTagContainer TagsToRemove;
-					
-					for (const FGameplayTag& Tag : PossibleStatContainer)
-					{
-						if (Tag.GetTagLeafName() == RandomTagName)
-						{
-							TagsToRemove.AddTag(Tag);
-						}
-					}
-					
-					PossibleStatContainer.RemoveTags(TagsToRemove);
-					
-					break;
-				}
-			}
-		}
-	}
 }
 
 FRPGInventoryEntry* FRPGInventoryList::TryStackItem(const FGameplayTag& ItemTag, int32 NumItems)
