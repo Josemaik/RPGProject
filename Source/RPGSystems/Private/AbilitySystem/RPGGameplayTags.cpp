@@ -33,3 +33,9 @@ namespace RPGGameplayTags::Player::State
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Crouch, "Player.State.Crouch", "Player is Actively Crouching");
 }
 
+namespace RPGGameplayTags::InventoryItems
+{
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(ConsumableTag,"Item.Consumable","Inventory Item consumable by player");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(EquipmentTag,"Item.Equipment","Inventory Item equipable by player");
+}
+

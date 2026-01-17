@@ -15,6 +15,7 @@ class AItemActor;
 class UEquipmentStaffEfects;
 class UItemTypesToTables;
 class UInventoryComponent;
+class UUniformGridSlot;
 
 DECLARE_MULTICAST_DELEGATE_TwoParams(FEquipmentItemUsed, const TSubclassOf<UEquipmentDefinition>& /*Equipment Definition*/,const FEquipmentEffectPackage& /* Stat Effects and one Ability */)
 

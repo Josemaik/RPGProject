@@ -35,3 +35,9 @@ namespace RPGGameplayTags::Player::State
 {
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Crouch);
 }
+
+namespace RPGGameplayTags::InventoryItems
+{
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(ConsumableTag);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(EquipmentTag);
+}

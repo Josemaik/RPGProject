@@ -36,6 +36,7 @@ public:
 	void SetItemNameText(FText Text);
 	void SetQuantityText(int32 Quantity);
 	void SetIcon();
+	void SetGridSlot(const int32 Index,UUniformGridSlot* GridSlot);
 	
 	void SetInventoryEntry(const FRPGInventoryEntry& InItemDefinition,TSoftObjectPtr<UTexture2D> Icon);
 	
@@ -53,6 +54,14 @@ private:
 	UFUNCTION()
 	void OnClickedUseButtom();
 
+	UFUNCTION()
+	void OnActionButtomHovered();
+
+	UPROPERTY()
+	TObjectPtr<UUniformGridSlot> GridSlot = nullptr;
+
+	int32 GridIndex = 0;
+
 	UPROPERTY()
 	TSoftObjectPtr<UTexture2D> SoftIconTexture;
 
@@ -68,14 +77,14 @@ private:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(AllowPrivateAccess=true))
 	FGameplayTag GameplayTagEquipment;
 	
-	UPROPERTY(VisibleAnywhere,BlueprintReadWrite, meta = (BindWidget,AllowPrivateAccess="true"), Category = "UI")
-	UTextBlock* ItemName;
+	// UPROPERTY(VisibleAnywhere,BlueprintReadWrite, meta = (BindWidget,AllowPrivateAccess="true"), Category = "UI")
+	// UTextBlock* ItemName;
 
 	UPROPERTY(VisibleAnywhere,BlueprintReadWrite, meta = (BindWidget,AllowPrivateAccess="true"), Category = "UI")
 	UTextBlock* ItemQuantity;
 	
-	UPROPERTY(VisibleAnywhere,BlueprintReadWrite, meta = (BindWidget,AllowPrivateAccess="true"), Category = "UI")
-	UTextBlock* ActionText;
+	// UPROPERTY(VisibleAnywhere,BlueprintReadWrite, meta = (BindWidget,AllowPrivateAccess="true"), Category = "UI")
+	// UTextBlock* ActionText;
 
 	UPROPERTY(VisibleAnywhere,BlueprintReadWrite, meta = (BindWidget,AllowPrivateAccess="true"), Category = "UI")
 	UButton* ActionButtom;

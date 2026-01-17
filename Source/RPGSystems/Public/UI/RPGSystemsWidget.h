@@ -3,11 +3,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameplayTagContainer.h"
 #include "Blueprint/UserWidget.h"
 #include "InventorySection/InventoryComponent.h"
 #include "RPGSystemsWidget.generated.h"
 
+class UCategoryButton;
+class UUniformGridPanel;
 struct FRPGInventoryEntry;
 class UEditableText;
 class UItemRowWidget;
@@ -22,6 +23,8 @@ class USizeBox;
 class UBorder;
 class UCanvasPanel;
 class UWidgetController;
+class UVerticalBox;
+
 /**
  * 
  */
@@ -40,6 +43,8 @@ private:
 	void CacheEssentialVars();
 	void BindInventoryItemDelegates();
 	void ClearEntries();
+	void HandleCategorySelected(FGameplayTag CategorySelected);
+	void AddToItemsGrid();
 
 	//callbacks
 	UFUNCTION()
@@ -67,18 +72,30 @@ private:
 	UInventoryComponent* OwningInventory;
 
 	UPROPERTY(EditDefaultsOnly)
-	TSubclassOf<UItemRowWidget> ItemRowWidgetClass;
+	TSubclassOf<UItemRowWidget> ItemSlotWidget;
 	
 	UPROPERTY()
-	TObjectPtr<UItemRowWidget> CurrentItemRowWidget;
+	TObjectPtr<UItemRowWidget> CurrentItemSlotWidget;
 	
 	//TArray<UItemRowWidget*> ActiveItemRowWidgets;
-	TMap<int64, UItemRowWidget*> ActiveItemRowWidgets;
+	TMap<int64, UItemRowWidget*> ActiveItemSlotWidgets; //created item slots
+	int32 CurrentCategoryIndex = 0;
 
 	//Hierarchy
 	UPROPERTY(VisibleAnywhere, meta = (BindWidget), Category = "UI")
 	UCanvasPanel* CanvasPanel;
 
+	UPROPERTY(VisibleAnywhere, meta = (BindWidget), Category = "UI")
+	UTextBlock* InventoryText;
+
+	/////////////////////////////////
+	//Categories Labels
+
+	UPROPERTY(meta=(BindWidget))
+	UHorizontalBox* CategoriesContainer;
+
+	/////////////////////////////////
+	//ItemsPanel
 	UPROPERTY(VisibleAnywhere, meta = (BindWidget), Category = "UI")
 	UBorder* BackgroundBorder;
 
@@ -91,20 +108,24 @@ private:
 	UPROPERTY(VisibleAnywhere, meta = (BindWidget), Category = "UI")
 	UWrapBox* WrapBox;
 
-	UPROPERTY(VisibleAnywhere, meta = (BindWidget), Category = "UI")
-	UHorizontalBox* HorizontalBox;
-
-	UPROPERTY(VisibleAnywhere, meta = (BindWidget), Category = "UI")
-	UTextBlock* InventoryText;
+	// UPROPERTY(VisibleAnywhere, meta = (BindWidget), Category = "UI")
+	// UHorizontalBox* HorizontalBox;
 
 	UPROPERTY(VisibleAnywhere, meta = (BindWidget), Category = "UI")
 	UEditableText* SearchBar;
 
-	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, meta = (BindWidget, AllowPrivateAccess = "true"), Category = "UI")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (BindWidget, AllowPrivateAccess = "true"), Category = "UI")
 	UScrollBox* InventoryContent;
-	
+
 	UPROPERTY(VisibleAnywhere, meta = (BindWidget), Category = "UI")
-	UTextBlock* ItemDescriptionText;
+	UUniformGridPanel* ItemsPanel;
+	
+	// UPROPERTY(VisibleAnywhere, meta = (BindWidget), Category = "UI")
+	// UTextBlock* ItemDescriptionText;
+	
+	FGameplayTag CurrentCategorySelected;
+	
+	const int32 MaxColumns = 5;
 };
 
 

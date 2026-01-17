@@ -5,6 +5,7 @@
 
 #include "GameDelegates.h"
 #include "GameplayTagContainer.h"
+#include "AbilitySystem/RPGGameplayTags.h"
 #include "Blueprint/WidgetBlueprintLibrary.h"
 #include "Components/Button.h"
 #include "Components/SizeBox.h"
@@ -15,29 +16,31 @@
 
 void UItemRowWidget::SetActionText(const FGameplayTag& GameplayTag)
 {
-	if (GameplayTag.MatchesTag(GameplayTagConsumable))
-	{
-		ActionText->SetText(FText::FromString("Use"));
-		return;
-	}
-	
-	if (GameplayTag.MatchesTag(GameplayTagEquipment))
-	{
-		ActionText->SetText(FText::FromString("Equip"));
-		return;
-	}
-	
-	ActionText->SetText(FText::FromString("Not a equipment"));
-	ActionButtom->SetIsEnabled(false); //Disable buttom
+	// if (GameplayTag.MatchesTag(GameplayTagConsumable))
+	// {
+	// 	ActionText->SetText(FText::FromString("Use"));
+	// 	return;
+	// }
+	//
+	// if (GameplayTag.MatchesTag(GameplayTagEquipment))
+	// {
+	// 	ActionText->SetText(FText::FromString("Equip"));
+	// 	return;
+	// }
+	//
+	// ActionText->SetText(FText::FromString("Not a equipment"));
+	// ActionButtom->SetIsEnabled(false); //Disable buttom
 }
 
 void UItemRowWidget::SetItemNameText(FText Text)
 {
-	ItemName->SetText(Text);
+	//ItemName->SetText(Text);
 }
 
 void UItemRowWidget::SetQuantityText(int32 Quantity)
 {
+	if (ItemEntry.IsValid() && ItemEntry.ItemTag.MatchesTag(RPGGameplayTags::InventoryItems::EquipmentTag)) return;
+	
 	const FText FormatText = FText::FromString(FString("x") + FString::FromInt(Quantity));
 	ItemQuantity->SetText(FormatText);
 }
@@ -52,11 +55,18 @@ void UItemRowWidget::SetIcon()
 	}
 }
 
+void UItemRowWidget::SetGridSlot(const int32 Index,UUniformGridSlot* NewGridSlot)
+{
+	GridSlot = NewGridSlot;
+	GridIndex = Index;
+}
+
 void UItemRowWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 
 	ActionButtom->OnClicked.AddDynamic(this,&UItemRowWidget::OnClickedUseButtom);
+	ActionButtom->OnHovered.AddDynamic(this,&UItemRowWidget::OnActionButtomHovered);
 
 	SetIcon();
 }
@@ -106,4 +116,9 @@ void UItemRowWidget::NativeOnDragCancelled(const FDragDropEvent& InDragDropEvent
 void UItemRowWidget::OnClickedUseButtom()
 {
 	OnUseButtomClickedDelegate.ExecuteIfBound(ItemEntry);
+}
+
+void UItemRowWidget::OnActionButtomHovered()
+{
+	
 }

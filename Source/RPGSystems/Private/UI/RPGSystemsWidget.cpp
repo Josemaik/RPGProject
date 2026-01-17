@@ -3,12 +3,14 @@
 
 #include "UI/RPGSystemsWidget.h"
 
-#include "ContentBrowserDataSource.h"
+#include "AbilitySystem/RPGGameplayTags.h"
 #include "Components/EditableText.h"
-#include "Components/ScrollBox.h"
-#include "Components/TextBlock.h"
+#include "Components/HorizontalBox.h"
+#include "Components/UniformGridPanel.h"
+#include "Components/UniformGridSlot.h"
 #include "Interfaces/InventoryInterface.h"
 #include "InventorySection/InventoryComponent.h"
+#include "UI/Inventory/CategoryButton.h"
 #include "UI/Inventory/ItemRowWidget.h"
 #include "UI/WidgetController/InventoryWidgetController.h"
 #include "UI/WidgetController/WidgetController.h"
@@ -24,7 +26,21 @@ void URPGSystemsWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 
+	CurrentCategorySelected = RPGGameplayTags::InventoryItems::EquipmentTag;
+
 	SearchBar->OnTextChanged.AddDynamic(this, &ThisClass::OnSearchBarTextChanged);
+
+	TArray<UWidget*> CategoryContainerChildren = CategoriesContainer->GetAllChildren();
+	for (UWidget* Child : CategoryContainerChildren)
+	{
+		if (UCategoryButton* CategoryButton = Cast<UCategoryButton>(Child))
+		{
+			CategoryButton->OnCategorySelected.AddLambda([this](FGameplayTag CategoryTag)
+			{
+				HandleCategorySelected(CategoryTag);
+			});
+		}
+	}
 }
 
 void URPGSystemsWidget::FinishDestroy()
@@ -64,20 +80,58 @@ void URPGSystemsWidget::BindInventoryItemDelegates()
 void URPGSystemsWidget::ClearEntries()
 {
 	TArray<int64> keys;
-	ActiveItemRowWidgets.GetKeys(keys);
+	ActiveItemSlotWidgets.GetKeys(keys);
 	
 	for (auto& key : keys)
 	{
 		HandleInventoryItemRemoved(key);
 	}
 
-	ActiveItemRowWidgets.Empty();
+	ActiveItemSlotWidgets.Empty();
+}
+
+void URPGSystemsWidget::HandleCategorySelected(FGameplayTag CategorySelected)
+{
+	if (CurrentCategorySelected.MatchesTagExact(CategorySelected)) return;
+
+	//New Category
+	CurrentCategoryIndex = 0;
+	ItemsPanel->ClearChildren();
+
+	for (const auto& Pair : ActiveItemSlotWidgets)
+	{
+		if (Pair.Value->ItemEntry.ItemTag.MatchesTag(CategorySelected))
+		{
+			AddToItemsGrid();
+		}
+	}
+	
+}
+
+void URPGSystemsWidget::AddToItemsGrid()
+{
+	const int32 Index = CurrentCategoryIndex;
+		
+	const int32 Row = Index / MaxColumns;
+	const int32 Column = Index % MaxColumns;
+		
+	UUniformGridSlot* GridSlot = ItemsPanel->AddChildToUniformGrid(CurrentItemSlotWidget);
+		
+	if (IsValid(GridSlot))
+	{
+		GridSlot->SetRow(Row);
+		GridSlot->SetColumn(Column);
+	}
+		
+	CurrentItemSlotWidget->SetGridSlot(Index,GridSlot);
+
+	CurrentCategoryIndex++;
 }
 
 void URPGSystemsWidget::HandleInventoyItemReceived(const FRPGInventoryEntry& Entry)
 {
 	if (!IsValid(OwningInventory)) return;
-	if (UItemRowWidget** FoundWidgetPtr = ActiveItemRowWidgets.Find(Entry.ItemID))
+	if (UItemRowWidget** FoundWidgetPtr = ActiveItemSlotWidgets.Find(Entry.ItemID))
 	{
 		if (UItemRowWidget* FoundWidget = *FoundWidgetPtr)
 		{
@@ -88,47 +142,54 @@ void URPGSystemsWidget::HandleInventoyItemReceived(const FRPGInventoryEntry& Ent
 
 	FMasterItemDefinition ItemDefinition = OwningInventory->GetItemDefinitionByTag(Entry.ItemTag);
 	
-	CurrentItemRowWidget = Cast<UItemRowWidget>(CreateWidget(this,ItemRowWidgetClass));
+	CurrentItemSlotWidget = Cast<UItemRowWidget>(CreateWidget(this,ItemSlotWidget));
 	
-	if (!IsValid(CurrentItemRowWidget))
+	if (!IsValid(CurrentItemSlotWidget))
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red,FString::Printf(TEXT("Item Widget is null")));
 		return;
 	}
-	CurrentItemRowWidget->SetInventoryEntry(Entry, ItemDefinition.Icon);
-	CurrentItemRowWidget->SetActionText(Entry.ItemTag);
-	CurrentItemRowWidget->SetItemNameText(Entry.ItemName);
-	CurrentItemRowWidget->SetQuantityText(Entry.Quantity);
+	CurrentItemSlotWidget->SetInventoryEntry(Entry, ItemDefinition.Icon);
+	CurrentItemSlotWidget->SetActionText(Entry.ItemTag);
+	CurrentItemSlotWidget->SetItemNameText(Entry.ItemName);
+	CurrentItemSlotWidget->SetQuantityText(Entry.Quantity);
 
-	InventoryContent->AddChild(CurrentItemRowWidget);
-	
-	ActiveItemRowWidgets.Add(Entry.ItemID,CurrentItemRowWidget);
-
-	//the last item added udpate description text
-	//HandleItemRowClicked(Entry);
-	
-	CurrentItemRowWidget->OnUseButtomClickedDelegate.BindLambda(
+	//bind delegates
+	CurrentItemSlotWidget->OnUseButtomClickedDelegate.BindLambda(
 		[this](const FRPGInventoryEntry& Entry)
 		{
 			OwningInventory->UseItem(Entry,1);
+			if (Entry.Quantity == 0)
+			{
+				//El Slot queda vacío, entonces hay que reordenar los slots
+				//recorrer active item row widgets, ver cuales tienen mayor index y desplazarlos a una casilla anterior
+			}
 		});
-	CurrentItemRowWidget->OnItemRowClickedDelegate.BindLambda(
+	CurrentItemSlotWidget->OnItemRowClickedDelegate.BindLambda(
 		[this](const FRPGInventoryEntry& Entry)
 		{
 			HandleItemRowClicked(Entry);
 		});
-	CurrentItemRowWidget->OnItemDroppedEventDelegate.BindUObject(this,&ThisClass::HandleItemDropped);
+	CurrentItemSlotWidget->OnItemDroppedEventDelegate.BindUObject(this,&ThisClass::HandleItemDropped);
+
+	ActiveItemSlotWidgets.Add(Entry.ItemID,CurrentItemSlotWidget);
+	
+	//Check category to add to Grid
+	if (Entry.ItemTag.MatchesTag(CurrentCategorySelected))
+	{
+		AddToItemsGrid();
+	}
 }
 
 void URPGSystemsWidget::HandleItemRowClicked(const FRPGInventoryEntry& Entry)
 {
-	if (!IsValid(ItemDescriptionText) || !IsValid(OwningInventory))
+	if (/*!IsValid(ItemDescriptionText) ||*/ !IsValid(OwningInventory))
 	{
 		return;
 	}
 	
 	const FMasterItemDefinition& ItemDefiniton = OwningInventory->GetItemDefinitionByTag(Entry.ItemTag);
-	ItemDescriptionText->SetText(ItemDefiniton.ItemDescription);
+	//ItemDescriptionText->SetText(ItemDefiniton.ItemDescription);
 }
 
 void URPGSystemsWidget::HandleItemDropped(const FRPGInventoryEntry& Entry)
@@ -141,13 +202,13 @@ void URPGSystemsWidget::HandleItemDropped(const FRPGInventoryEntry& Entry)
 
 void URPGSystemsWidget::HandleInventoryItemRemoved(const int64 ItemID)
 {
-	if (UItemRowWidget* ItemRow = ActiveItemRowWidgets.FindChecked(ItemID))
+	if (UItemRowWidget* ItemRow = ActiveItemSlotWidgets.FindChecked(ItemID))
 	{
 		ItemRow->OnUseButtomClickedDelegate.Unbind();
 		ItemRow->OnItemRowClickedDelegate.Unbind();
 		ItemRow->OnItemDroppedEventDelegate.Unbind();
 		ItemRow->RemoveFromParent();
-		ActiveItemRowWidgets.Remove(ItemID);
+		ActiveItemSlotWidgets.Remove(ItemID);
 	}
 }
 
