@@ -81,6 +81,8 @@ struct FRPGInventoryList : public FFastArraySerializer
 	{
 		return FastArrayDeltaSerialize<FRPGInventoryEntry, FRPGInventoryList>(Entries,DeltaParams,*this);
 	}
+
+	TArray<FRPGInventoryEntry> GetEntries() const { return Entries; }
 	
 	FDirtyInventoryItemsSignature DirtyItemDelegate;
 	FInventoryItemRemovedSignature InventoryItemRemovedDelegate;

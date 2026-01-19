@@ -25,6 +25,21 @@ class UCanvasPanel;
 class UWidgetController;
 class UVerticalBox;
 
+USTRUCT(BlueprintType)
+struct FCategoryButtonData
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere)
+	FGameplayTag CategoryTag;
+
+	UPROPERTY(EditAnywhere)
+	FText DisplayName;
+
+	UPROPERTY(EditAnywhere)
+	UTexture2D* Icon;
+};
+
 /**
  * 
  */
@@ -44,11 +59,11 @@ private:
 	void BindInventoryItemDelegates();
 	void ClearEntries();
 	void HandleCategorySelected(FGameplayTag CategorySelected);
-	void AddToItemsGrid();
+	void AddToItemsGrid(TObjectPtr<UItemRowWidget> ItemSlot);
 
 	//callbacks
 	UFUNCTION()
-	void HandleInventoyItemReceived(const FRPGInventoryEntry& Entry);
+	void HandleInventoryItemReceived(const FRPGInventoryEntry& Entry);
 
 	UFUNCTION()
 	void HandleItemRowClicked(const FRPGInventoryEntry& Entry);
@@ -82,10 +97,10 @@ private:
 	int32 CurrentCategoryIndex = 0;
 
 	//Hierarchy
-	UPROPERTY(VisibleAnywhere, meta = (BindWidget), Category = "UI")
+	UPROPERTY(VisibleAnywhere, Category = "UI")
 	UCanvasPanel* CanvasPanel;
 
-	UPROPERTY(VisibleAnywhere, meta = (BindWidget), Category = "UI")
+	UPROPERTY(VisibleAnywhere, Category = "UI")
 	UTextBlock* InventoryText;
 
 	/////////////////////////////////
@@ -94,9 +109,15 @@ private:
 	UPROPERTY(meta=(BindWidget))
 	UHorizontalBox* CategoriesContainer;
 
+	UPROPERTY(EditAnywhere, Category="Categories")
+	TArray<FCategoryButtonData> Categories;
+
+	UPROPERTY(EditDefaultsOnly, Category="Categories")
+	TSubclassOf<UCategoryButton> CategoryButtonClass;
+
 	/////////////////////////////////
 	//ItemsPanel
-	UPROPERTY(VisibleAnywhere, meta = (BindWidget), Category = "UI")
+	UPROPERTY(VisibleAnywhere, Category = "UI")
 	UBorder* BackgroundBorder;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (BindWidget, AllowPrivateAccess), Category = "UI")

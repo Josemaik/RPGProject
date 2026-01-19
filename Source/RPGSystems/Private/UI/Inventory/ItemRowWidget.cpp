@@ -39,7 +39,7 @@ void UItemRowWidget::SetItemNameText(FText Text)
 
 void UItemRowWidget::SetQuantityText(int32 Quantity)
 {
-	if (ItemEntry.IsValid() && ItemEntry.ItemTag.MatchesTag(RPGGameplayTags::InventoryItems::EquipmentTag)) return;
+	if (!ItemEntry.IsValid() || ItemEntry.ItemTag.MatchesTag(RPGGameplayTags::InventoryItems::EquipmentTag) || !IsValid(ItemQuantity)) return;
 	
 	const FText FormatText = FText::FromString(FString("x") + FString::FromInt(Quantity));
 	ItemQuantity->SetText(FormatText);
@@ -64,11 +64,23 @@ void UItemRowWidget::SetGridSlot(const int32 Index,UUniformGridSlot* NewGridSlot
 void UItemRowWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
-
-	ActionButtom->OnClicked.AddDynamic(this,&UItemRowWidget::OnClickedUseButtom);
-	ActionButtom->OnHovered.AddDynamic(this,&UItemRowWidget::OnActionButtomHovered);
+	
+	if (!IsValid(ActionButton)) return;
+		
+	ActionButton->OnClicked.AddDynamic(this,&UItemRowWidget::OnClickedUseButtom);
+	ActionButton->OnHovered.AddDynamic(this,&UItemRowWidget::OnActionButtomHovered);
 
 	SetIcon();
+}
+
+void UItemRowWidget::NativeDestruct()
+{
+	Super::NativeDestruct();
+
+	if (!IsValid(ActionButton)) return;
+	
+	ActionButton->OnClicked.RemoveAll(this);
+	ActionButton->OnHovered.RemoveAll(this);
 }
 
 void UItemRowWidget::SetInventoryEntry(const FRPGInventoryEntry& Entry,TSoftObjectPtr<UTexture2D> Icon)

@@ -6,6 +6,7 @@
 #include "AbilitySystem/RPGGameplayTags.h"
 #include "Components/EditableText.h"
 #include "Components/HorizontalBox.h"
+#include "Components/Spacer.h"
 #include "Components/UniformGridPanel.h"
 #include "Components/UniformGridSlot.h"
 #include "Interfaces/InventoryInterface.h"
@@ -18,6 +19,7 @@
 void URPGSystemsWidget::SetWidgetController(UWidgetController* InWidgetController)
 {
 	WidgetController = InWidgetController;
+	CurrentCategorySelected = RPGGameplayTags::InventoryItems::EquipmentTag;
 	CacheEssentialVars();
 	BindInventoryItemDelegates();
 }
@@ -26,20 +28,27 @@ void URPGSystemsWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 
-	CurrentCategorySelected = RPGGameplayTags::InventoryItems::EquipmentTag;
-
 	SearchBar->OnTextChanged.AddDynamic(this, &ThisClass::OnSearchBarTextChanged);
-
-	TArray<UWidget*> CategoryContainerChildren = CategoriesContainer->GetAllChildren();
-	for (UWidget* Child : CategoryContainerChildren)
+	
+	CategoriesContainer->ClearChildren();
+	for (const FCategoryButtonData& Data : Categories)
 	{
-		if (UCategoryButton* CategoryButton = Cast<UCategoryButton>(Child))
+		UCategoryButton* Button =
+			CreateWidget<UCategoryButton>(this, CategoryButtonClass);
+
+		Button->Init(Data.CategoryTag, Data.DisplayName, Data.Icon);
+
+		Button->OnCategorySelected.AddLambda([this](FGameplayTag CategoryTag)
 		{
-			CategoryButton->OnCategorySelected.AddLambda([this](FGameplayTag CategoryTag)
-			{
-				HandleCategorySelected(CategoryTag);
-			});
-		}
+			HandleCategorySelected(CategoryTag);
+		});
+
+		CategoriesContainer->AddChildToHorizontalBox(Button);
+
+		USpacer* Spacer = NewObject<USpacer>(this);
+		Spacer->SetSize(FVector2d(8.f,1.f));
+
+		CategoriesContainer->AddChildToHorizontalBox(Spacer);
 	}
 }
 
@@ -69,11 +78,18 @@ void URPGSystemsWidget::CacheEssentialVars()
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red,FString::Printf(TEXT("No valid Inventory")));
 	}
+
+	const TArray<FRPGInventoryEntry>& Entries = OwningInventory->InventoryList.GetEntries();
+	if (Entries.IsEmpty()) return;
+	for (const FRPGInventoryEntry& Entry : Entries)
+	{
+		HandleInventoryItemReceived(Entry);
+	}
 }
 
 void URPGSystemsWidget::BindInventoryItemDelegates()
 {
-	InventoryWidgetController->InventoryEntryDelegate.AddUObject(this,&URPGSystemsWidget::HandleInventoyItemReceived);
+	InventoryWidgetController->InventoryEntryDelegate.AddUObject(this,&URPGSystemsWidget::HandleInventoryItemReceived);
 	InventoryWidgetController->OnInventoryItemRemoved.AddUObject(this,&URPGSystemsWidget::HandleInventoryItemRemoved);
 }
 
@@ -93,29 +109,32 @@ void URPGSystemsWidget::ClearEntries()
 void URPGSystemsWidget::HandleCategorySelected(FGameplayTag CategorySelected)
 {
 	if (CurrentCategorySelected.MatchesTagExact(CategorySelected)) return;
-
+	
 	//New Category
+	CurrentCategorySelected = CategorySelected;
 	CurrentCategoryIndex = 0;
 	ItemsPanel->ClearChildren();
 
 	for (const auto& Pair : ActiveItemSlotWidgets)
 	{
-		if (Pair.Value->ItemEntry.ItemTag.MatchesTag(CategorySelected))
+		if (Pair.Value->ItemEntry.ItemTag.MatchesTag(CategorySelected) && IsValid(Pair.Value))
 		{
-			AddToItemsGrid();
+			AddToItemsGrid(Pair.Value);
 		}
 	}
 	
 }
 
-void URPGSystemsWidget::AddToItemsGrid()
+void URPGSystemsWidget::AddToItemsGrid(TObjectPtr<UItemRowWidget> ItemSlot)
 {
+	if (!IsValid(CurrentItemSlotWidget)) return;
+	
 	const int32 Index = CurrentCategoryIndex;
 		
 	const int32 Row = Index / MaxColumns;
 	const int32 Column = Index % MaxColumns;
 		
-	UUniformGridSlot* GridSlot = ItemsPanel->AddChildToUniformGrid(CurrentItemSlotWidget);
+	UUniformGridSlot* GridSlot = ItemsPanel->AddChildToUniformGrid(ItemSlot);
 		
 	if (IsValid(GridSlot))
 	{
@@ -123,12 +142,12 @@ void URPGSystemsWidget::AddToItemsGrid()
 		GridSlot->SetColumn(Column);
 	}
 		
-	CurrentItemSlotWidget->SetGridSlot(Index,GridSlot);
+	ItemSlot->SetGridSlot(Index,GridSlot);
 
 	CurrentCategoryIndex++;
 }
 
-void URPGSystemsWidget::HandleInventoyItemReceived(const FRPGInventoryEntry& Entry)
+void URPGSystemsWidget::HandleInventoryItemReceived(const FRPGInventoryEntry& Entry)
 {
 	if (!IsValid(OwningInventory)) return;
 	if (UItemRowWidget** FoundWidgetPtr = ActiveItemSlotWidgets.Find(Entry.ItemID))
@@ -177,7 +196,7 @@ void URPGSystemsWidget::HandleInventoyItemReceived(const FRPGInventoryEntry& Ent
 	//Check category to add to Grid
 	if (Entry.ItemTag.MatchesTag(CurrentCategorySelected))
 	{
-		AddToItemsGrid();
+		AddToItemsGrid(CurrentItemSlotWidget);
 	}
 }
 
@@ -197,7 +216,8 @@ void URPGSystemsWidget::HandleItemDropped(const FRPGInventoryEntry& Entry)
 	if (!IsValid(OwningInventory)) return;
 	
 	OwningInventory->DropItem(Entry,Entry.Quantity);
-	//HandleInventoryItemRemoved(Entry.ItemID);
+	
+	HandleInventoryItemRemoved(Entry.ItemID);
 }
 
 void URPGSystemsWidget::HandleInventoryItemRemoved(const int64 ItemID)
@@ -218,13 +238,22 @@ void URPGSystemsWidget::OnSearchBarTextChanged(const FText& InText)
 	{
 		return;
 	}
-
-	ClearEntries();
+	
+	CurrentCategoryIndex = 0;
+	ItemsPanel->ClearChildren();
 
 	TArray<FRPGInventoryEntry> SearchedEntries = OwningInventory->GetEntriesByString(InText.ToString());
-
+	
+	if (SearchedEntries.IsEmpty()) return;
+	
 	for (const FRPGInventoryEntry& Entry : SearchedEntries)
 	{
-		HandleInventoyItemReceived(Entry);
+		if (Entry.ItemTag.MatchesTag(CurrentCategorySelected) && ActiveItemSlotWidgets.Contains(Entry.ItemID))
+		{
+			 if (UItemRowWidget* FoundWidget = *ActiveItemSlotWidgets.Find(Entry.ItemID))
+			 {
+			 	AddToItemsGrid(FoundWidget);
+			 }
+		}
 	}
 }

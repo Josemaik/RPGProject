@@ -23,6 +23,8 @@ class RPGSYSTEMS_API UCategoryButton : public UUserWidget
 	GENERATED_BODY()
 public:
 	FOnCategorySelected OnCategorySelected;
+
+	void Init(FGameplayTag Category,FText CategoryText, UTexture2D* IconTexture);
 private:
 	virtual void NativeConstruct() override;
 	
@@ -36,7 +38,7 @@ private:
 	UTextBlock* ItemCategoryName;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (BindWidget, AllowPrivateAccess="true"), Category = "UI")
-	UButton* ActionButtom;
+	UButton* ActionButton;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (BindWidget, AllowPrivateAccess="true"), Category = "UI")
 	UImage* Icon;
