@@ -36,6 +36,6 @@ namespace RPGGameplayTags::Player::State
 namespace RPGGameplayTags::InventoryItems
 {
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(ConsumableTag,"Item.Consumable","Inventory Item consumable by player");
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(EquipmentTag,"Item.Equipment","Inventory Item equipable by player");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(EquipmentTag,"Item.Equipment","Inventory Item by player");
 }
 

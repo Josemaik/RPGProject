@@ -18,7 +18,7 @@
 class UEquipmentManagerComponent;
  class URPGAbilitySystemComponent;
  class URPGInputConfig;
- class URPGSystemsWidget;
+ class UInventoryWidget;
 class UInventoryComponent;
 /**
  * 
@@ -97,10 +97,10 @@ private:
 	TSubclassOf<UInventoryWidgetController> InventoryWidgetControllerClass;
 
 	UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = true))
-	TObjectPtr<URPGSystemsWidget> InventoryWidget;
+	TObjectPtr<UInventoryWidget> InventoryWidget;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Custom Values|Widgets")
-	TSubclassOf<URPGSystemsWidget> InventoryWidgetClass;
+	TSubclassOf<UInventoryWidget> InventoryWidgetClass;
 };
 
 

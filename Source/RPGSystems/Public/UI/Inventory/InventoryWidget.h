@@ -5,13 +5,14 @@
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
 #include "InventorySection/InventoryComponent.h"
-#include "RPGSystemsWidget.generated.h"
+#include "InventoryWidget.generated.h"
 
-class UCategoryButton;
+class UEquipmentSlot;
+class UItemCategoryButton;
 class UUniformGridPanel;
 struct FRPGInventoryEntry;
 class UEditableText;
-class UItemRowWidget;
+class UItemSlotWidget;
 class UInventoryWidgetController;
 class UInventoryComponent;
 class UScrollBox;
@@ -44,14 +45,15 @@ struct FCategoryButtonData
  * 
  */
 UCLASS()
-class RPGSYSTEMS_API URPGSystemsWidget : public UUserWidget
+class RPGSYSTEMS_API UInventoryWidget : public UUserWidget
 {
 	GENERATED_BODY()
 public:
 
-	void SetWidgetController(UWidgetController* InWidgetController);
+	void SetWidgetController(UInventoryWidgetController* InWidgetController);
 protected:
 	void NativeConstruct() override;
+	virtual bool NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
 private:
 	virtual void FinishDestroy() override;
 	//functions
@@ -59,8 +61,9 @@ private:
 	void BindInventoryItemDelegates();
 	void ClearEntries();
 	void HandleCategorySelected(FGameplayTag CategorySelected);
-	void AddToItemsGrid(TObjectPtr<UItemRowWidget> ItemSlot);
+	void AddToItemsGrid(TObjectPtr<UItemSlotWidget> InSlotWidget);
 
+	UItemSlotWidget* NewActiveItem(const FRPGInventoryEntry& Entry);
 	//callbacks
 	UFUNCTION()
 	void HandleInventoryItemReceived(const FRPGInventoryEntry& Entry);
@@ -76,7 +79,11 @@ private:
 
 	UFUNCTION()
 	void OnSearchBarTextChanged(const FText& InText);
+
+	UFUNCTION()
+	void OnEquipItem(const FRPGInventoryEntry& Entry);
 	
+	//References
 	UPROPERTY(BlueprintReadOnly, meta=(allowPrivateAccess=true))
 	TObjectPtr<UWidgetController> WidgetController;
 
@@ -87,14 +94,12 @@ private:
 	UInventoryComponent* OwningInventory;
 
 	UPROPERTY(EditDefaultsOnly)
-	TSubclassOf<UItemRowWidget> ItemSlotWidget;
+	TSubclassOf<UItemSlotWidget> ItemSlotWidgetClass;
 	
-	UPROPERTY()
-	TObjectPtr<UItemRowWidget> CurrentItemSlotWidget;
+	//TArray<FRPGInventoryEntry> ActiveItems; //created item slots
 	
-	//TArray<UItemRowWidget*> ActiveItemRowWidgets;
-	TMap<int64, UItemRowWidget*> ActiveItemSlotWidgets; //created item slots
 	int32 CurrentCategoryIndex = 0;
+	FGameplayTag CurrentCategorySelected;
 
 	//Hierarchy
 	UPROPERTY(VisibleAnywhere, Category = "UI")
@@ -113,7 +118,7 @@ private:
 	TArray<FCategoryButtonData> Categories;
 
 	UPROPERTY(EditDefaultsOnly, Category="Categories")
-	TSubclassOf<UCategoryButton> CategoryButtonClass;
+	TSubclassOf<UItemCategoryButton> CategoryButtonClass;
 
 	/////////////////////////////////
 	//ItemsPanel
@@ -124,15 +129,6 @@ private:
 	USizeBox* SizeBox;
 
 	UPROPERTY(VisibleAnywhere, meta = (BindWidget), Category = "UI")
-	UOverlay* CoreOverlay; 
-
-	UPROPERTY(VisibleAnywhere, meta = (BindWidget), Category = "UI")
-	UWrapBox* WrapBox;
-
-	// UPROPERTY(VisibleAnywhere, meta = (BindWidget), Category = "UI")
-	// UHorizontalBox* HorizontalBox;
-
-	UPROPERTY(VisibleAnywhere, meta = (BindWidget), Category = "UI")
 	UEditableText* SearchBar;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (BindWidget, AllowPrivateAccess = "true"), Category = "UI")
@@ -140,13 +136,16 @@ private:
 
 	UPROPERTY(VisibleAnywhere, meta = (BindWidget), Category = "UI")
 	UUniformGridPanel* ItemsPanel;
-	
-	// UPROPERTY(VisibleAnywhere, meta = (BindWidget), Category = "UI")
-	// UTextBlock* ItemDescriptionText;
-	
-	FGameplayTag CurrentCategorySelected;
-	
+
 	const int32 MaxColumns = 5;
+
+	//Equipments Panel
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget,AllowPrivateAccess="true"), Category = "UI")
+	UEquipmentSlot* LeftHandEquipment;
+	
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget,AllowPrivateAccess="true"), Category = "UI")
+	UEquipmentSlot* RightHandEquipment;
 };
+
 
 

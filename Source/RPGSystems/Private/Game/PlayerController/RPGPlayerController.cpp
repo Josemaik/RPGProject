@@ -12,7 +12,7 @@
 #include "Input/RPGSystemsInputComponent.h"
 #include "InventorySection/InventoryComponent.h"
 #include "UI/WidgetController/InventoryWidgetController.h"
-#include "UI/RPGSystemsWidget.h"
+#include "UI/Inventory/InventoryWidget.h"
 
 
 ARPGPlayerController::ARPGPlayerController()
@@ -201,9 +201,9 @@ UInventoryWidgetController* ARPGPlayerController::GetInventoryWidgetController()
 
 void ARPGPlayerController::CreateInventoryWidget()
 {
- 	if (UUserWidget* Widget = CreateWidget<URPGSystemsWidget>(this, InventoryWidgetClass))
+ 	if (UUserWidget* Widget = CreateWidget<UInventoryWidget>(this, InventoryWidgetClass))
  	{
- 		InventoryWidget = Cast<URPGSystemsWidget>(Widget);
+ 		InventoryWidget = Cast<UInventoryWidget>(Widget);
  		InventoryWidget->SetWidgetController(GetInventoryWidgetController());
  		InventoryWidgetController->BroadCastInitialValues();
  		InventoryWidget->AddToViewport();

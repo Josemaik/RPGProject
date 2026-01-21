@@ -5,7 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameplayTagContainer.h"
 #include "Blueprint/UserWidget.h"
-#include "CategoryButton.generated.h"
+#include "ItemCategoryButton.generated.h"
 
 
 class UImage;
@@ -18,7 +18,7 @@ DECLARE_MULTICAST_DELEGATE_OneParam(FOnCategorySelected,FGameplayTag/*CategoryTa
  * 
  */
 UCLASS()
-class RPGSYSTEMS_API UCategoryButton : public UUserWidget
+class RPGSYSTEMS_API UItemCategoryButton : public UUserWidget
 {
 	GENERATED_BODY()
 public:

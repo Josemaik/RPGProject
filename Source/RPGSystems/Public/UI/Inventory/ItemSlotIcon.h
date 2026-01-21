@@ -4,14 +4,14 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
-#include "ItemRowIcon.generated.h"
+#include "ItemSlotIcon.generated.h"
 
 class UImage;
 /**
  * 
  */
 UCLASS()
-class RPGSYSTEMS_API UItemRowIcon : public UUserWidget
+class RPGSYSTEMS_API UItemSlotIcon : public UUserWidget
 {
 	GENERATED_BODY()
 
