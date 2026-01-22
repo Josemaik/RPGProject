@@ -18,4 +18,7 @@ class RPGSYSTEMS_API UItemSlotDroppedDragDrop : public UDragDropOperation
 
 public:
 	FRPGInventoryEntry* ItemEntry;
+
+	UPROPERTY()
+	TObjectPtr<UTexture2D> IconTexture;
 };

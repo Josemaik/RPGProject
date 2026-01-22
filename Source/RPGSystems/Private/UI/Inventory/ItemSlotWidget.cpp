@@ -41,10 +41,14 @@ void UItemSlotWidget::SetIcon()
 	}
 }
 
-void UItemSlotWidget::SetGridSlot(const int32 Index,UUniformGridSlot* NewGridSlot)
+void UItemSlotWidget::SetGridSlot(UUniformGridSlot* NewGridSlot)
 {
 	GridSlot = NewGridSlot;
-	GridIndex = Index;
+}
+
+UUniformGridSlot* UItemSlotWidget::GetGridSlot()
+{
+	return GridSlot;
 }
 
 void UItemSlotWidget::NativeConstruct()
@@ -58,36 +62,19 @@ void UItemSlotWidget::NativeDestruct()
 {
 	Super::NativeDestruct();
 	
-	OnUseButtomClickedDelegate.Unbind();
 	OnItemRowClickedDelegate.Unbind();
 	OnItemDroppedEventDelegate.Unbind();
-	RemoveFromParent();
-	
-	if (WidgetController)
-	{
-		WidgetController->InventoryEntryDelegate.RemoveAll(this);
-	}
 
 	Super::NativeDestruct();
 }
 
-void UItemSlotWidget::Init(const FRPGInventoryEntry& Entry,TSoftObjectPtr<UTexture2D> Icon,TObjectPtr<UInventoryWidgetController> InventoryWidgetController)
+void UItemSlotWidget::Init(const FRPGInventoryEntry& Entry,TSoftObjectPtr<UTexture2D> Icon)
 {
 	ItemEntry = Entry;
 	SetItemNameText(ItemEntry.ItemName);
 	SetQuantityText(ItemEntry.Quantity);
 	
 	SoftIconTexture = Icon;
-	
-	WidgetController = InventoryWidgetController;
-
-	if (IsValid(WidgetController))
-	{
-		WidgetController->InventoryEntryDelegate.AddUObject(
-			this,
-			&UItemSlotWidget::OnItemUpdated
-		);
-	}
 }
 
 FReply UItemSlotWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
@@ -111,13 +98,34 @@ void UItemSlotWidget::NativeOnDragDetected(const FGeometry& InGeometry, const FP
 	DragDropOperation->DefaultDragVisual = IconWidgetReference;
 	DragDropOperation->Payload = this;
 	DragDropOperation->ItemEntry = &ItemEntry;
+	DragDropOperation->IconTexture = SoftIconTexture.Get();
 
 	OutOperation = DragDropOperation;
 }
 
-void UItemSlotWidget::OnItemUpdated(const FRPGInventoryEntry& UpdatedEntry)
+void UItemSlotWidget::NativeOnDragCancelled(const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation)
 {
-	if (UpdatedEntry.ItemID != ItemEntry.ItemID) return;
+	GEngine->AddOnScreenDebugMessage(-1,5.f,FColor::Emerald,FString::Printf(TEXT("Drag Cancelled")));
+	Super::NativeOnDragCancelled(InDragDropEvent, InOperation);
+	//No ha dropeado en ningún lado -> mundo
+	if (!IsValid(InOperation)) return;
+		
+	UItemSlotDroppedDragDrop* DragDropOp = Cast<UItemSlotDroppedDragDrop>(InOperation);
+	if (!IsValid(DragDropOp)) return;
 
-	SetQuantityText(UpdatedEntry.Quantity);
+	OnItemDroppedEventDelegate.ExecuteIfBound(*DragDropOp->ItemEntry);
 }
+
+void UItemSlotWidget::NativeOnDragEnter(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent,
+	UDragDropOperation* InOperation)
+{
+	GEngine->AddOnScreenDebugMessage(-1,5.f,FColor::Emerald,FString::Printf(TEXT("Drag Enter")));
+	Super::NativeOnDragEnter(InGeometry, InDragDropEvent, InOperation);
+}
+
+void UItemSlotWidget::NativeOnDragLeave(const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation)
+{
+	GEngine->AddOnScreenDebugMessage(-1,5.f,FColor::Emerald,FString::Printf(TEXT("Drag Leave")));
+	Super::NativeOnDragLeave(InDragDropEvent, InOperation);
+}
+

@@ -4,6 +4,7 @@
 #include "UI/Inventory/Equipment/EquipmentSlot.h"
 
 #include "AbilitySystem/RPGGameplayTags.h"
+#include "Components/Image.h"
 #include "InventorySection/InventoryComponent.h"
 #include "UI/Inventory/ItemSlotDroppedDragDrop.h"
 
@@ -15,8 +16,20 @@ bool UEquipmentSlot::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEv
 
 	if (DragOp->ItemEntry->ItemTag.MatchesTag(EquipmentTag))
 	{
+		if (!bIsEmpty)
+		{
+			//Lógica para sustituir por el que se ha dragueado	
+		}
+
+		bIsEmpty = false;
+		
 		GEngine->AddOnScreenDebugMessage(-1,5.f,FColor::Emerald,FString::Printf(TEXT("Equipment dropped in Slot")));
+
+		if (!IsValid(EquipmentSlotImage)) return false;
+		EquipmentSlotImage->SetBrushFromTexture(DragOp->IconTexture);
+		
 		OnEquipItem.ExecuteIfBound(*DragOp->ItemEntry);
+		
 		return true;
 	}
 	

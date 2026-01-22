@@ -18,7 +18,6 @@ class UTextBlock;
 class UButton;
 
 
-DECLARE_DELEGATE_OneParam(FOnUseButtomClicked, const FRPGInventoryEntry&);
 DECLARE_DELEGATE_OneParam(FOnItemRowClicked, const FRPGInventoryEntry&);
 DECLARE_DELEGATE_OneParam(FOnItemDroppedEvent, const FRPGInventoryEntry&);
 /**
@@ -29,16 +28,16 @@ class RPGSYSTEMS_API UItemSlotWidget : public UUserWidget
 {
 	GENERATED_BODY()
 public:
-	FOnUseButtomClicked	OnUseButtomClickedDelegate;
 	FOnItemRowClicked OnItemRowClickedDelegate;
 	FOnItemDroppedEvent OnItemDroppedEventDelegate;
 	
 	void SetItemNameText(FText Text);
 	void SetQuantityText(int32 Quantity);
 	void SetIcon();
-	void SetGridSlot(const int32 Index,UUniformGridSlot* GridSlot);
+	void SetGridSlot(UUniformGridSlot* GridSlot);
+	UUniformGridSlot* GetGridSlot();
 	
-	void Init(const FRPGInventoryEntry& InItemDefinition,TSoftObjectPtr<UTexture2D> Icon,TObjectPtr<UInventoryWidgetController> InventoryWidgetController);
+	void Init(const FRPGInventoryEntry& InItemDefinition,TSoftObjectPtr<UTexture2D> Icon);
 	
 	UPROPERTY(BlueprintReadOnly)
 	FRPGInventoryEntry ItemEntry;
@@ -49,19 +48,13 @@ protected:
 	virtual void NativeDestruct() override;
 	virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 	virtual void NativeOnDragDetected(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent, UDragDropOperation*& OutOperation) override;
+	virtual void NativeOnDragCancelled(const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
+	virtual void NativeOnDragEnter(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
+	virtual void NativeOnDragLeave(const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
 private:
-	
-	UFUNCTION()
-	void OnItemUpdated(const FRPGInventoryEntry& UpdatedEntry);
-
-	//References
-	UPROPERTY()
-	TObjectPtr<UInventoryWidgetController> WidgetController;
 	
 	UPROPERTY()
 	TObjectPtr<UUniformGridSlot> GridSlot = nullptr;
-	
-	int32 GridIndex = 0;
 	
 	UPROPERTY()
 	TSoftObjectPtr<UTexture2D> SoftIconTexture;
@@ -80,3 +73,6 @@ private:
 	UPROPERTY(VisibleAnywhere,BlueprintReadWrite, meta = (BindWidget,AllowPrivateAccess="true"), Category = "UI")
 	USizeBox* IconBox;
 };
+
+
+

@@ -7,6 +7,7 @@
 #include "InventorySection/InventoryComponent.h"
 #include "InventoryWidget.generated.h"
 
+class UItemsPanelWidget;
 class UEquipmentSlot;
 class UItemCategoryButton;
 class UUniformGridPanel;
@@ -98,7 +99,6 @@ private:
 	
 	//TArray<FRPGInventoryEntry> ActiveItems; //created item slots
 	
-	int32 CurrentCategoryIndex = 0;
 	FGameplayTag CurrentCategorySelected;
 
 	//Hierarchy
@@ -120,31 +120,46 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category="Categories")
 	TSubclassOf<UItemCategoryButton> CategoryButtonClass;
 
-	/////////////////////////////////
-	//ItemsPanel
-	UPROPERTY(VisibleAnywhere, Category = "UI")
-	UBorder* BackgroundBorder;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (BindWidget, AllowPrivateAccess), Category = "UI")
-	USizeBox* SizeBox;
-
+	//Search Bar
 	UPROPERTY(VisibleAnywhere, meta = (BindWidget), Category = "UI")
 	UEditableText* SearchBar;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (BindWidget, AllowPrivateAccess = "true"), Category = "UI")
-	UScrollBox* InventoryContent;
+	UPROPERTY(VisibleAnywhere, meta = (BindWidget), Category = "UI")
+	UTextBlock* CategoryText;
+	
+	/////////////////////////////////
+	//ItemsPanel
 
 	UPROPERTY(VisibleAnywhere, meta = (BindWidget), Category = "UI")
-	UUniformGridPanel* ItemsPanel;
-
-	const int32 MaxColumns = 5;
+	UItemsPanelWidget* ItemsContainer;
+	
+	// UPROPERTY(VisibleAnywhere, Category = "UI")
+	// UBorder* BackgroundBorder;
+	//
+	// UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (BindWidget, AllowPrivateAccess), Category = "UI")
+	// USizeBox* SizeBox;
+	
+	
+	// UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (BindWidget, AllowPrivateAccess = "true"), Category = "UI")
+	// UScrollBox* InventoryContent;
+	//
+	// UPROPERTY(VisibleAnywhere, meta = (BindWidget), Category = "UI")
+	// UUniformGridPanel* ItemsPanel;
+	//
+	// const int32 MaxColumns = 5;
 
 	//Equipments Panel
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget,AllowPrivateAccess="true"), Category = "UI")
-	UEquipmentSlot* LeftHandEquipment;
+	UEquipmentSlot* SilverSword;
 	
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget,AllowPrivateAccess="true"), Category = "UI")
-	UEquipmentSlot* RightHandEquipment;
+	UEquipmentSlot* SteelWeapon;
+
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget,AllowPrivateAccess="true"), Category = "UI")
+	UEquipmentSlot* Bolls;
+
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget,AllowPrivateAccess="true"), Category = "UI")
+	UEquipmentSlot* RangedWeapon;
 };
 
 

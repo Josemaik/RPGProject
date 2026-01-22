@@ -7,6 +7,7 @@
 #include "Blueprint/UserWidget.h"
 #include "EquipmentSlot.generated.h"
 
+class USizeBox;
 struct FRPGInventoryEntry;
 DECLARE_DELEGATE_OneParam(FOnEquipItem, const FRPGInventoryEntry&)
 
@@ -23,9 +24,14 @@ public:
 
 	FOnEquipItem OnEquipItem;
 private:
-	UPROPERTY(EditDefaultsOnly,BlueprintReadOnly,meta=(AllowPrivateAccess=true))
+	UPROPERTY(EditDefaultsOnly,BlueprintReadOnly,meta=(BindWidget,AllowPrivateAccess=true))
 	UImage* EquipmentSlotImage;
 
 	UPROPERTY(EditAnywhere,BlueprintReadOnly, Category= "Config",meta=(AllowPrivateAccess=true))
 	FGameplayTag EquipmentTag;
+
+	UPROPERTY(EditAnywhere,BlueprintReadOnly, Category= "Config",meta=(BindWidget,ExposeOnSpawn,AllowPrivateAccess=true))
+	USizeBox* SizeBox;
+
+	bool bIsEmpty = true;
 };
