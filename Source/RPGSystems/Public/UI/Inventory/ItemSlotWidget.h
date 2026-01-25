@@ -8,6 +8,7 @@
 #include "InventorySection/InventoryComponent.h"
 #include "ItemSlotWidget.generated.h"
 
+class UImage;
 class UUniformGridSlot;
 class UInventoryWidgetController;
 class USizeBox;
@@ -38,10 +39,12 @@ public:
 	UUniformGridSlot* GetGridSlot();
 	
 	void Init(const FRPGInventoryEntry& InItemDefinition,TSoftObjectPtr<UTexture2D> Icon);
+	void EmptySlot();
+	bool IsEmpty() const { return bIsEmpty; }
+	TSoftObjectPtr<UTexture2D> GetIconTexture() { return  SoftIconTexture; }
 	
 	UPROPERTY(BlueprintReadOnly)
 	FRPGInventoryEntry ItemEntry;
-	
 	
 protected:
 	virtual void NativeConstruct() override;
@@ -52,6 +55,7 @@ protected:
 	virtual void NativeOnDragEnter(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
 	virtual void NativeOnDragLeave(const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
 private:
+	bool bIsEmpty = true;
 	
 	UPROPERTY()
 	TObjectPtr<UUniformGridSlot> GridSlot = nullptr;
@@ -71,7 +75,10 @@ private:
 	UTextBlock* ItemQuantity;
 	
 	UPROPERTY(VisibleAnywhere,BlueprintReadWrite, meta = (BindWidget,AllowPrivateAccess="true"), Category = "UI")
-	USizeBox* IconBox;
+	UImage* IconBox;
+
+	UPROPERTY(VisibleAnywhere,BlueprintReadWrite, meta = (BindWidget,AllowPrivateAccess="true"), Category = "UI")
+	UImage* Border;
 };
 
 

@@ -6,6 +6,7 @@
 #include "GameplayTagContainer.h"
 #include "AbilitySystem/RPGGameplayTags.h"
 #include "Blueprint/WidgetBlueprintLibrary.h"
+#include "Components/Image.h"
 #include "Components/SizeBox.h"
 #include "Components/TextBlock.h"
 #include "InventorySection/InventoryComponent.h"
@@ -36,8 +37,9 @@ void UItemSlotWidget::SetIcon()
 	IconWidgetReference = Cast<UItemSlotIcon>(CreateWidget(this,IconWidgetClass));
 	if (IsValid(IconWidgetReference))
 	{
+		IconBox->SetBrushFromTexture(SoftIconTexture.Get());
+		IconBox->SetColorAndOpacity(FLinearColor::White);
 		IconWidgetReference->SetIcon(SoftIconTexture);
-		IconBox->AddChild(IconWidgetReference);
 	}
 }
 
@@ -54,8 +56,6 @@ UUniformGridSlot* UItemSlotWidget::GetGridSlot()
 void UItemSlotWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
-
-	SetIcon();
 }
 
 void UItemSlotWidget::NativeDestruct()
@@ -73,8 +73,21 @@ void UItemSlotWidget::Init(const FRPGInventoryEntry& Entry,TSoftObjectPtr<UTextu
 	ItemEntry = Entry;
 	SetItemNameText(ItemEntry.ItemName);
 	SetQuantityText(ItemEntry.Quantity);
-	
+
 	SoftIconTexture = Icon;
+	SetIcon();
+
+	bIsEmpty = false;
+}
+
+void UItemSlotWidget::EmptySlot()
+{
+	ItemEntry = FRPGInventoryEntry();
+	ItemQuantity = 0;
+	IconBox->SetColorAndOpacity(FLinearColor::Black);
+	IconBox->SetBrushFromTexture(nullptr);
+	SoftIconTexture.Reset();
+	bIsEmpty = true;
 }
 
 FReply UItemSlotWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
@@ -121,11 +134,13 @@ void UItemSlotWidget::NativeOnDragEnter(const FGeometry& InGeometry, const FDrag
 {
 	GEngine->AddOnScreenDebugMessage(-1,5.f,FColor::Emerald,FString::Printf(TEXT("Drag Enter")));
 	Super::NativeOnDragEnter(InGeometry, InDragDropEvent, InOperation);
+	Border->SetColorAndOpacity(FColor::Orange); 
 }
 
 void UItemSlotWidget::NativeOnDragLeave(const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation)
 {
 	GEngine->AddOnScreenDebugMessage(-1,5.f,FColor::Emerald,FString::Printf(TEXT("Drag Leave")));
 	Super::NativeOnDragLeave(InDragDropEvent, InOperation);
+	Border->SetColorAndOpacity(FColor::Black); 
 }
 

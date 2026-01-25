@@ -94,10 +94,8 @@ private:
 	UPROPERTY()
 	UInventoryComponent* OwningInventory;
 
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditDefaultsOnly, Category = "Data")
 	TSubclassOf<UItemSlotWidget> ItemSlotWidgetClass;
-	
-	//TArray<FRPGInventoryEntry> ActiveItems; //created item slots
 	
 	FGameplayTag CurrentCategorySelected;
 

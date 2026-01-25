@@ -18,7 +18,8 @@ bool UEquipmentSlot::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEv
 	{
 		if (!bIsEmpty)
 		{
-			//Lógica para sustituir por el que se ha dragueado	
+			//Lógica para sustituir por el que se ha dragueado
+			
 		}
 
 		bIsEmpty = false;

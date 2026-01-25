@@ -3,6 +3,7 @@
 
 #include "UI/Inventory/InventoryWidget.h"
 
+#include "ShaderPrintParameters.h"
 #include "AbilitySystem/RPGGameplayTags.h"
 #include "Components/EditableText.h"
 #include "Components/HorizontalBox.h"
@@ -25,14 +26,8 @@ void UInventoryWidget::SetWidgetController(UInventoryWidgetController* InWidgetC
 	ItemsContainer->CurrentCategoryTag = CurrentCategorySelected;
 	CacheEssentialVars();
 	BindInventoryItemDelegates();
-}
 
-void UInventoryWidget::NativeConstruct()
-{
-	Super::NativeConstruct();
-
-	SearchBar->OnTextChanged.AddDynamic(this, &ThisClass::OnSearchBarTextChanged);
-	
+	//Init categories
 	CategoriesContainer->ClearChildren();
 	for (const FCategoryButtonData& Data : Categories)
 	{
@@ -52,10 +47,23 @@ void UInventoryWidget::NativeConstruct()
 		Spacer->SetSize(FVector2d(8.f,1.f));
 
 		CategoriesContainer->AddChildToHorizontalBox(Spacer);
-	}
 
+		ItemsContainer->AddEmptySlots(Data.CategoryTag);
+	}
+}
+
+void UInventoryWidget::NativeConstruct()
+{
+	Super::NativeConstruct();
+
+	SearchBar->OnTextChanged.AddDynamic(this, &ThisClass::OnSearchBarTextChanged);
+
+	//bind warpbox->childs->childs(castear a UEquipmentSlot) y delegate
+	//funcion bind inventoryequipmentdelegates
 	SilverSword->OnEquipItem.BindUObject(this, &ThisClass::OnEquipItem);
 	SteelWeapon->OnEquipItem.BindUObject(this, &ThisClass::OnEquipItem);
+	Bolls->OnEquipItem.BindUObject(this, &ThisClass::OnEquipItem);
+	RangedWeapon->OnEquipItem.BindUObject(this, &ThisClass::OnEquipItem);
 }
 
 bool UInventoryWidget::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent,
@@ -107,20 +115,20 @@ void UInventoryWidget::HandleCategorySelected(FGameplayTag CategorySelected)
 	CurrentCategorySelected = CategorySelected;
 	ItemsContainer->ResetCategory(CurrentCategorySelected);
 	
-	if (!IsValid(ItemsContainer)) return;
-	ItemsContainer->ClearPanel();
-
-	for (const FRPGInventoryEntry& ItemEntry : OwningInventory->InventoryList.GetEntries())
-	{
-		if (ItemEntry.ItemTag.MatchesTag(CategorySelected))
-		{
-			UItemSlotWidget* NewItemSlot = NewActiveItem(ItemEntry);
-			if (IsValid(NewItemSlot))
-			{
-				AddToItemsGrid(NewItemSlot);
-			}
-		}
-	}
+	// if (!IsValid(ItemsContainer)) return;
+	// ItemsContainer->ClearPanel();
+	//
+	// for (const FRPGInventoryEntry& ItemEntry : OwningInventory->InventoryList.GetEntries())
+	// {
+	// 	if (ItemEntry.ItemTag.MatchesTag(CategorySelected))
+	// 	{
+	// 		UItemSlotWidget* NewItemSlot = NewActiveItem(ItemEntry);
+	// 		if (IsValid(NewItemSlot))
+	// 		{
+	// 			AddToItemsGrid(NewItemSlot);
+	// 		}
+	// 	}
+	// }
 	
 }
 
@@ -128,7 +136,7 @@ void UInventoryWidget::AddToItemsGrid(TObjectPtr<UItemSlotWidget> InSlotWidget)
 {
 	if (!IsValid(InSlotWidget) || !IsValid(ItemsContainer)) return;
 
-	ItemsContainer->AddItem(InSlotWidget);
+	//ItemsContainer->AddItem(InSlotWidget);
 }
 
 UItemSlotWidget* UInventoryWidget::NewActiveItem(const FRPGInventoryEntry& Entry)
@@ -165,22 +173,36 @@ UItemSlotWidget* UInventoryWidget::NewActiveItem(const FRPGInventoryEntry& Entry
 
 void UInventoryWidget::HandleInventoryItemReceived(const FRPGInventoryEntry& Entry)
 {
-	if (!Entry.ItemTag.MatchesTag(CurrentCategorySelected))
+	// if (!Entry.ItemTag.MatchesTag(CurrentCategorySelected))
+	// {
+	// 	return;
+	// }
+	
+	if (!IsValid(ItemsContainer)) return;
+	if (ItemsContainer->ContainsItemSlot(Entry.ItemID))
 	{
+		ItemsContainer->UpdateItemSlot(Entry);
 		return;
 	}
 
-	//current category
-	if (Entry.Quantity > 1)
+	if (!IsValid(OwningInventory)) return;
+
+	FMasterItemDefinition ItemDefinition = OwningInventory->GetItemDefinitionByTag(Entry.ItemTag);
+	UItemSlotWidget* CurrentItemSlotWidget = ItemsContainer->AddItemSlot(Entry,ItemDefinition.Icon);
+	if (IsValid(CurrentItemSlotWidget))
 	{
-		ItemsContainer->UpdateItem(Entry);
-		return;
+		CurrentItemSlotWidget->OnItemRowClickedDelegate.BindLambda(
+			[this](const FRPGInventoryEntry& Entry)
+			{
+				HandleItemRowClicked(Entry);
+			});
+
+		CurrentItemSlotWidget->OnItemDroppedEventDelegate.BindLambda(
+			[this](const FRPGInventoryEntry& Entry)
+			{
+				HandleItemDropped(Entry);
+			});	
 	}
-		
-	UItemSlotWidget* NewSlotWidget = NewActiveItem(Entry);
-	if (!IsValid(NewSlotWidget)) return;
-	
-	AddToItemsGrid(NewSlotWidget);
 }
 
 
