@@ -5,8 +5,10 @@
 
 #include "IDetailTreeNode.h"
 #include "AbilitySystem/RPGGameplayTags.h"
+#include "Blueprint/DragDropOperation.h"
 #include "Components/UniformGridPanel.h"
 #include "Components/UniformGridSlot.h"
+#include "UI/Inventory/ItemSlotDroppedDragDrop.h"
 #include "UI/Inventory/ItemSlotWidget.h"
 
 void UItemsPanelWidget::AddItemToGrid(UItemSlotWidget* Item,const int32 Index)
@@ -207,5 +209,9 @@ bool UItemsPanelWidget::NativeOnDrop(const FGeometry& InGeometry, const FDragDro
                                      UDragDropOperation* InOperation)
 {
 	GEngine->AddOnScreenDebugMessage(-1,5.f,FColor::Red,FString::Printf(TEXT("Drop on Items Panel")));
+	//InOperation->Payload
+	// UItemSlotDroppedDragDrop* DragDropOperation = Cast<UItemSlotDroppedDragDrop>(InOperation);
+	// if (!IsValid(DragDropOperation)) return false;
+	
 	return true;
 }

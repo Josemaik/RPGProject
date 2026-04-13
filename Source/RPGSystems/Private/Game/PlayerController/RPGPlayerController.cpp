@@ -4,6 +4,7 @@
 #include "Game/PlayerController/RPGPlayerController.h"
 
 #include "AbilitySystemBlueprintLibrary.h"
+#include "EnhancedInputSubsystems.h"
 #include "AbilitySystem/RPGAbilitySystemComponent.h"
 #include "Blueprint/UserWidget.h"
 #include "Equipment/EquipmentManagerComponent.h"
@@ -208,6 +209,54 @@ void ARPGPlayerController::CreateInventoryWidget()
  		InventoryWidgetController->BroadCastInitialValues();
  		InventoryWidget->AddToViewport();
  	}
+}
+
+void ARPGPlayerController::EnableInventoryWidget()
+{
+	if (!IsValid(InventoryWidget))
+	{
+		CreateInventoryWidget();
+	}
+	
+	InventoryWidget->SetVisibility(ESlateVisibility::Visible);
+	OverlayWidgetRef->SetVisibility(ESlateVisibility::Hidden);
+
+	if (!IsValid(RPGAbilitySystemComponent))
+	{
+		return;
+	}
+ 		
+	RPGAbilitySystemComponent->AddLooseGameplayTag(FGameplayTag::RequestGameplayTag(FName("Input.BlockInput.InventoryOpen")));
+	UEnhancedInputLocalPlayerSubsystem* Subsystem =
+		ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer());
+
+	Subsystem->RemoveMappingContext(GameplayIMC);
+	Subsystem->AddMappingContext(InventoryIMC, 1);
+
+	SetInputMode(FInputModeGameAndUI());
+}
+
+void ARPGPlayerController::DisableInventoryWidget()
+{
+	if (!IsValid(InventoryWidget)) return;
+
+	InventoryWidget->SetVisibility(ESlateVisibility::Collapsed);
+	OverlayWidgetRef->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+
+	if (!IsValid(RPGAbilitySystemComponent))
+	{
+		return;
+	}
+ 		
+	RPGAbilitySystemComponent->RemoveLooseGameplayTag(FGameplayTag::RequestGameplayTag(FName("Input.BlockInput.InventoryOpen")));
+
+	UEnhancedInputLocalPlayerSubsystem* Subsystem =
+		ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer());
+
+	Subsystem->RemoveMappingContext(InventoryIMC);
+	Subsystem->AddMappingContext(GameplayIMC, 1);
+
+	SetInputMode(FInputModeGameOnly());
 }
 
 

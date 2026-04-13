@@ -104,12 +104,14 @@ FReply UItemSlotWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, con
 void UItemSlotWidget::NativeOnDragDetected(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent,
 	UDragDropOperation*& OutOperation)
 {
+	if (bIsEmpty) return;
+	
 	Super::NativeOnDragDetected(InGeometry, InMouseEvent, OutOperation);
 	
 	UItemSlotDroppedDragDrop* DragDropOperation = Cast<UItemSlotDroppedDragDrop>(UWidgetBlueprintLibrary::CreateDragDropOperation(UItemSlotDroppedDragDrop::StaticClass()));
 	DragDropOperation->Pivot = EDragPivot::CenterCenter;
 	DragDropOperation->DefaultDragVisual = IconWidgetReference;
-	DragDropOperation->Payload = this;
+	DragDropOperation->ItemSlot_Payload = this;
 	DragDropOperation->ItemEntry = &ItemEntry;
 	DragDropOperation->IconTexture = SoftIconTexture.Get();
 
@@ -142,5 +144,25 @@ void UItemSlotWidget::NativeOnDragLeave(const FDragDropEvent& InDragDropEvent, U
 	GEngine->AddOnScreenDebugMessage(-1,5.f,FColor::Emerald,FString::Printf(TEXT("Drag Leave")));
 	Super::NativeOnDragLeave(InDragDropEvent, InOperation);
 	Border->SetColorAndOpacity(FColor::Black); 
+}
+
+bool UItemSlotWidget::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent,
+	UDragDropOperation* InOperation)
+{
+	GEngine->AddOnScreenDebugMessage(-1,5.f,FColor::Emerald,FString::Printf(TEXT("Dro Item Slot")));
+	UItemSlotDroppedDragDrop* DragDropOp = Cast<UItemSlotDroppedDragDrop>(InOperation);
+	if (!IsValid(DragDropOp)) return false;
+
+	//Add to the new slot
+	Init(*DragDropOp->ItemEntry,DragDropOp->IconTexture);
+
+	//Clear the last slot
+	if (!IsValid(DragDropOp->ItemSlot_Payload)) return false;
+	DragDropOp->ItemSlot_Payload->EmptySlot();
+
+	if (!IsValid(Border)) return false;
+	Border->SetColorAndOpacity(FColor::Black); 
+	
+	return true;
 }
 

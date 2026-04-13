@@ -10,6 +10,7 @@
 #include "Interfaces/RPGAbilitySystemInterface.h"
 #include "RPGPlayerController.generated.h"
 
+ class UInputMappingContext;
  struct FRPGInventoryEntry;
  struct FRPGEquipmentEntry;
  struct FEquipmentEffectPackage;
@@ -54,6 +55,12 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void CreateInventoryWidget();
 
+	UFUNCTION(BlueprintCallable)
+	void EnableInventoryWidget();
+
+	UFUNCTION(BlueprintCallable)
+	void DisableInventoryWidget();
+	
 protected:
 	virtual void BeginPlay() override;
 	
@@ -89,6 +96,12 @@ private:
 	
 	UPROPERTY(EditDefaultsOnly, Category="Custom Values|Input")
 	TObjectPtr<URPGInputConfig> RPGInputConfig;
+
+	UPROPERTY(EditDefaultsOnly, Category="Custom Values|Input")
+	TObjectPtr<UInputMappingContext> GameplayIMC;
+
+	UPROPERTY(EditDefaultsOnly, Category="Custom Values|Input")
+	TObjectPtr<UInputMappingContext> InventoryIMC;
 	
 	UPROPERTY()
 	TObjectPtr<UInventoryWidgetController> InventoryWidgetController;
@@ -101,6 +114,9 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Custom Values|Widgets")
 	TSubclassOf<UInventoryWidget> InventoryWidgetClass;
+
+	UPROPERTY(BlueprintReadWrite, meta = (AllowPrivateAccess = true))
+	TObjectPtr<UUserWidget> OverlayWidgetRef;
 };
 
 
