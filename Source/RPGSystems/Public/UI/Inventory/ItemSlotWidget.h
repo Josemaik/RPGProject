@@ -19,8 +19,21 @@ class UTextBlock;
 class UButton;
 
 
+
+UENUM()
+enum ESlotSizeCategories : uint8
+{
+	UniqueSlot,
+	SuperiorSlotVertical,
+	LowerSlotVertical
+};
+
+class UItemSlotWidget;
+
 DECLARE_DELEGATE_OneParam(FOnItemRowClicked, const FRPGInventoryEntry&);
 DECLARE_DELEGATE_OneParam(FOnItemDroppedEvent, const FRPGInventoryEntry&);
+DECLARE_DELEGATE_TwoParams(FOnItemDroppedPanel, UItemSlotWidget* OldSlot, UItemSlotWidget* NewSlot);
+DECLARE_DELEGATE_OneParam(FOnDragEntered, int32 NewIndex);
 /**
  * 
  */
@@ -31,17 +44,25 @@ class RPGSYSTEMS_API UItemSlotWidget : public UUserWidget
 public:
 	FOnItemRowClicked OnItemRowClickedDelegate;
 	FOnItemDroppedEvent OnItemDroppedEventDelegate;
+	FOnItemDroppedPanel OnItemDroppedPanelDelegate;
+	FOnDragEntered OnDragEnteredDelegate; 
 	
 	void SetItemNameText(FText Text);
 	void SetQuantityText(int32 Quantity);
-	void SetIcon();
+	void SetIcon(const FSlateBrush& Brush);
 	void SetGridSlot(UUniformGridSlot* GridSlot);
 	UUniformGridSlot* GetGridSlot();
 	
-	void Init(const FRPGInventoryEntry& InItemDefinition,TSoftObjectPtr<UTexture2D> Icon);
+	void Init(const FRPGInventoryEntry& Entry,const TSoftObjectPtr<UTexture2D>& Icon,const FSlateBrush& Brush = FSlateBrush(), ESlotSizeCategories SlotSize = ESlotSizeCategories::UniqueSlot);
 	void EmptySlot();
+	void OutlineSlot(ESlotSizeCategories SlotSize);
+	void SetIconPadding() const;
 	bool IsEmpty() const { return bIsEmpty; }
-	TSoftObjectPtr<UTexture2D> GetIconTexture() { return  SoftIconTexture; }
+	TSoftObjectPtr<UTexture2D> GetIconTexture() const { return  SoftIconTexture; }
+	int32 GetGridIndex() const { return CurrentGridIndex; }
+	void SetGridIndex(const int32 NewIndex) { CurrentGridIndex = NewIndex; }
+	ESlotSizeCategories GetCurrentSlotSize() const { return CurrentSlotSize; }
+	const FSlateBrush& GetIconBrush() const { return CurrentIconBrush; }
 	
 	UPROPERTY(BlueprintReadOnly)
 	FRPGInventoryEntry ItemEntry;
@@ -56,13 +77,19 @@ protected:
 	virtual void NativeOnDragLeave(const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
 	virtual bool NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
 private:
+	ESlotSizeCategories CurrentSlotSize;
+	
 	bool bIsEmpty = true;
+	
+	int32 CurrentGridIndex = 0;
+	
+	FSlateBrush CurrentIconBrush;
+
+	UPROPERTY()
+	TSoftObjectPtr<UTexture2D> SoftIconTexture;
 	
 	UPROPERTY()
 	TObjectPtr<UUniformGridSlot> GridSlot = nullptr;
-	
-	UPROPERTY()
-	TSoftObjectPtr<UTexture2D> SoftIconTexture;
 	
 	UPROPERTY()
 	UItemSlotIcon* IconWidgetReference;

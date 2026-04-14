@@ -7,6 +7,7 @@
 #include "Blueprint/DragDropOperation.h"
 #include "ItemSlotDroppedDragDrop.generated.h"
 
+enum ESlotSizeCategories : uint8;
 class UItemSlotWidget;
 struct FRPGInventoryEntry;
 /**
@@ -18,11 +19,11 @@ class RPGSYSTEMS_API UItemSlotDroppedDragDrop : public UDragDropOperation
 	GENERATED_BODY()
 
 public:
-	FRPGInventoryEntry* ItemEntry;
-	
 	UPROPERTY()
 	UItemSlotWidget* ItemSlot_Payload;
 
+	FRPGInventoryEntry* ItemEntry;
+
 	UPROPERTY()
-	TObjectPtr<UTexture2D> IconTexture;
+	UTexture2D* IconTexture;
 };

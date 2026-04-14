@@ -7,9 +7,13 @@
 #include "Blueprint/UserWidget.h"
 #include "ItemsPanelWidget.generated.h"
 
+enum ESlotSizeCategories : uint8;
+struct FMasterItemDefinition;
 struct FRPGInventoryEntry;
 class UItemSlotWidget;
 class UUniformGridPanel;
+
+
 /**
  * 
  */
@@ -25,12 +29,15 @@ public:
 	
 	void UpdateItemSlot(const FRPGInventoryEntry& Entry);
 	FGameplayTag GetItemCategory(FGameplayTag ItemTag);
-	UItemSlotWidget* AddItemSlot(const FRPGInventoryEntry& Entry,TSoftObjectPtr<UTexture2D> Icon);
+	UItemSlotWidget* AddItemSlot(const FRPGInventoryEntry& Entry,const FMasterItemDefinition& ItemDefinition,int32 Index = INDEX_NONE);
 	
 	void ClearPanel();
 	int32 GetMaxColums() const { return MaxColumns; }
 	void AddEmptySlots(FGameplayTag InCurrentCategoryTag);
 	void ResetCategory(FGameplayTag CurrentCategoryTag);
+
+	void HandleItemDropped(UItemSlotWidget* DroppedSlot,UItemSlotWidget* NewSlot);
+	void HandleDraggedItemEntered(int32 NewIndex);
 	
 	FGameplayTag CurrentCategoryTag;
 

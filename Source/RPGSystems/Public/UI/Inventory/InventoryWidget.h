@@ -65,6 +65,8 @@ private:
 	void AddToItemsGrid(TObjectPtr<UItemSlotWidget> InSlotWidget);
 
 	UItemSlotWidget* NewActiveItem(const FRPGInventoryEntry& Entry);
+	void BindItemSlotDelegates(UItemSlotWidget* CurrentItemSlotWidget);
+	void AddItemToGrid(const FRPGInventoryEntry& Entry, const FMasterItemDefinition& ItemDefinition);
 	//callbacks
 	UFUNCTION()
 	void HandleInventoryItemReceived(const FRPGInventoryEntry& Entry);

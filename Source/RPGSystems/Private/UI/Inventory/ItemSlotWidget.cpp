@@ -12,6 +12,9 @@
 #include "InventorySection/InventoryComponent.h"
 #include "UI/Inventory/ItemSlotDroppedDragDrop.h"
 #include "UI/Inventory/ItemSlotIcon.h"
+#include "Components/Image.h"
+#include "Components/OverlaySlot.h"
+#include "Misc/Iteration.h"
 #include "UI/WidgetController/InventoryWidgetController.h"
 
 
@@ -32,15 +35,18 @@ void UItemSlotWidget::SetQuantityText(int32 Quantity)
 	ItemQuantity->SetText(FormatText);
 }
 
-void UItemSlotWidget::SetIcon()
+void UItemSlotWidget::SetIcon(const FSlateBrush& Brush)
 {
 	IconWidgetReference = Cast<UItemSlotIcon>(CreateWidget(this,IconWidgetClass));
 	if (IsValid(IconWidgetReference))
 	{
-		IconBox->SetBrushFromTexture(SoftIconTexture.Get());
-		IconBox->SetColorAndOpacity(FLinearColor::White);
 		IconWidgetReference->SetIcon(SoftIconTexture);
 	}
+	
+	if (!IsValid(IconBox)) return;
+	
+	IconBox->SetBrush(Brush);
+	IconBox->SetColorAndOpacity(FLinearColor::White);
 }
 
 void UItemSlotWidget::SetGridSlot(UUniformGridSlot* NewGridSlot)
@@ -68,16 +74,21 @@ void UItemSlotWidget::NativeDestruct()
 	Super::NativeDestruct();
 }
 
-void UItemSlotWidget::Init(const FRPGInventoryEntry& Entry,TSoftObjectPtr<UTexture2D> Icon)
+void UItemSlotWidget::Init(const FRPGInventoryEntry& Entry,const TSoftObjectPtr<UTexture2D>& Icon,const FSlateBrush& Brush,ESlotSizeCategories SlotSize)
 {
 	ItemEntry = Entry;
 	SetItemNameText(ItemEntry.ItemName);
 	SetQuantityText(ItemEntry.Quantity);
 
 	SoftIconTexture = Icon;
-	SetIcon();
-
+	SetIcon(Brush);
+	
+	CurrentIconBrush = Brush;
+	
 	bIsEmpty = false;
+	CurrentSlotSize = SlotSize;
+
+	SetIconPadding();
 }
 
 void UItemSlotWidget::EmptySlot()
@@ -86,8 +97,36 @@ void UItemSlotWidget::EmptySlot()
 	ItemQuantity = 0;
 	IconBox->SetColorAndOpacity(FLinearColor::Black);
 	IconBox->SetBrushFromTexture(nullptr);
-	SoftIconTexture.Reset();
+	CurrentIconBrush = FSlateBrush();
 	bIsEmpty = true;
+	
+	if (UOverlaySlot* IconBoxSlot = Cast<UOverlaySlot>(IconBox->Slot))
+	{
+		IconBoxSlot->SetPadding(FMargin(5.f, 5.f, 5.f, 5.f));
+	}
+}
+
+void UItemSlotWidget::OutlineSlot(ESlotSizeCategories SlotSize)
+{
+	CurrentSlotSize = SlotSize;
+	SetIconPadding();
+	Border->SetColorAndOpacity(FColor::Orange);
+}
+
+void UItemSlotWidget::SetIconPadding() const
+{
+	if (!IsValid(IconBox) || CurrentSlotSize == ESlotSizeCategories::UniqueSlot) return;
+	UOverlaySlot* IconBoxSlot = Cast<UOverlaySlot>(IconBox->Slot);
+	if (!IsValid(Slot)) return;
+	
+	if (CurrentSlotSize == ESlotSizeCategories::SuperiorSlotVertical)
+	{
+		IconBoxSlot->SetPadding(FMargin(5.f, 5.f, 5.f, 0));
+	}
+	else
+	{
+		IconBoxSlot->SetPadding(FMargin(5.f, 0.f, 5.f, 5.f));
+	}
 }
 
 FReply UItemSlotWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
@@ -111,10 +150,11 @@ void UItemSlotWidget::NativeOnDragDetected(const FGeometry& InGeometry, const FP
 	UItemSlotDroppedDragDrop* DragDropOperation = Cast<UItemSlotDroppedDragDrop>(UWidgetBlueprintLibrary::CreateDragDropOperation(UItemSlotDroppedDragDrop::StaticClass()));
 	DragDropOperation->Pivot = EDragPivot::CenterCenter;
 	DragDropOperation->DefaultDragVisual = IconWidgetReference;
+	DragDropOperation->Payload = this;
 	DragDropOperation->ItemSlot_Payload = this;
 	DragDropOperation->ItemEntry = &ItemEntry;
 	DragDropOperation->IconTexture = SoftIconTexture.Get();
-
+	
 	OutOperation = DragDropOperation;
 }
 
@@ -127,8 +167,10 @@ void UItemSlotWidget::NativeOnDragCancelled(const FDragDropEvent& InDragDropEven
 		
 	UItemSlotDroppedDragDrop* DragDropOp = Cast<UItemSlotDroppedDragDrop>(InOperation);
 	if (!IsValid(DragDropOp)) return;
-
-	OnItemDroppedEventDelegate.ExecuteIfBound(*DragDropOp->ItemEntry);
+	UItemSlotWidget* DraggedSlot = DragDropOp->ItemSlot_Payload;
+	if (!IsValid(DraggedSlot)) return;
+	
+	OnItemDroppedEventDelegate.ExecuteIfBound(DraggedSlot->ItemEntry);
 }
 
 void UItemSlotWidget::NativeOnDragEnter(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent,
@@ -136,14 +178,32 @@ void UItemSlotWidget::NativeOnDragEnter(const FGeometry& InGeometry, const FDrag
 {
 	GEngine->AddOnScreenDebugMessage(-1,5.f,FColor::Emerald,FString::Printf(TEXT("Drag Enter")));
 	Super::NativeOnDragEnter(InGeometry, InDragDropEvent, InOperation);
-	Border->SetColorAndOpacity(FColor::Orange); 
+	
+	UItemSlotDroppedDragDrop* DragDropOp = Cast<UItemSlotDroppedDragDrop>(InOperation);
+	if (!IsValid(DragDropOp)) return;
+	
+	UItemSlotWidget* DroppedItem = DragDropOp->ItemSlot_Payload;
+	if (!IsValid(DroppedItem)) return;
+
+	if (DroppedItem == this) return; //Ignorar a mi mismo
+	
+	OutlineSlot(DroppedItem->GetCurrentSlotSize());
+	
+	OnDragEnteredDelegate.ExecuteIfBound(CurrentGridIndex);
 }
 
 void UItemSlotWidget::NativeOnDragLeave(const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation)
 {
 	GEngine->AddOnScreenDebugMessage(-1,5.f,FColor::Emerald,FString::Printf(TEXT("Drag Leave")));
 	Super::NativeOnDragLeave(InDragDropEvent, InOperation);
-	Border->SetColorAndOpacity(FColor::Black); 
+
+	if (InOperation->Payload == this) return; //Ignorar a mi mismo
+	
+	if (UOverlaySlot* IconBoxSlot = Cast<UOverlaySlot>(IconBox->Slot))
+	{
+		IconBoxSlot->SetPadding(FMargin(5.f, 5.f, 5.f, 5.f));
+	}
+	Border->SetColorAndOpacity(FColor::Black);
 }
 
 bool UItemSlotWidget::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent,
@@ -153,16 +213,21 @@ bool UItemSlotWidget::NativeOnDrop(const FGeometry& InGeometry, const FDragDropE
 	UItemSlotDroppedDragDrop* DragDropOp = Cast<UItemSlotDroppedDragDrop>(InOperation);
 	if (!IsValid(DragDropOp)) return false;
 
+	UItemSlotWidget* DroppedItem = DragDropOp->ItemSlot_Payload;
+	if (!IsValid(DroppedItem)) return false;
+	
 	//Add to the new slot
-	Init(*DragDropOp->ItemEntry,DragDropOp->IconTexture);
-
 	//Clear the last slot
-	if (!IsValid(DragDropOp->ItemSlot_Payload)) return false;
-	DragDropOp->ItemSlot_Payload->EmptySlot();
+	// if (!IsValid(DragDropOp->ItemSlot_Payload)) return false;
+	// DragDropOp->ItemSlot_Payload->EmptySlot();
 
+	if (DroppedItem->GetCurrentSlotSize() != ESlotSizeCategories::UniqueSlot)
+	{
+		OnItemDroppedPanelDelegate.ExecuteIfBound(DroppedItem,this);
+	}
+	
 	if (!IsValid(Border)) return false;
 	Border->SetColorAndOpacity(FColor::Black); 
 	
 	return true;
 }
-

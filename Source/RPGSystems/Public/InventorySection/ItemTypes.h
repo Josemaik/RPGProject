@@ -54,6 +54,9 @@ struct FMasterItemDefinition : public FTableRowBase
 	TSoftObjectPtr<UTexture2D> Icon = nullptr;
 
 	UPROPERTY(EditDefaultsOnly,BlueprintReadOnly)
+	uint8 SlotsSize = 1;
+
+	UPROPERTY(EditDefaultsOnly,BlueprintReadOnly)
 	FConsumableProps ConsumableProps = FConsumableProps();
 
 	UPROPERTY(EditDefaultsOnly,BlueprintReadOnly)

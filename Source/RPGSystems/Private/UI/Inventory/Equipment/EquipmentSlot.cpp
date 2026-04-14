@@ -3,7 +3,6 @@
 
 #include "UI/Inventory/Equipment/EquipmentSlot.h"
 
-#include "AbilitySystem/RPGGameplayTags.h"
 #include "Components/Image.h"
 #include "InventorySection/InventoryComponent.h"
 #include "UI/Inventory/ItemSlotDroppedDragDrop.h"
@@ -14,6 +13,8 @@ bool UEquipmentSlot::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEv
 	UItemSlotDroppedDragDrop* DragOp = Cast<UItemSlotDroppedDragDrop>(InOperation);
 	if (!DragOp) return false;
 
+	
+	
 	if (DragOp->ItemEntry->ItemTag.MatchesTag(EquipmentTag))
 	{
 		if (!bIsEmpty)
