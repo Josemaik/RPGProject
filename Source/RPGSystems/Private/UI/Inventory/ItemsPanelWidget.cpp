@@ -11,12 +11,15 @@
 #include "Blueprint/DragDropOperation.h"
 #include "Components/UniformGridPanel.h"
 #include "Components/UniformGridSlot.h"
+#include "Engine/AssetManager.h"
 #include "UI/Inventory/ItemSlotDroppedDragDrop.h"
 #include "UI/Inventory/ItemSlotWidget.h"
 
-namespace FGameplayTags::Static
+struct FStreamableManager;
+
+namespace FGameplayTags
 {
-	UE_DEFINE_GAMEPLAY_TAG_STATIC(Category_Equipment, "Item.Equipment");
+	UE_DEFINE_GAMEPLAY_TAG(Category_Equipment, "Item.Equipment");
 }
 
 void UItemsPanelWidget::AddItemToGrid(UItemSlotWidget* Item,const int32 Index)
@@ -146,11 +149,38 @@ UItemSlotWidget* UItemsPanelWidget::AddItemSlot(const FRPGInventoryEntry& Entry,
 	
 	int32 FreeIndex = INDEX_NONE;
 	FSlateBrush Brush;
-	Brush.SetResourceObject(ItemDefinition.Icon.Get());
+	// Brush.SetResourceObject(ItemDefinition.Icon.Get());
+	//Load Icon
+	if (ItemDefinition.Icon.IsNull())
+	{
+		return nullptr;
+	}
+
+	if (ItemDefinition.Icon.IsValid())
+	{
+		Brush.SetResourceObject(ItemDefinition.Icon.Get());
+	}
+	else
+	{
+		FStreamableManager& Streamable = UAssetManager::GetStreamableManager();
+    
+		Streamable.RequestAsyncLoad(ItemDefinition.Icon.ToSoftObjectPath(),
+			FStreamableDelegate::CreateLambda([this, ItemDefinition]()
+			{
+				UTexture2D* LoadedTexture = ItemDefinition.Icon.Get();
+				if (LoadedTexture)
+				{
+					FSlateBrush Brush;
+					Brush.SetResourceObject(LoadedTexture);
+				}
+			})
+		);
+	}
+	
 	bool isEquipmentSlot = false;
 
 	//Equipment
-	if (Entry.ItemTag.MatchesTag(FGameplayTags::Static::Category_Equipment) && ItemDefinition.SlotsSize == 2)
+	if (Entry.ItemTag.MatchesTag(FGameplayTags::Category_Equipment) && ItemDefinition.SlotsSize == 2)
 	{
 		if (LastAddedSlotIndex != INDEX_NONE)
 		{
@@ -229,7 +259,7 @@ void UItemsPanelWidget::AddEmptySlots(FGameplayTag InCurrentCategoryTag)
 		
 		CurrentItemSlotWidget->OnItemDroppedPanelDelegate.BindUObject(this,&UItemsPanelWidget::HandleItemDropped);
 		CurrentItemSlotWidget->OnDragEnteredDelegate.BindUObject(this,&UItemsPanelWidget::HandleDraggedItemEntered);
-		
+		CurrentItemSlotWidget->OnDragLeavedDelegate.BindUObject(this,&UItemsPanelWidget::HandleDraggedItemLeaved);
 		--RemainingSlots;
 	}
 }
@@ -242,23 +272,21 @@ void UItemsPanelWidget::ResetCategory(FGameplayTag InCurrentCategoryTag)
 	//clear panel
 	ItemsPanel->ClearChildren();
 
-	TArray<UItemSlotWidget*>& ItemsArray = *CategoryItemsMap.Find(CurrentCategoryTag);
-	if (ItemsArray.IsEmpty()) return;
-	
-	for (int i = 0; i < ItemsArray.Num(); i++)
+	TArray<UItemSlotWidget*>* ItemsArrayPtr = CategoryItemsMap.Find(CurrentCategoryTag);
+
+	if (!ItemsArrayPtr || ItemsArrayPtr->IsEmpty())
 	{
-		UItemSlotWidget* CurrentItem = ItemsArray[i];
+		return;
+	}
+	
+	for (int i = 0; i < ItemsArrayPtr->Num(); i++)
+	{
+		UItemSlotWidget* CurrentItem = (*ItemsArrayPtr)[i];
 		if (IsValid(CurrentItem))
 		{
-			AddItemToGrid(CurrentItem,i);
+			AddItemToGrid(CurrentItem, i);
 		}
 	}
-
-	
-	//Reset last category
-	//if (!CategoryItemsMap.Contains(CurrentCategoryTag)) return;
-	//CategoryItemsMap[CurrentCategoryTag].Empty();
-	//set new category
 }
 
 bool UItemsPanelWidget::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent,
@@ -289,6 +317,7 @@ void UItemsPanelWidget::HandleItemDropped(UItemSlotWidget* DroppedSlot,UItemSlot
 	UItemSlotWidget* NewLowerSlot = ItemsArray[NewSlot->GetGridIndex() + MaxColumns];
 	UItemSlotWidget* OldLowerSlot = IsDroppedSlotSuperior ? ItemsArray[DroppedSlot->GetGridIndex() + MaxColumns] : DroppedSlot;
 	NewLowerSlot->Init(OldLowerSlot->ItemEntry,OldLowerSlot->GetIconTexture(),OldLowerSlot->GetIconBrush(),OldLowerSlot->GetCurrentSlotSize());
+	NewLowerSlot->RemoveOutLineSlot(true);
 	
 	//Clear Dropped Slot
 	OldLowerSlot->EmptySlot();
@@ -299,7 +328,16 @@ void UItemsPanelWidget::HandleDraggedItemEntered(int32 NewIndex)
 {
 	TArray<UItemSlotWidget*>& ItemsArray = *CategoryItemsMap.Find(CurrentCategoryTag);
 	if (ItemsArray.IsEmpty()) return;
-
+	
 	UItemSlotWidget* NewLowerSlot = ItemsArray[NewIndex + MaxColumns];
 	NewLowerSlot->OutlineSlot(ESlotSizeCategories::LowerSlotVertical);
+}
+
+void UItemsPanelWidget::HandleDraggedItemLeaved(int32 NewIndex)
+{
+	TArray<UItemSlotWidget*>& ItemsArray = *CategoryItemsMap.Find(CurrentCategoryTag);
+	if (ItemsArray.IsEmpty()) return;
+
+	UItemSlotWidget* NewLowerSlot = ItemsArray[NewIndex + MaxColumns];
+	NewLowerSlot->RemoveOutLineSlot(false);
 }

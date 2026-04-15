@@ -34,6 +34,7 @@ DECLARE_DELEGATE_OneParam(FOnItemRowClicked, const FRPGInventoryEntry&);
 DECLARE_DELEGATE_OneParam(FOnItemDroppedEvent, const FRPGInventoryEntry&);
 DECLARE_DELEGATE_TwoParams(FOnItemDroppedPanel, UItemSlotWidget* OldSlot, UItemSlotWidget* NewSlot);
 DECLARE_DELEGATE_OneParam(FOnDragEntered, int32 NewIndex);
+DECLARE_DELEGATE_OneParam(FOnDragLeaved, int32 NewIndex);
 /**
  * 
  */
@@ -45,7 +46,8 @@ public:
 	FOnItemRowClicked OnItemRowClickedDelegate;
 	FOnItemDroppedEvent OnItemDroppedEventDelegate;
 	FOnItemDroppedPanel OnItemDroppedPanelDelegate;
-	FOnDragEntered OnDragEnteredDelegate; 
+	FOnDragEntered OnDragEnteredDelegate;
+	FOnDragLeaved OnDragLeavedDelegate;
 	
 	void SetItemNameText(FText Text);
 	void SetQuantityText(int32 Quantity);
@@ -56,7 +58,8 @@ public:
 	void Init(const FRPGInventoryEntry& Entry,const TSoftObjectPtr<UTexture2D>& Icon,const FSlateBrush& Brush = FSlateBrush(), ESlotSizeCategories SlotSize = ESlotSizeCategories::UniqueSlot);
 	void EmptySlot();
 	void OutlineSlot(ESlotSizeCategories SlotSize);
-	void SetIconPadding() const;
+	void RemoveOutLineSlot(bool OnDrop);
+	void SetIconPadding(bool reset) const;
 	bool IsEmpty() const { return bIsEmpty; }
 	TSoftObjectPtr<UTexture2D> GetIconTexture() const { return  SoftIconTexture; }
 	int32 GetGridIndex() const { return CurrentGridIndex; }

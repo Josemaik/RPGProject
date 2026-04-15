@@ -88,18 +88,19 @@ void UItemSlotWidget::Init(const FRPGInventoryEntry& Entry,const TSoftObjectPtr<
 	bIsEmpty = false;
 	CurrentSlotSize = SlotSize;
 
-	SetIconPadding();
+	SetIconPadding(false);
 }
 
 void UItemSlotWidget::EmptySlot()
 {
+	//Border->SetColorAndOpacity(FLinearColor(FColor::FromHex(TEXT("121212FF"))));
 	ItemEntry = FRPGInventoryEntry();
 	ItemQuantity = 0;
-	IconBox->SetColorAndOpacity(FLinearColor::Black);
+	IconBox->SetColorAndOpacity(FLinearColor(FColor::FromHex(TEXT("121212FF"))));
 	IconBox->SetBrushFromTexture(nullptr);
 	CurrentIconBrush = FSlateBrush();
 	bIsEmpty = true;
-	
+
 	if (UOverlaySlot* IconBoxSlot = Cast<UOverlaySlot>(IconBox->Slot))
 	{
 		IconBoxSlot->SetPadding(FMargin(5.f, 5.f, 5.f, 5.f));
@@ -109,19 +110,41 @@ void UItemSlotWidget::EmptySlot()
 void UItemSlotWidget::OutlineSlot(ESlotSizeCategories SlotSize)
 {
 	CurrentSlotSize = SlotSize;
-	SetIconPadding();
+	SetIconPadding(false);
 	Border->SetColorAndOpacity(FColor::Orange);
 }
 
-void UItemSlotWidget::SetIconPadding() const
+void UItemSlotWidget::RemoveOutLineSlot(bool OnDrop)
 {
-	if (!IsValid(IconBox) || CurrentSlotSize == ESlotSizeCategories::UniqueSlot) return;
+	if (OnDrop) //Drop
+	{
+		Border->SetColorAndOpacity(FLinearColor(FColor::FromHex(TEXT("121212FF"))));
+		return;
+	}
+
+	//Leave
+	CurrentSlotSize = ESlotSizeCategories::UniqueSlot;
+	SetIconPadding(true);
+	Border->SetColorAndOpacity(FLinearColor(FColor::FromHex(TEXT("121212FF"))));
+}
+
+void UItemSlotWidget::SetIconPadding(bool reset) const
+{
+	if (!IsValid(IconBox)) return;
 	UOverlaySlot* IconBoxSlot = Cast<UOverlaySlot>(IconBox->Slot);
 	if (!IsValid(Slot)) return;
+
+	if (reset)
+	{
+		IconBoxSlot->SetPadding(FMargin(5.f, 5.f, 5.f, 5.f));
+		return;
+	}
+	
+	if (GetCurrentSlotSize() == ESlotSizeCategories::UniqueSlot) return;
 	
 	if (CurrentSlotSize == ESlotSizeCategories::SuperiorSlotVertical)
 	{
-		IconBoxSlot->SetPadding(FMargin(5.f, 5.f, 5.f, 0));
+		IconBoxSlot->SetPadding(FMargin(5.f, 5.f, 5.f, 0.f));
 	}
 	else
 	{
@@ -188,6 +211,8 @@ void UItemSlotWidget::NativeOnDragEnter(const FGeometry& InGeometry, const FDrag
 	if (DroppedItem == this) return; //Ignorar a mi mismo
 	
 	OutlineSlot(DroppedItem->GetCurrentSlotSize());
+
+	if (DroppedItem->GetCurrentSlotSize() == ESlotSizeCategories::UniqueSlot) return;
 	
 	OnDragEnteredDelegate.ExecuteIfBound(CurrentGridIndex);
 }
@@ -197,13 +222,19 @@ void UItemSlotWidget::NativeOnDragLeave(const FDragDropEvent& InDragDropEvent, U
 	GEngine->AddOnScreenDebugMessage(-1,5.f,FColor::Emerald,FString::Printf(TEXT("Drag Leave")));
 	Super::NativeOnDragLeave(InDragDropEvent, InOperation);
 
-	if (InOperation->Payload == this) return; //Ignorar a mi mismo
+	UItemSlotDroppedDragDrop* DragDropOp = Cast<UItemSlotDroppedDragDrop>(InOperation);
+	if (!IsValid(DragDropOp)) return;
 	
-	if (UOverlaySlot* IconBoxSlot = Cast<UOverlaySlot>(IconBox->Slot))
-	{
-		IconBoxSlot->SetPadding(FMargin(5.f, 5.f, 5.f, 5.f));
-	}
-	Border->SetColorAndOpacity(FColor::Black);
+	UItemSlotWidget* DroppedItem = DragDropOp->ItemSlot_Payload;
+	if (!IsValid(DroppedItem)) return;
+	
+	if (DroppedItem == this) return; //Ignorar a mi mismo
+	
+	RemoveOutLineSlot(false);
+
+	if (DroppedItem->GetCurrentSlotSize() == ESlotSizeCategories::UniqueSlot) return;
+	
+	OnDragLeavedDelegate.ExecuteIfBound(CurrentGridIndex);
 }
 
 bool UItemSlotWidget::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent,
@@ -216,18 +247,16 @@ bool UItemSlotWidget::NativeOnDrop(const FGeometry& InGeometry, const FDragDropE
 	UItemSlotWidget* DroppedItem = DragDropOp->ItemSlot_Payload;
 	if (!IsValid(DroppedItem)) return false;
 	
-	//Add to the new slot
-	//Clear the last slot
-	// if (!IsValid(DragDropOp->ItemSlot_Payload)) return false;
-	// DragDropOp->ItemSlot_Payload->EmptySlot();
+	RemoveOutLineSlot(true);
 
 	if (DroppedItem->GetCurrentSlotSize() != ESlotSizeCategories::UniqueSlot)
 	{
 		OnItemDroppedPanelDelegate.ExecuteIfBound(DroppedItem,this);
+		return true;
 	}
-	
-	if (!IsValid(Border)) return false;
-	Border->SetColorAndOpacity(FColor::Black); 
-	
+
+	Init(DroppedItem->ItemEntry,DroppedItem->GetIconTexture(),DroppedItem->GetIconBrush(),DroppedItem->GetCurrentSlotSize());
+	DroppedItem->EmptySlot();
+		
 	return true;
 }

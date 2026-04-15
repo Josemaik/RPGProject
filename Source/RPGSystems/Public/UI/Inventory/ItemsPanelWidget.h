@@ -38,6 +38,7 @@ public:
 
 	void HandleItemDropped(UItemSlotWidget* DroppedSlot,UItemSlotWidget* NewSlot);
 	void HandleDraggedItemEntered(int32 NewIndex);
+	void HandleDraggedItemLeaved(int32 NewIndex);
 	
 	FGameplayTag CurrentCategoryTag;
 
@@ -59,3 +60,5 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(AllowPrivateAccess="true"), Category = "Data")
 	int32 NUM_INITIAL_EMPTY_SLOTS = 35;
 };
+
+
