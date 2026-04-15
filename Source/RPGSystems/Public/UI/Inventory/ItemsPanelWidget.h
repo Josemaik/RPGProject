@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameplayTagContainer.h"
 #include "Blueprint/UserWidget.h"
+#include "InventorySection/InventoryComponent.h"
 #include "ItemsPanelWidget.generated.h"
 
 enum ESlotSizeCategories : uint8;
@@ -13,6 +14,25 @@ struct FRPGInventoryEntry;
 class UItemSlotWidget;
 class UUniformGridPanel;
 
+USTRUCT()
+struct FItemSlotData
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	FRPGInventoryEntry Entry;
+
+	UPROPERTY()
+	TSoftObjectPtr<UTexture2D> Icon;
+
+	UPROPERTY()
+	FSlateBrush IconBrush;
+	
+	TEnumAsByte<ESlotSizeCategories>  Size;
+	
+	UPROPERTY()
+	bool bIsEmpty = true;
+};
 
 /**
  * 
@@ -25,15 +45,16 @@ class RPGSYSTEMS_API UItemsPanelWidget : public UUserWidget
 public:
 	void AddItemToGrid(UItemSlotWidget* Item,const int32 Index);
 	void RemoveItem(const int64 ItemID);
-	UItemSlotWidget* ContainsItemSlot(const int64 ItemID);
+	int32 FindItemIndex(const int64 ItemID,FGameplayTag ItemTa);
 	
 	void UpdateItemSlot(const FRPGInventoryEntry& Entry);
 	FGameplayTag GetItemCategory(FGameplayTag ItemTag);
-	UItemSlotWidget* AddItemSlot(const FRPGInventoryEntry& Entry,const FMasterItemDefinition& ItemDefinition,int32 Index = INDEX_NONE);
+	void AddItemSlot(const FRPGInventoryEntry& Entry,const FMasterItemDefinition& ItemDefinition);
 	
 	void ClearPanel();
 	int32 GetMaxColums() const { return MaxColumns; }
 	void AddEmptySlots(FGameplayTag InCurrentCategoryTag);
+	void OnIconLoaded(UItemSlotWidget* ItemSlotWidget, FItemSlotData ItemSlotData);
 	void ResetCategory(FGameplayTag CurrentCategoryTag);
 
 	void HandleItemDropped(UItemSlotWidget* DroppedSlot,UItemSlotWidget* NewSlot);
@@ -52,7 +73,8 @@ private:
 	TSubclassOf<UItemSlotWidget> ItemSlotWidgetClass;
 	
 	//TMap<FGameplayTag, int32> CategoriesIndexMap;
-	TMap<FGameplayTag, TArray<UItemSlotWidget*>> CategoryItemsMap;
+	//TMap<FGameplayTag, TArray<UItemSlotWidget*>> CategoryItemsMap;
+	TMap<FGameplayTag, TArray<FItemSlotData>> CategoryItemsMap;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(AllowPrivateAccess="true"), Category = "Data")
 	int32 MaxColumns = 5;

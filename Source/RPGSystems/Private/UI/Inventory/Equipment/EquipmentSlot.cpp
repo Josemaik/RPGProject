@@ -12,8 +12,6 @@ bool UEquipmentSlot::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEv
 {
 	UItemSlotDroppedDragDrop* DragOp = Cast<UItemSlotDroppedDragDrop>(InOperation);
 	if (!DragOp) return false;
-
-	
 	
 	if (DragOp->ItemEntry->ItemTag.MatchesTag(EquipmentTag))
 	{

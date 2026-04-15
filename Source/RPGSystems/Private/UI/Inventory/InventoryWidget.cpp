@@ -8,6 +8,7 @@
 #include "Components/EditableText.h"
 #include "Components/HorizontalBox.h"
 #include "Components/Spacer.h"
+#include "Components/TextBlock.h"
 #include "Components/UniformGridPanel.h"
 #include "Components/UniformGridSlot.h"
 #include "Interfaces/InventoryInterface.h"
@@ -115,6 +116,12 @@ void UInventoryWidget::HandleCategorySelected(FGameplayTag CategorySelected)
 	CurrentCategorySelected = CategorySelected;
 	ItemsContainer->ResetCategory(CurrentCategorySelected);
 	
+	FString TagString = CurrentCategorySelected.GetTagName().ToString();
+	FString RightPart;
+	TagString.Split(TEXT("."), nullptr, &RightPart, ESearchCase::IgnoreCase, ESearchDir::FromEnd);
+
+	CategoryText->SetText(FText::FromString(RightPart));
+	
 	// if (!IsValid(ItemsContainer)) return;
 	// ItemsContainer->ClearPanel();
 	//
@@ -195,24 +202,25 @@ void UInventoryWidget::AddItemToGrid(const FRPGInventoryEntry& Entry, const FMas
 	{
 		return;
 	}
-	
-	if (ItemDefinition.SlotsSize == 2)
-	{
-		UItemSlotWidget* SuperiorSlot = ItemsContainer->AddItemSlot(Entry,ItemDefinition);
-		BindItemSlotDelegates(SuperiorSlot);
-		
-		if (!IsValid(SuperiorSlot)) return;
-		UItemSlotWidget* LowerSlot = ItemsContainer->AddItemSlot(Entry,ItemDefinition,SuperiorSlot->GetGridIndex());
-		
-		if (!IsValid(LowerSlot)) return;
-		BindItemSlotDelegates(LowerSlot);
-		
-		return;
-	}
-	
-	UItemSlotWidget* CurrentItemSlotWidget = ItemsContainer->AddItemSlot(Entry,ItemDefinition);
-	if (!IsValid(CurrentItemSlotWidget)) return;
-	BindItemSlotDelegates(CurrentItemSlotWidget);
+
+	ItemsContainer->AddItemSlot(Entry,ItemDefinition);
+	// if (ItemDefinition.SlotsSize == 2) //esto no hace falta
+	// {
+	// 	UItemSlotWidget* SuperiorSlot = ItemsContainer->AddItemSlot(Entry,ItemDefinition);
+	// 	BindItemSlotDelegates(SuperiorSlot);
+	// 	
+	// 	if (!IsValid(SuperiorSlot)) return;
+	// 	UItemSlotWidget* LowerSlot = ItemsContainer->AddItemSlot(Entry,ItemDefinition,SuperiorSlot->GetGridIndex());
+	// 	
+	// 	if (!IsValid(LowerSlot)) return;
+	// 	BindItemSlotDelegates(LowerSlot);
+	// 	
+	// 	return;
+	// }
+	//
+	// UItemSlotWidget* CurrentItemSlotWidget = ItemsContainer->AddItemSlot(Entry,ItemDefinition);
+	// if (!IsValid(CurrentItemSlotWidget)) return;
+	// BindItemSlotDelegates(CurrentItemSlotWidget);
 }
 
 void UInventoryWidget::HandleInventoryItemReceived(const FRPGInventoryEntry& Entry)
@@ -223,7 +231,7 @@ void UInventoryWidget::HandleInventoryItemReceived(const FRPGInventoryEntry& Ent
 	// }
 	
 	if (!IsValid(ItemsContainer)) return;
-	if (ItemsContainer->ContainsItemSlot(Entry.ItemID))
+	if (ItemsContainer->FindItemIndex(Entry.ItemID,Entry.ItemTag) != INDEX_NONE)
 	{
 		ItemsContainer->UpdateItemSlot(Entry);
 		return;
@@ -232,7 +240,6 @@ void UInventoryWidget::HandleInventoryItemReceived(const FRPGInventoryEntry& Ent
 	if (!IsValid(OwningInventory)) return;
 
 	const FMasterItemDefinition& ItemDefinition = OwningInventory->GetItemDefinitionByTag(Entry.ItemTag);
-
 	AddItemToGrid(Entry, ItemDefinition);
 }
 

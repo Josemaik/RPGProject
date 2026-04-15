@@ -131,8 +131,9 @@ void UItemSlotWidget::RemoveOutLineSlot(bool OnDrop)
 void UItemSlotWidget::SetIconPadding(bool reset) const
 {
 	if (!IsValid(IconBox)) return;
+	
 	UOverlaySlot* IconBoxSlot = Cast<UOverlaySlot>(IconBox->Slot);
-	if (!IsValid(Slot)) return;
+	if (!IsValid(IconBoxSlot)) return;
 
 	if (reset)
 	{
@@ -246,17 +247,19 @@ bool UItemSlotWidget::NativeOnDrop(const FGeometry& InGeometry, const FDragDropE
 
 	UItemSlotWidget* DroppedItem = DragDropOp->ItemSlot_Payload;
 	if (!IsValid(DroppedItem)) return false;
+
+	//if (DroppedItem == this) return false;
+	//RemoveOutLineSlot(true);
 	
-	RemoveOutLineSlot(true);
+	OnItemDroppedPanelDelegate.ExecuteIfBound(DroppedItem,this);
+	// if (DroppedItem->GetCurrentSlotSize() != ESlotSizeCategories::UniqueSlot)
+	// {
+	// 	OnItemDroppedPanelDelegate.ExecuteIfBound(DroppedItem,this);
+	// 	return true;
+	// }
 
-	if (DroppedItem->GetCurrentSlotSize() != ESlotSizeCategories::UniqueSlot)
-	{
-		OnItemDroppedPanelDelegate.ExecuteIfBound(DroppedItem,this);
-		return true;
-	}
-
-	Init(DroppedItem->ItemEntry,DroppedItem->GetIconTexture(),DroppedItem->GetIconBrush(),DroppedItem->GetCurrentSlotSize());
-	DroppedItem->EmptySlot();
+	// Init(DroppedItem->ItemEntry,DroppedItem->GetIconTexture(),DroppedItem->GetIconBrush(),DroppedItem->GetCurrentSlotSize());
+	// DroppedItem->EmptySlot();
 		
 	return true;
 }
