@@ -3,12 +3,7 @@
 
 #include "UI/Inventory/ItemsPanelWidget.h"
 
-#include <rapidjson/reader.h>
-
-#include "GameDelegates.h"
-#include "IDetailTreeNode.h"
 #include "AbilitySystem/RPGGameplayTags.h"
-#include "Blueprint/DragDropOperation.h"
 #include "Components/UniformGridPanel.h"
 #include "Components/UniformGridSlot.h"
 #include "Engine/AssetManager.h"
@@ -135,7 +130,11 @@ void UItemsPanelWidget::AddItemSlot(const FRPGInventoryEntry& Entry,const FMaste
 
 	for (int32 i = 0; i < ItemsArray.Num(); i++)
 	{
-		if (ItemsArray[i].bIsEmpty)
+		bool EntrySizeHiguerThanOne = ItemDefinition.SlotsSize > 1;
+		bool IsUniqueItem = !EntrySizeHiguerThanOne && ItemsArray[i].bIsEmpty;
+		bool IsEquipmentItem = EntrySizeHiguerThanOne && ItemsArray[i].bIsEmpty && ItemsArray[i + MaxColumns].bIsEmpty;
+		
+		if (IsUniqueItem || IsEquipmentItem)
 		{
 			FreeIndex = i;
 			break;
@@ -144,33 +143,23 @@ void UItemsPanelWidget::AddItemSlot(const FRPGInventoryEntry& Entry,const FMaste
 
 	if (FreeIndex == INDEX_NONE) return;
 
-	FSlateBrush Brush;
-	Brush.SetResourceObject(ItemDefinition.Icon.Get());
-
 	ItemsArray[FreeIndex].Entry = Entry;
 	ItemsArray[FreeIndex].Icon = ItemDefinition.Icon;
 	ItemsArray[FreeIndex].bIsEmpty = false;
 	ItemsArray[FreeIndex].Size = UniqueSlot;
 	
+	FSlateBrush Brush;
+	Brush.SetResourceObject(ItemDefinition.Icon.Get());
+	
 	if (Entry.ItemTag.MatchesTag(FGameplayTags::Category_Equipment) && ItemDefinition.SlotsSize == 2)
 	{   //Slot Size == 2
-		// FBox2d UVRegionLower(FVector2d(0.0, 0.5), FVector2d(1.0, 1.0));
-		// Brush.SetUVRegion(UVRegionLower);
 		ItemsArray[FreeIndex].Size = SuperiorSlotVertical;
 		ItemsArray[FreeIndex + MaxColumns].Entry = Entry;
 		ItemsArray[FreeIndex + MaxColumns].Icon = ItemDefinition.Icon;
 		ItemsArray[FreeIndex + MaxColumns].bIsEmpty = false;
 		ItemsArray[FreeIndex + MaxColumns].Size = LowerSlotVertical;
-		//ItemsArray[FreeIndex + MaxColumns].IconBrush = Brush;
-					
-		// FBox2d UVRegionSuperior(FVector2d(0.0, 0.0), FVector2d(1.0, 0.5));
-		// Brush.SetUVRegion(UVRegionSuperior);
-		
-		
-		//ItemsArray[FreeIndex].IconBrush = Brush;
 	}
-
-	// 🔥 reconstruir UI SOLO si estás en esa categoría
+	
 	if (GetItemCategory(Entry.ItemTag) == CurrentCategoryTag)
 	{
 		ResetCategory(CurrentCategoryTag);
@@ -202,22 +191,91 @@ void UItemsPanelWidget::AddEmptySlots(FGameplayTag InCurrentCategoryTag)
 	}
 }
 
-void UItemsPanelWidget::OnIconLoaded(UItemSlotWidget* Widget, FItemSlotData SlotData)
+void UItemsPanelWidget::ProcessSlotWidget(const FItemSlotData& SlotData, UItemSlotWidget* NewWidget, FSlateBrush Brush)
 {
-	if (!IsValid(Widget)) return;
+	switch (SlotData.Size)
+	{
+	case LowerSlotVertical:
+		{
+			FBox2d UVRegionLower(FVector2d(0.0, 0.5), FVector2d(1.0, 1.0));
+			Brush.SetUVRegion(UVRegionLower);
 
-	UTexture2D* LoadedTexture = SlotData.Icon.Get();
-	if (!LoadedTexture) return;
+			NewWidget->Init(SlotData.Entry, SlotData.Icon, Brush, LowerSlotVertical);
+			break;
+		}
+	case SuperiorSlotVertical:
+		{
+			FBox2d UVRegionSuperior(FVector2d(0.0, 0.0), FVector2d(1.0, 0.5));
+			Brush.SetUVRegion(UVRegionSuperior);
+							
+			NewWidget->Init(SlotData.Entry, SlotData.Icon, Brush, SuperiorSlotVertical);
+			break;
+		}
+	case UniqueSlot: { NewWidget->Init(SlotData.Entry, SlotData.Icon, Brush, UniqueSlot); break; }
+	default: break;
+	}
+}
 
-	FSlateBrush Brush;
-	Brush.SetResourceObject(LoadedTexture);
+void UItemsPanelWidget::CreateSlotWidget(int32 Index,const FItemSlotData& SlotData)
+{
+	UItemSlotWidget* NewWidget = CreateWidget<UItemSlotWidget>(GetOwningPlayer(), ItemSlotWidgetClass);
+	if (!IsValid(NewWidget)) return;
 
-	Widget->Init(SlotData.Entry, SlotData.Icon, Brush, ESlotSizeCategories::UniqueSlot);
+	if (!SlotData.bIsEmpty)
+	{	//Item Slot
+		FSlateBrush Brush;
+		if (SlotData.Icon.IsNull())
+		{
+			return;
+		}
+
+		if (SlotData.Icon.IsValid())
+		{
+			Brush.SetResourceObject(SlotData.Icon.Get());
+			ProcessSlotWidget(SlotData, NewWidget, Brush);
+		}
+		else
+		{
+			GEngine->AddOnScreenDebugMessage(-1,5.f,FColor::Emerald,FString::Printf(TEXT("Icon texture Not Loaded")));
+			FStreamableManager& Streamable = UAssetManager::GetStreamableManager();
+
+			Streamable.RequestAsyncLoad(SlotData.Icon.ToSoftObjectPath(),
+		FStreamableDelegate::CreateLambda([this, SlotData,NewWidget,Index]()
+				{
+					if (UTexture2D* LoadedTexture = SlotData.Icon.Get())
+					{
+						FSlateBrush Brush;
+						Brush.SetResourceObject(LoadedTexture);
+						
+						ProcessSlotWidget(SlotData, NewWidget, Brush);
+
+						//Bind Callbacks and Add to Grid Panel
+						NewWidget->OnItemDroppedPanelDelegate.BindUObject(this,&UItemsPanelWidget::HandleItemDropped);
+						NewWidget->OnDragEnteredDelegate.BindUObject(this,&UItemsPanelWidget::HandleDraggedItemEntered);
+						NewWidget->OnDragLeavedDelegate.BindUObject(this,&UItemsPanelWidget::HandleDraggedItemLeaved);
+						AddItemToGrid(NewWidget, Index);
+					}
+				})
+			);
+			return;
+		}
+	}
+	else
+	{	//Empty Slot
+		NewWidget->EmptySlot();
+	}
+	
+	//Bind Callbacks and Add to Grid Panel
+	NewWidget->OnItemDroppedPanelDelegate.BindUObject(this,&UItemsPanelWidget::HandleItemDropped);
+	NewWidget->OnDragEnteredDelegate.BindUObject(this,&UItemsPanelWidget::HandleDraggedItemEntered);
+	NewWidget->OnDragLeavedDelegate.BindUObject(this,&UItemsPanelWidget::HandleDraggedItemLeaved);
+	AddItemToGrid(NewWidget, Index);
 }
 
 void UItemsPanelWidget::ResetCategory(FGameplayTag InCurrentCategoryTag)
 {
 	CurrentCategoryTag = InCurrentCategoryTag;
+
 	
 	if (!IsValid(ItemsPanel)) return;
 	//clear panel
@@ -228,75 +286,9 @@ void UItemsPanelWidget::ResetCategory(FGameplayTag InCurrentCategoryTag)
 
 	for (int32 i = 0; i < ItemsArray.Num(); i++)
 	{
-		FItemSlotData& SlotData = ItemsArray[i];
-		
-		UItemSlotWidget* NewWidget = CreateWidget<UItemSlotWidget>(GetOwningPlayer(), ItemSlotWidgetClass);
-		if (!IsValid(NewWidget)) continue;
+		const FItemSlotData& SlotData = ItemsArray[i];
 
-		if (!SlotData.bIsEmpty)
-		{   //Added Item
-			if (SlotData.Icon.IsNull())
-			{
-				continue;
-			}
-
-			if (SlotData.Icon.IsValid())
-			{
-				FSlateBrush Brush;
-				Brush.SetResourceObject(SlotData.Icon.Get());
-				
-				if (SlotData.Size == LowerSlotVertical)
-				{
-					FBox2d UVRegionLower(FVector2d(0.0, 0.5), FVector2d(1.0, 1.0));
-					Brush.SetUVRegion(UVRegionLower);
-
-					NewWidget->Init(SlotData.Entry, SlotData.Icon, Brush, LowerSlotVertical);
-					NewWidget->OnItemDroppedPanelDelegate.BindUObject(this,&UItemsPanelWidget::HandleItemDropped);
-					NewWidget->OnDragEnteredDelegate.BindUObject(this,&UItemsPanelWidget::HandleDraggedItemEntered);
-					NewWidget->OnDragLeavedDelegate.BindUObject(this,&UItemsPanelWidget::HandleDraggedItemLeaved);
-					AddItemToGrid(NewWidget, i);
-					continue;
-				}
-				
-				if (SlotData.Size == SuperiorSlotVertical)
-				{
-					FBox2d UVRegionSuperior(FVector2d(0.0, 0.0), FVector2d(1.0, 0.5));
-					Brush.SetUVRegion(UVRegionSuperior);
-					
-					NewWidget->Init(SlotData.Entry, SlotData.Icon, Brush, SuperiorSlotVertical);
-				}
-				else
-				{
-					NewWidget->Init(SlotData.Entry, SlotData.Icon, Brush, UniqueSlot);
-				}
-
-				NewWidget->OnItemDroppedPanelDelegate.BindUObject(this,&UItemsPanelWidget::HandleItemDropped);
-				NewWidget->OnDragEnteredDelegate.BindUObject(this,&UItemsPanelWidget::HandleDraggedItemEntered);
-				NewWidget->OnDragLeavedDelegate.BindUObject(this,&UItemsPanelWidget::HandleDraggedItemLeaved);
-				AddItemToGrid(NewWidget, i);
-			}
-			else
-			{
-				GEngine->AddOnScreenDebugMessage(-1,5.f,FColor::Emerald,FString::Printf(TEXT("Icon texture Not Loaded")));
-				FStreamableManager& Streamable = UAssetManager::GetStreamableManager();
-    
-				TWeakObjectPtr<UItemSlotWidget> WeakWidget = NewWidget;
-
-				Streamable.RequestAsyncLoad(
-					SlotData.Icon.ToSoftObjectPath(),
-					FStreamableDelegate::CreateUObject(this, &UItemsPanelWidget::OnIconLoaded, WeakWidget.Get(), SlotData)
-				);
-			}
-		}
-		else
-		{
-			// Bind delegates
-			NewWidget->EmptySlot();
-			NewWidget->OnItemDroppedPanelDelegate.BindUObject(this,&UItemsPanelWidget::HandleItemDropped);
-			NewWidget->OnDragEnteredDelegate.BindUObject(this,&UItemsPanelWidget::HandleDraggedItemEntered);
-			NewWidget->OnDragLeavedDelegate.BindUObject(this,&UItemsPanelWidget::HandleDraggedItemLeaved);
-			AddItemToGrid(NewWidget, i);
-		}
+		CreateSlotWidget(i,SlotData);
 	}
 }
 
@@ -314,46 +306,52 @@ bool UItemsPanelWidget::NativeOnDrop(const FGeometry& InGeometry, const FDragDro
 void UItemsPanelWidget::HandleItemDropped(UItemSlotWidget* DroppedSlot,UItemSlotWidget* NewSlot)
 {
 	if (!IsValid(DroppedSlot) || !IsValid(NewSlot)) return;
+	
+	TArray<FItemSlotData>& ItemsArray = *CategoryItemsMap.Find(CurrentCategoryTag);
+	if (ItemsArray.IsEmpty()) return;
 
 	int32 FromIndex = DroppedSlot->GetGridIndex();
 	int32 ToIndex = NewSlot->GetGridIndex();
-
-	ESlotSizeCategories FromSize = DroppedSlot->GetCurrentSlotSize();
-	ESlotSizeCategories ToSize   = NewSlot->GetCurrentSlotSize();
 	
-	if ((FromIndex == ToIndex) || (FromSize == SuperiorSlotVertical && ToIndex == FromIndex + MaxColumns)
-		|| (FromSize == LowerSlotVertical && ToIndex == FromIndex - MaxColumns)) return;
-	
-	
-	TArray<FItemSlotData>* ItemsArrayPtr = CategoryItemsMap.Find(CurrentCategoryTag);
-	if (!ItemsArrayPtr) return;
-
-	TArray<FItemSlotData>& ItemsArray = *ItemsArrayPtr;
-	
-	
-
 	if (!ItemsArray.IsValidIndex(FromIndex) || !ItemsArray.IsValidIndex(ToIndex)) return;
 
+	ESlotSizeCategories FromSize = DroppedSlot->GetCurrentSlotSize();
 	
-
 	//Save Data origin
-	FItemSlotData FromMain = ItemsArray[FromIndex];
+	FItemSlotData& FromMain = ItemsArray[FromIndex];
 	FItemSlotData FromSecond;
 	
 	if (FromSize == UniqueSlot)
 	{
-		ItemsArray[FromIndex] = FromMain;
+		ItemsArray[ToIndex] = FromMain;
+		FromMain = FItemSlotData();
+		ResetCategory(CurrentCategoryTag);
+		return;
 	}
-
+	
+	if ((FromSize == SuperiorSlotVertical && ToIndex == FromIndex + MaxColumns)
+		|| (FromSize == LowerSlotVertical && ToIndex == FromIndex - MaxColumns)) return;
+	
+	//Copy dropped item in slot
 	//Save Slot two if origin slot size == 2
 	if (FromSize == SuperiorSlotVertical && ItemsArray.IsValidIndex(FromIndex + MaxColumns))
 	{
-		FromSecond = ItemsArray[FromIndex + MaxColumns];
+		int32 LowerToIndex = ToIndex + MaxColumns;
+		if (LowerToIndex <= 0 || LowerToIndex >= ItemsArray.Num()) return;
+		FItemSlotData& LowerSlot = ItemsArray[LowerToIndex];
+		if (!LowerSlot.bIsEmpty) return;
+		LowerSlot = ItemsArray[FromIndex + MaxColumns];
 	}
 	else if (FromSize == LowerSlotVertical && ItemsArray.IsValidIndex(FromIndex - MaxColumns))
 	{
-		FromSecond = ItemsArray[FromIndex - MaxColumns];
+		int32 SuperiorToIndex = ToIndex - MaxColumns;
+		if (ToIndex <= 0 || ToIndex >= ItemsArray.Num()) return;
+		FItemSlotData& SuperiorSlot = ItemsArray[ToIndex];
+		if (!SuperiorSlot.bIsEmpty) return;
+		SuperiorSlot = ItemsArray[FromIndex - MaxColumns];
 	}
+	
+	ItemsArray[ToIndex] = FromMain;
 
 	//Clean origin
 	ItemsArray[FromIndex] = FItemSlotData();
@@ -366,37 +364,35 @@ void UItemsPanelWidget::HandleItemDropped(UItemSlotWidget* DroppedSlot,UItemSlot
 	{
 		ItemsArray[FromIndex - MaxColumns] = FItemSlotData();
 	}
-
-	ItemsArray[ToIndex] = FItemSlotData();
-
-	if (ToSize == SuperiorSlotVertical && ItemsArray.IsValidIndex(ToIndex + MaxColumns))
-	{
-		ItemsArray[ToIndex + MaxColumns] = FItemSlotData();
-	}
-	else if (ToSize == LowerSlotVertical && ItemsArray.IsValidIndex(ToIndex - MaxColumns))
-	{
-		ItemsArray[ToIndex - MaxColumns] = FItemSlotData();
-	}
-
-	ItemsArray[ToIndex] = FromMain;
-
-	if (FromSize == SuperiorSlotVertical && ItemsArray.IsValidIndex(ToIndex + MaxColumns))
-	{
-		ItemsArray[ToIndex + MaxColumns] = FromSecond;
-	}
-	else if (FromSize == LowerSlotVertical && ItemsArray.IsValidIndex(ToIndex - MaxColumns))
-	{
-		ItemsArray[ToIndex - MaxColumns] = FromSecond;
-	}
 	
-	// 🔥 rebuild
+	// rebuild
 	ResetCategory(CurrentCategoryTag);
 }
 
-void UItemsPanelWidget::HandleDraggedItemEntered(int32 NewIndex)
+void UItemsPanelWidget::HandleDraggedItemEntered(int32 EnteredIndex, int32 NewIndex)
 {
 	if (!ItemsPanel) return;
 
+	TArray<FItemSlotData>& ItemsArrayPtr = *CategoryItemsMap.Find(CurrentCategoryTag);
+	if (ItemsArrayPtr.IsEmpty()) return;
+
+	const FItemSlotData& NewSlot = ItemsArrayPtr[NewIndex];
+	const FItemSlotData& EnteredSlot = ItemsArrayPtr[EnteredIndex];
+
+	const FItemSlotData& LowerSlot = ItemsArrayPtr[NewIndex + MaxColumns];
+	if (!LowerSlot.bIsEmpty) return;
+	
+	if (NewSlot.Size == SuperiorSlotVertical && EnteredIndex == NewIndex + MaxColumns) return;
+	if (NewSlot.Size == LowerSlotVertical && EnteredIndex == NewIndex - MaxColumns) return;
+
+	if (UWidget* Child = ItemsPanel->GetChildAt(NewIndex))
+	{
+		if (UItemSlotWidget* ItemSlotWidget = Cast<UItemSlotWidget>(Child))
+		{
+			ItemSlotWidget->OutlineSlot(ESlotSizeCategories::SuperiorSlotVertical);
+		}
+	}
+	
 	if (UWidget* Child = ItemsPanel->GetChildAt(NewIndex + MaxColumns))
 	{
 		if (UItemSlotWidget* ItemSlotWidget = Cast<UItemSlotWidget>(Child))
@@ -406,13 +402,29 @@ void UItemsPanelWidget::HandleDraggedItemEntered(int32 NewIndex)
 	}
 }
 
-void UItemsPanelWidget::HandleDraggedItemLeaved(int32 NewIndex)
+void UItemsPanelWidget::HandleDraggedItemLeaved(int32 DraggedIndex,int32 NewIndex)
 {
 	if (!ItemsPanel) return;
 
-	TArray<FItemSlotData>* ItemsArrayPtr = CategoryItemsMap.Find(CurrentCategoryTag);
-	if (!ItemsArrayPtr) return;
+	const TArray<FItemSlotData>& ItemsArrayPtr = *CategoryItemsMap.Find(CurrentCategoryTag);
+	if (ItemsArrayPtr.IsEmpty()) return;
 
+	const FItemSlotData& NewSlot = ItemsArrayPtr[NewIndex];
+	const FItemSlotData& DraggedSlot = ItemsArrayPtr[DraggedIndex];
+	if (DraggedSlot.Size == SuperiorSlotVertical && NewIndex == DraggedIndex + MaxColumns) return;
+	if (DraggedSlot.Size == LowerSlotVertical && NewIndex == DraggedIndex - MaxColumns) return;
+
+	const FItemSlotData& LowerSlot = ItemsArrayPtr[NewIndex + MaxColumns];
+	if (!LowerSlot.bIsEmpty) return;
+	
+	if (UWidget* Child = ItemsPanel->GetChildAt(NewIndex))
+	{
+		if (UItemSlotWidget* ItemSlotWidget = Cast<UItemSlotWidget>(Child))
+		{
+			ItemSlotWidget->RemoveOutLineSlot(false);
+		}
+	}
+	
 	if (UWidget* Child = ItemsPanel->GetChildAt(NewIndex + MaxColumns))
 	{
 		if (UItemSlotWidget* ItemSlotWidget = Cast<UItemSlotWidget>(Child))

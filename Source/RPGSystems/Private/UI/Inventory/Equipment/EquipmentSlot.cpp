@@ -30,6 +30,8 @@ bool UEquipmentSlot::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEv
 		
 		OnEquipItem.ExecuteIfBound(*DragOp->ItemEntry);
 		
+		EquipmentSlotImage->SetBrushTintColor(FLinearColor(1.f,1.f,1.f,1.f));
+		
 		return true;
 	}
 	

@@ -69,7 +69,9 @@ void UItemSlotWidget::NativeDestruct()
 	Super::NativeDestruct();
 	
 	OnItemRowClickedDelegate.Unbind();
-	OnItemDroppedEventDelegate.Unbind();
+	OnItemDroppedPanelDelegate.Unbind();
+	OnDragEnteredDelegate.Unbind();
+	OnDragLeavedDelegate.Unbind();
 
 	Super::NativeDestruct();
 }
@@ -193,8 +195,6 @@ void UItemSlotWidget::NativeOnDragCancelled(const FDragDropEvent& InDragDropEven
 	if (!IsValid(DragDropOp)) return;
 	UItemSlotWidget* DraggedSlot = DragDropOp->ItemSlot_Payload;
 	if (!IsValid(DraggedSlot)) return;
-	
-	OnItemDroppedEventDelegate.ExecuteIfBound(DraggedSlot->ItemEntry);
 }
 
 void UItemSlotWidget::NativeOnDragEnter(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent,
@@ -209,13 +209,15 @@ void UItemSlotWidget::NativeOnDragEnter(const FGeometry& InGeometry, const FDrag
 	UItemSlotWidget* DroppedItem = DragDropOp->ItemSlot_Payload;
 	if (!IsValid(DroppedItem)) return;
 
-	if (DroppedItem == this) return; //Ignorar a mi mismo
+	if (!bIsEmpty || DroppedItem == this) return; //Ignorar a mi mismo
 	
-	OutlineSlot(DroppedItem->GetCurrentSlotSize());
-
-	if (DroppedItem->GetCurrentSlotSize() == ESlotSizeCategories::UniqueSlot) return;
+	if (DroppedItem->GetCurrentSlotSize() == ESlotSizeCategories::UniqueSlot)
+	{
+		OutlineSlot(DroppedItem->GetCurrentSlotSize());
+		return;
+	}
 	
-	OnDragEnteredDelegate.ExecuteIfBound(CurrentGridIndex);
+	OnDragEnteredDelegate.ExecuteIfBound(DroppedItem->GetGridIndex(),CurrentGridIndex);
 }
 
 void UItemSlotWidget::NativeOnDragLeave(const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation)
@@ -229,13 +231,14 @@ void UItemSlotWidget::NativeOnDragLeave(const FDragDropEvent& InDragDropEvent, U
 	UItemSlotWidget* DroppedItem = DragDropOp->ItemSlot_Payload;
 	if (!IsValid(DroppedItem)) return;
 	
-	if (DroppedItem == this) return; //Ignorar a mi mismo
+	if (DroppedItem->GetCurrentSlotSize() == ESlotSizeCategories::UniqueSlot)
+	{
+		if (!bIsEmpty) return;
+		RemoveOutLineSlot(false);
+		return;
+	}
 	
-	RemoveOutLineSlot(false);
-
-	if (DroppedItem->GetCurrentSlotSize() == ESlotSizeCategories::UniqueSlot) return;
-	
-	OnDragLeavedDelegate.ExecuteIfBound(CurrentGridIndex);
+	OnDragLeavedDelegate.ExecuteIfBound(DroppedItem->GetGridIndex(),CurrentGridIndex);
 }
 
 bool UItemSlotWidget::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent,
@@ -247,19 +250,10 @@ bool UItemSlotWidget::NativeOnDrop(const FGeometry& InGeometry, const FDragDropE
 
 	UItemSlotWidget* DroppedItem = DragDropOp->ItemSlot_Payload;
 	if (!IsValid(DroppedItem)) return false;
-
-	//if (DroppedItem == this) return false;
-	//RemoveOutLineSlot(true);
+	
+	if (!bIsEmpty || DroppedItem == this) return false; //Slot is Busy or is self
 	
 	OnItemDroppedPanelDelegate.ExecuteIfBound(DroppedItem,this);
-	// if (DroppedItem->GetCurrentSlotSize() != ESlotSizeCategories::UniqueSlot)
-	// {
-	// 	OnItemDroppedPanelDelegate.ExecuteIfBound(DroppedItem,this);
-	// 	return true;
-	// }
-
-	// Init(DroppedItem->ItemEntry,DroppedItem->GetIconTexture(),DroppedItem->GetIconBrush(),DroppedItem->GetCurrentSlotSize());
-	// DroppedItem->EmptySlot();
 		
 	return true;
 }

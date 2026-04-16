@@ -54,12 +54,13 @@ public:
 	void ClearPanel();
 	int32 GetMaxColums() const { return MaxColumns; }
 	void AddEmptySlots(FGameplayTag InCurrentCategoryTag);
-	void OnIconLoaded(UItemSlotWidget* ItemSlotWidget, FItemSlotData ItemSlotData);
+	void ProcessSlotWidget(const FItemSlotData& SlotData, UItemSlotWidget* NewWidget, FSlateBrush Brush);
+	void CreateSlotWidget(int32 Index,const FItemSlotData& SlotData);
 	void ResetCategory(FGameplayTag CurrentCategoryTag);
 
 	void HandleItemDropped(UItemSlotWidget* DroppedSlot,UItemSlotWidget* NewSlot);
-	void HandleDraggedItemEntered(int32 NewIndex);
-	void HandleDraggedItemLeaved(int32 NewIndex);
+	void HandleDraggedItemEntered(int32 EnteredIndex,int32 NewIndex);
+	void HandleDraggedItemLeaved(int32 DraggedIndex,int32 NewIndex);
 	
 	FGameplayTag CurrentCategoryTag;
 

@@ -14,6 +14,7 @@
 #include "Interfaces/InventoryInterface.h"
 #include "InventorySection/InventoryComponent.h"
 #include "UI/Inventory/ItemCategoryButton.h"
+#include "UI/Inventory/ItemsDropToWorldWidget.h"
 #include "UI/Inventory/ItemSlotWidget.h"
 #include "UI/Inventory/ItemsPanelWidget.h"
 #include "UI/Inventory/Equipment/EquipmentSlot.h"
@@ -65,12 +66,8 @@ void UInventoryWidget::NativeConstruct()
 	SteelWeapon->OnEquipItem.BindUObject(this, &ThisClass::OnEquipItem);
 	Bolls->OnEquipItem.BindUObject(this, &ThisClass::OnEquipItem);
 	RangedWeapon->OnEquipItem.BindUObject(this, &ThisClass::OnEquipItem);
-}
 
-bool UInventoryWidget::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent,
-	UDragDropOperation* InOperation)
-{
-	return Super::NativeOnDrop(InGeometry, InDragDropEvent, InOperation);
+	ItemsDropToWorldWidget->OnItemDroppedPanelDelegate.BindUObject(this, &ThisClass::HandleItemDropped);
 }
 
 void UInventoryWidget::FinishDestroy()
@@ -102,11 +99,6 @@ void UInventoryWidget::BindInventoryItemDelegates()
 	InventoryWidgetController->OnInventoryItemRemoved.AddUObject(this,&UInventoryWidget::HandleInventoryItemRemoved);
 }
 
-void UInventoryWidget::ClearEntries()
-{
-	//ActiveItems.Empty();
-}
-
 void UInventoryWidget::HandleCategorySelected(FGameplayTag CategorySelected)
 {
 	if (CurrentCategorySelected.MatchesTagExact(CategorySelected)) return;
@@ -121,29 +113,6 @@ void UInventoryWidget::HandleCategorySelected(FGameplayTag CategorySelected)
 	TagString.Split(TEXT("."), nullptr, &RightPart, ESearchCase::IgnoreCase, ESearchDir::FromEnd);
 
 	CategoryText->SetText(FText::FromString(RightPart));
-	
-	// if (!IsValid(ItemsContainer)) return;
-	// ItemsContainer->ClearPanel();
-	//
-	// for (const FRPGInventoryEntry& ItemEntry : OwningInventory->InventoryList.GetEntries())
-	// {
-	// 	if (ItemEntry.ItemTag.MatchesTag(CategorySelected))
-	// 	{
-	// 		UItemSlotWidget* NewItemSlot = NewActiveItem(ItemEntry);
-	// 		if (IsValid(NewItemSlot))
-	// 		{
-	// 			AddToItemsGrid(NewItemSlot);
-	// 		}
-	// 	}
-	// }
-	
-}
-
-void UInventoryWidget::AddToItemsGrid(TObjectPtr<UItemSlotWidget> InSlotWidget)
-{
-	if (!IsValid(InSlotWidget) || !IsValid(ItemsContainer)) return;
-
-	//ItemsContainer->AddItem(InSlotWidget);
 }
 
 UItemSlotWidget* UInventoryWidget::NewActiveItem(const FRPGInventoryEntry& Entry)
@@ -168,13 +137,6 @@ UItemSlotWidget* UInventoryWidget::NewActiveItem(const FRPGInventoryEntry& Entry
 			HandleItemRowClicked(Entry);
 		});
 
-	CurrentItemSlotWidget->OnItemDroppedEventDelegate.BindLambda(
-		[this](const FRPGInventoryEntry& Entry)
-		{
-			HandleItemDropped(Entry);
-		});
-	
-
 	return CurrentItemSlotWidget;
 }
 
@@ -187,12 +149,6 @@ void UInventoryWidget::BindItemSlotDelegates(UItemSlotWidget* CurrentItemSlotWid
 			{
 				HandleItemRowClicked(Entry);
 			});
-
-		CurrentItemSlotWidget->OnItemDroppedEventDelegate.BindLambda(
-			[this](const FRPGInventoryEntry& Entry)
-			{
-				HandleItemDropped(Entry);
-			});	
 	}
 }
 
@@ -204,23 +160,6 @@ void UInventoryWidget::AddItemToGrid(const FRPGInventoryEntry& Entry, const FMas
 	}
 
 	ItemsContainer->AddItemSlot(Entry,ItemDefinition);
-	// if (ItemDefinition.SlotsSize == 2) //esto no hace falta
-	// {
-	// 	UItemSlotWidget* SuperiorSlot = ItemsContainer->AddItemSlot(Entry,ItemDefinition);
-	// 	BindItemSlotDelegates(SuperiorSlot);
-	// 	
-	// 	if (!IsValid(SuperiorSlot)) return;
-	// 	UItemSlotWidget* LowerSlot = ItemsContainer->AddItemSlot(Entry,ItemDefinition,SuperiorSlot->GetGridIndex());
-	// 	
-	// 	if (!IsValid(LowerSlot)) return;
-	// 	BindItemSlotDelegates(LowerSlot);
-	// 	
-	// 	return;
-	// }
-	//
-	// UItemSlotWidget* CurrentItemSlotWidget = ItemsContainer->AddItemSlot(Entry,ItemDefinition);
-	// if (!IsValid(CurrentItemSlotWidget)) return;
-	// BindItemSlotDelegates(CurrentItemSlotWidget);
 }
 
 void UInventoryWidget::HandleInventoryItemReceived(const FRPGInventoryEntry& Entry)
@@ -262,8 +201,6 @@ void UInventoryWidget::HandleItemDropped(const FRPGInventoryEntry& Entry)
 	GEngine->AddOnScreenDebugMessage(-1,5.f,FColor::Green,FString::Printf(TEXT("Equipment dropped in World")));
 	
 	OwningInventory->DropItem(Entry,Entry.Quantity);
-
-	//Unbind delegates
 }
 
 void UInventoryWidget::HandleInventoryItemRemoved(const int64 ItemID)
@@ -296,7 +233,7 @@ void UInventoryWidget::OnSearchBarTextChanged(const FText& InText)
 			UItemSlotWidget* NewItemSlot = NewActiveItem(Entry);
 			if (IsValid(NewItemSlot))
 			{
-				AddToItemsGrid(NewItemSlot);
+				//AddToItemsGrid(NewItemSlot);
 			}
 		}
 	}

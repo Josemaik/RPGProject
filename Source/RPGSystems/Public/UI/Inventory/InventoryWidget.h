@@ -7,6 +7,7 @@
 #include "InventorySection/InventoryComponent.h"
 #include "InventoryWidget.generated.h"
 
+class UItemsDropToWorldWidget;
 class UItemsPanelWidget;
 class UEquipmentSlot;
 class UItemCategoryButton;
@@ -54,15 +55,12 @@ public:
 	void SetWidgetController(UInventoryWidgetController* InWidgetController);
 protected:
 	void NativeConstruct() override;
-	virtual bool NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
 private:
 	virtual void FinishDestroy() override;
 	//functions
 	void CacheEssentialVars();
 	void BindInventoryItemDelegates();
-	void ClearEntries();
 	void HandleCategorySelected(FGameplayTag CategorySelected);
-	void AddToItemsGrid(TObjectPtr<UItemSlotWidget> InSlotWidget);
 
 	UItemSlotWidget* NewActiveItem(const FRPGInventoryEntry& Entry);
 	void BindItemSlotDelegates(UItemSlotWidget* CurrentItemSlotWidget);
@@ -132,21 +130,11 @@ private:
 
 	UPROPERTY(VisibleAnywhere, meta = (BindWidget), Category = "UI")
 	UItemsPanelWidget* ItemsContainer;
-	
-	// UPROPERTY(VisibleAnywhere, Category = "UI")
-	// UBorder* BackgroundBorder;
-	//
-	// UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (BindWidget, AllowPrivateAccess), Category = "UI")
-	// USizeBox* SizeBox;
-	
-	
-	// UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (BindWidget, AllowPrivateAccess = "true"), Category = "UI")
-	// UScrollBox* InventoryContent;
-	//
-	// UPROPERTY(VisibleAnywhere, meta = (BindWidget), Category = "UI")
-	// UUniformGridPanel* ItemsPanel;
-	//
-	// const int32 MaxColumns = 5;
+
+	/////////////////////////////////
+	//Drop To World Panel
+	UPROPERTY(VisibleAnywhere, meta = (BindWidget), Category = "UI")
+	UItemsDropToWorldWidget* ItemsDropToWorldWidget;
 
 	//Equipments Panel
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget,AllowPrivateAccess="true"), Category = "UI")

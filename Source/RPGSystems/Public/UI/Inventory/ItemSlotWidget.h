@@ -31,10 +31,9 @@ enum ESlotSizeCategories : uint8
 class UItemSlotWidget;
 
 DECLARE_DELEGATE_OneParam(FOnItemRowClicked, const FRPGInventoryEntry&);
-DECLARE_DELEGATE_OneParam(FOnItemDroppedEvent, const FRPGInventoryEntry&);
 DECLARE_DELEGATE_TwoParams(FOnItemDroppedPanel, UItemSlotWidget* OldSlot, UItemSlotWidget* NewSlot);
-DECLARE_DELEGATE_OneParam(FOnDragEntered, int32 NewIndex);
-DECLARE_DELEGATE_OneParam(FOnDragLeaved, int32 NewIndex);
+DECLARE_DELEGATE_TwoParams(FOnDragEntered,int32 OldIndex, int32 NewIndex);
+DECLARE_DELEGATE_TwoParams(FOnDragLeaved, int32 OldIndex,int32 NewIndex);
 /**
  * 
  */
@@ -44,7 +43,6 @@ class RPGSYSTEMS_API UItemSlotWidget : public UUserWidget
 	GENERATED_BODY()
 public:
 	FOnItemRowClicked OnItemRowClickedDelegate;
-	FOnItemDroppedEvent OnItemDroppedEventDelegate;
 	FOnItemDroppedPanel OnItemDroppedPanelDelegate;
 	FOnDragEntered OnDragEnteredDelegate;
 	FOnDragLeaved OnDragLeavedDelegate;
