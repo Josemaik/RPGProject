@@ -21,6 +21,8 @@
 #include "Libraries/RPGAbilitySystemLibrary.h"
 #include "Character/Components/RPGMotionWarpingComponent.h"
 #include "Components/ArrowComponent.h"
+#include "Components/SceneCaptureComponent2D.h"
+#include "Equipment/EquipmentActor.h"
 #include "Kismet/GameplayStatics.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
@@ -69,6 +71,12 @@ ARPGSystemsCharacter::ARPGSystemsCharacter(const FObjectInitializer& ObjectIniti
 	KickSphereTracePoint->SetupAttachment(GetRootComponent());
 
 	MotionWarpingComponent = CreateDefaultSubobject<URPGMotionWarpingComponent>(TEXT("MotionWarpingComponent"));
+
+	CharacterCaptureSpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("CharacterCaptureSpringArm"));
+	CharacterCaptureSpringArm->SetupAttachment(GetCapsuleComponent());
+
+	CharacterCaptureComponent = CreateDefaultSubobject<USceneCaptureComponent2D>(TEXT("CharacterCaptureComponent"));
+	CharacterCaptureComponent->SetupAttachment(CharacterCaptureSpringArm);
 	
 	GetCharacterMovement()->NavAgentProps.bCanCrouch = true;
 	VaultSphereRadiusFirstCheck = 5.f;
@@ -221,6 +229,14 @@ void ARPGSystemsCharacter::BeginPlay()
 {
 	// Call the base class  
 	Super::BeginPlay();
+	
+	AddEquipmentToCharacterCapture(this);
+}
+
+void ARPGSystemsCharacter::AddEquipmentToCharacterCapture(AActor* Actor) const
+{
+	if (!IsValid(CharacterCaptureComponent)) return;
+	CharacterCaptureComponent->ShowOnlyActors.Add(Actor);
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -263,6 +279,18 @@ void ARPGSystemsCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 	{
 		UE_LOG(LogTemplateCharacter, Error, TEXT("'%s' Failed to find an Enhanced Input component! This template is built to use the Enhanced Input system. If you intend to use the legacy system, then you will need to update this C++ file."), *GetNameSafe(this));
 	}
+}
+
+void ARPGSystemsCharacter::SetRightHandEquipment(AEquipmentActor* NewRightHandEquipment)
+{
+	RightHandEquipment = NewRightHandEquipment;
+	AddEquipmentToCharacterCapture(NewRightHandEquipment);
+}
+
+void ARPGSystemsCharacter::SetLeftHandEquipment(AEquipmentActor* NewLeftHandEquipment)
+{
+	LeftHandEquipment = NewLeftHandEquipment;
+	AddEquipmentToCharacterCapture(NewLeftHandEquipment);
 }
 
 void ARPGSystemsCharacter::Move(const FInputActionValue& Value)

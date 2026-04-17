@@ -48,6 +48,7 @@ FRPGInventoryEntry* FRPGInventoryList::AddItem(const FGameplayTag& ItemTag, int3
 	NewEntry.ItemName = Item.ItemName;
 	NewEntry.Quantity = NumItems;
 	NewEntry.ItemID = GenerateID();
+	NewEntry.Weight = Item.ItemWeightCost;
 
 	if (NewEntry.ItemTag.MatchesTag(FGameplayTags::Static::Category_Equipment) && IsValid(WeakStats.Get()))
 	{
@@ -101,6 +102,7 @@ void FRPGInventoryList::AddUnEquippedItem(const FGameplayTag& ItemTag,
 	NewEntry.Quantity = NumItems;
 	NewEntry.ItemID = GenerateID();
 	NewEntry.EffectPackage = EffectPackage;
+	NewEntry.Weight = Item.ItemWeightCost;
 	
 	MarkItemDirty(NewEntry);
 	DirtyItemDelegate.Broadcast(NewEntry);
@@ -129,7 +131,7 @@ void FRPGInventoryList::RemoveItem(const FRPGInventoryEntry& InventoryEntry, int
 			}
 			else
 			{
-				InventoryItemRemovedDelegate.Broadcast(Entry.ItemID);
+				InventoryItemRemovedDelegate.Broadcast(Entry);
 				EntryIt.RemoveCurrent();
 				MarkArrayDirty();
 			}
@@ -183,7 +185,7 @@ void FRPGInventoryList::PreReplicatedRemove(const TArrayView<int32> RemovedIndic
 	for (int32 Index : RemovedIndices)
 	{
 		const FRPGInventoryEntry& Entry = Entries[Index];
-		InventoryItemRemovedDelegate.Broadcast(Entry.ItemID);
+		InventoryItemRemovedDelegate.Broadcast(Entry);
 	}
 }
 
@@ -230,6 +232,9 @@ void UInventoryComponent::BeginPlay()
 	{
 		InventoryList.SetStats(StatEffects);
 	}
+	
+	InventoryList.DirtyItemDelegate.AddLambda([this](const FRPGInventoryEntry&){ UpdateWeight(); });
+	InventoryList.InventoryItemRemovedDelegate.AddLambda([this](const FRPGInventoryEntry&){ UpdateWeight(); });
 }
 
 void UInventoryComponent::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
@@ -253,6 +258,7 @@ void UInventoryComponent::AddItem(const FGameplayTag& ItemTag, int32 NumItems)
 	}
 
 	InventoryList.AddItem(ItemTag, NumItems);
+	
 	GetOwner()->ForceNetUpdate();
 }
 
@@ -439,6 +445,18 @@ void UInventoryComponent::SpawnItem(const FTransform& SpawnTransform, const FRPG
 				});
 		}
 	}
+}
+
+void UInventoryComponent::UpdateWeight()
+{
+	CurrentWeight = 0.f;
+
+	for (auto& Item : InventoryList.GetEntries())
+	{
+		CurrentWeight += Item.Weight * static_cast<float>(Item.Quantity);
+	}
+
+	OnWeightChanged.Broadcast(CurrentWeight);
 }
 
 //////////////////////////////

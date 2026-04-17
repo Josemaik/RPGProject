@@ -57,7 +57,7 @@ void UInventoryWidget::SetWidgetController(UInventoryWidgetController* InWidgetC
 void UInventoryWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
-
+	
 	SearchBar->OnTextChanged.AddDynamic(this, &ThisClass::OnSearchBarTextChanged);
 
 	//bind warpbox->childs->childs(castear a UEquipmentSlot) y delegate
@@ -68,6 +68,7 @@ void UInventoryWidget::NativeConstruct()
 	RangedWeapon->OnEquipItem.BindUObject(this, &ThisClass::OnEquipItem);
 
 	ItemsDropToWorldWidget->OnItemDroppedPanelDelegate.BindUObject(this, &ThisClass::HandleItemDropped);
+	MaxInventoryWeightText->SetText(FText::FromString("60"));
 }
 
 void UInventoryWidget::FinishDestroy()
@@ -97,6 +98,7 @@ void UInventoryWidget::BindInventoryItemDelegates()
 {
 	InventoryWidgetController->InventoryEntryDelegate.AddUObject(this,&UInventoryWidget::HandleInventoryItemReceived);
 	InventoryWidgetController->OnInventoryItemRemoved.AddUObject(this,&UInventoryWidget::HandleInventoryItemRemoved);
+	InventoryWidgetController->OnInventoryWeightChanged.AddUObject(this,&UInventoryWidget::HandleInventoryWeight);
 }
 
 void UInventoryWidget::HandleCategorySelected(FGameplayTag CategorySelected)
@@ -191,7 +193,6 @@ void UInventoryWidget::HandleItemRowClicked(const FRPGInventoryEntry& Entry)
 	}
 	
 	const FMasterItemDefinition& ItemDefiniton = OwningInventory->GetItemDefinitionByTag(Entry.ItemTag);
-	//ItemDescriptionText->SetText(ItemDefiniton.ItemDescription);
 }
 
 void UInventoryWidget::HandleItemDropped(const FRPGInventoryEntry& Entry)
@@ -203,11 +204,30 @@ void UInventoryWidget::HandleItemDropped(const FRPGInventoryEntry& Entry)
 	OwningInventory->DropItem(Entry,Entry.Quantity);
 }
 
-void UInventoryWidget::HandleInventoryItemRemoved(const int64 ItemID)
+void UInventoryWidget::HandleInventoryItemRemoved(const FRPGInventoryEntry& Entry) const
 {
-	ItemsContainer->RemoveItem(ItemID);
+	ItemsContainer->RemoveItem(Entry.ItemID);
 
 	//Unbind delegates
+	
+}
+
+void UInventoryWidget::HandleInventoryWeight(const float Weight)
+{
+	CurrentInventoryWeightText->SetText(FText::AsNumber(FMath::RoundToInt(Weight)));
+
+	if (WeightIsHiguerThanTheMaxAvailable && Weight < OwningInventory->GetMaxInventoryWeight())
+	{
+		CurrentInventoryWeightText->SetColorAndOpacity(FSlateColor(FLinearColor::White));
+		WeightIsHiguerThanTheMaxAvailable = false;
+		return;
+	}
+	
+	if (Weight > OwningInventory->GetMaxInventoryWeight())
+	{
+		WeightIsHiguerThanTheMaxAvailable = true;
+		CurrentInventoryWeightText->SetColorAndOpacity(FSlateColor(FLinearColor::Red));
+	}
 }
 
 void UInventoryWidget::OnSearchBarTextChanged(const FText& InText)

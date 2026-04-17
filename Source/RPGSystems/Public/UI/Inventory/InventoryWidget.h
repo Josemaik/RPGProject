@@ -76,8 +76,11 @@ private:
 	void HandleItemDropped(const FRPGInventoryEntry& Entry);
 	
 	UFUNCTION()
-	void HandleInventoryItemRemoved(const int64 ItemID);
+	void HandleInventoryItemRemoved(const FRPGInventoryEntry& Entry) const;
 
+	UFUNCTION()
+	void HandleInventoryWeight(const float Weight);
+	
 	UFUNCTION()
 	void OnSearchBarTextChanged(const FText& InText);
 
@@ -104,7 +107,15 @@ private:
 	UCanvasPanel* CanvasPanel;
 
 	UPROPERTY(VisibleAnywhere, Category = "UI")
-	UTextBlock* InventoryText;
+	UTextBlock* MaxInventoryWeight;
+	
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget), Category = "UI")
+	UTextBlock* CurrentInventoryWeightText;
+
+	bool WeightIsHiguerThanTheMaxAvailable = false;
+
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget), Category = "UI")
+	UTextBlock* MaxInventoryWeightText;
 
 	/////////////////////////////////
 	//Categories Labels

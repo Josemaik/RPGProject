@@ -11,7 +11,9 @@ struct FMasterItemDefinition;
 class UInventoryComponent;
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FInventoryEntrySignature, const FRPGInventoryEntry&);
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnInventoryItemRemoeved, const int64);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnInventoryItemRemoeved, const FRPGInventoryEntry&);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnInventoryWeightChanged, float);
+
 /**
  * 
  */
@@ -25,12 +27,13 @@ public:
 	FInventoryEntrySignature InventoryEntryDelegate;
 	
 	FOnInventoryItemRemoeved OnInventoryItemRemoved;
+	FOnInventoryWeightChanged OnInventoryWeightChanged;
 	
 	void SetOwningActor(AActor* InOwner);
 	FORCEINLINE AActor* GetOwningActor() { return OwningActor; };
 
 	void BindCallbacksToDependencies();
-	void BroadCastInitialValues();
+	void BroadCastInitialValues() const;
 	
 private:
 	UPROPERTY()

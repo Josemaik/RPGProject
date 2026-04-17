@@ -37,6 +37,9 @@ struct FRPGInventoryEntry : public FFastArraySerializerItem
 	int64 ItemID = 0;
 
 	UPROPERTY(BlueprintReadWrite)
+	float Weight = 0.f;
+
+	UPROPERTY(BlueprintReadWrite)
 	FEquipmentEffectPackage EffectPackage = FEquipmentEffectPackage();
 
 	FORCEINLINE bool IsValid() const { return ItemID != 0; }
@@ -48,8 +51,9 @@ struct FRPGInventoryEntry : public FFastArraySerializerItem
 };
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FDirtyInventoryItemsSignature, const FRPGInventoryEntry&  /*Dirty Item*/)
-DECLARE_MULTICAST_DELEGATE_OneParam(FInventoryItemRemovedSignature, const int64 /*Item ID*/)
+DECLARE_MULTICAST_DELEGATE_OneParam(FInventoryItemRemovedSignature, const FRPGInventoryEntry& /*Removed Item*/)
 DECLARE_MULTICAST_DELEGATE_TwoParams(FItemDroppedSignature, const FRPGInventoryEntry* /*Entry*/, int32 /*NumItems*/)
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnWeightChangedSignature, float /*NewWeight*/);
 
 USTRUCT()
 struct FRPGInventoryList : public FFastArraySerializer
@@ -120,6 +124,7 @@ class RPGSYSTEMS_API UInventoryComponent : public UActorComponent
 public:
 	FEquipmentItemUsed EquipmentItemDelegate;
 	FItemDroppedSignature ItemDroppedDelegate;
+	FOnWeightChangedSignature OnWeightChanged;
 	
 	UPROPERTY(Replicated,ReplicatedUsing = OnRep_InventoryList)
 	FRPGInventoryList InventoryList;
@@ -155,7 +160,14 @@ public:
 	TArray<FRPGInventoryEntry> GetEntriesByString(const FString& InString);
 
 	void SpawnItem(const FTransform& SpawnTransform, const FRPGInventoryEntry* Entry, int32 NumItems);
+
+	float GetMaxInventoryWeight() const { return MAX_INVENTORY_WEIGHT; };
 private:
+
+	float CurrentWeight = 0.f;
+	const float MAX_INVENTORY_WEIGHT = 60.f;
+
+	void UpdateWeight();
 	
 	UPROPERTY(EditDefaultsOnly, Category="Custom Values|Stat Effect")
 	TObjectPtr<UEquipmentStaffEfects> StatEffects;

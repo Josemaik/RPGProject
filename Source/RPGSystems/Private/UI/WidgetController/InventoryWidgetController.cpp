@@ -24,20 +24,28 @@ void UInventoryWidgetController::BindCallbacksToDependencies()
 			});
 
 		OwningInventory->InventoryList.InventoryItemRemovedDelegate.AddLambda(
-			[this](const int64 ItemID)
+			[this](const FRPGInventoryEntry& ItemRemoved)
 			{
-				OnInventoryItemRemoved.Broadcast(ItemID);
+				OnInventoryItemRemoved.Broadcast(ItemRemoved);
+			});
+		OwningInventory->OnWeightChanged.AddLambda(
+			[this](float Weight)
+			{
+				OnInventoryWeightChanged.Broadcast(Weight);
 			});
 	}
 }
 
-void UInventoryWidgetController::BroadCastInitialValues()
+void UInventoryWidgetController::BroadCastInitialValues() const
 {
 	if (IsValid(OwningInventory))
 	{
+		float TotalWeight = 0;
 		for (const FRPGInventoryEntry& Entry : OwningInventory->GetInventoryEntries())
 		{
 			InventoryEntryDelegate.Broadcast(Entry);
+			TotalWeight += Entry.Weight;
 		}
+		OnInventoryWeightChanged.Broadcast(TotalWeight);
 	}
 }

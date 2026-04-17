@@ -46,6 +46,7 @@ struct FMasterItemDefinition : public FTableRowBase
 	
 	UPROPERTY(BlueprintReadOnly)
 	int32 ItemQuantity = 0;
+
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	FText ItemDescription = FText();
@@ -55,6 +56,9 @@ struct FMasterItemDefinition : public FTableRowBase
 
 	UPROPERTY(EditDefaultsOnly,BlueprintReadOnly)
 	uint8 SlotsSize = 1;
+	
+	UPROPERTY(EditDefaultsOnly,BlueprintReadOnly)
+	int32 ItemWeightCost = 0;
 
 	UPROPERTY(EditDefaultsOnly,BlueprintReadOnly)
 	FConsumableProps ConsumableProps = FConsumableProps();

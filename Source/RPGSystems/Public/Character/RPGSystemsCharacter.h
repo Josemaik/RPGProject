@@ -56,6 +56,12 @@ class ARPGSystemsCharacter : public ACharacterBase,public IAbilitySystemInterfac
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Motion, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<URPGMotionWarpingComponent> MotionWarpingComponent;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = CaptureCharacter, meta = (AllowPrivateAccess = "true"))
+	USpringArmComponent* CharacterCaptureSpringArm;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = CaptureCharacter, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<USceneCaptureComponent2D> CharacterCaptureComponent;
+
 public:
 	ARPGSystemsCharacter(const FObjectInitializer& ObjectInitializer);
 	
@@ -74,8 +80,8 @@ public:
 	/*equipment instances*/
 	AEquipmentActor* GetRightHandEquipmentActor() const { return RightHandEquipment; }
 	AEquipmentActor* GetLeftHandEquipmentActor() const { return LeftHandEquipment; }
-	void SetRightHandEquipment(AEquipmentActor* NewRightHandEquipment) { RightHandEquipment = NewRightHandEquipment; }
-	void SetLeftHandEquipment(AEquipmentActor* NewLeftHandEquipment) { LeftHandEquipment = NewLeftHandEquipment; }
+	void SetRightHandEquipment(AEquipmentActor* NewRightHandEquipment);
+	void SetLeftHandEquipment(AEquipmentActor* NewLeftHandEquipment);
 
 	UArrowComponent* GetKickSphereTracePoint() const { return KickSphereTracePoint; }
 protected:
@@ -98,6 +104,8 @@ protected:
 	
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	virtual void BeginPlay() override;
+
+	void AddEquipmentToCharacterCapture(AActor* Actor) const;
 	
 private:
 
