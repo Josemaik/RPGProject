@@ -23,6 +23,9 @@ struct FItemSlotData
 	FRPGInventoryEntry Entry;
 
 	UPROPERTY()
+	FMasterItemDefinition ItemDefinition;
+
+	UPROPERTY()
 	TSoftObjectPtr<UTexture2D> Icon;
 
 	UPROPERTY()
@@ -32,6 +35,13 @@ struct FItemSlotData
 	
 	UPROPERTY()
 	bool bIsEmpty = true;
+};
+
+struct FLogicalItem
+{
+	FRPGInventoryEntry Entry;
+	FMasterItemDefinition ItemDefinition;
+	int32 Size; // 1 o 2
 };
 
 /**
@@ -48,15 +58,18 @@ public:
 	int32 FindItemIndex(const int64 ItemID,FGameplayTag ItemTa);
 	
 	void UpdateItemSlot(const FRPGInventoryEntry& Entry);
-	FGameplayTag GetItemCategory(FGameplayTag ItemTag);
-	void AddItemSlot(const FRPGInventoryEntry& Entry,const FMasterItemDefinition& ItemDefinition);
-	
-	void ClearPanel();
-	int32 GetMaxColums() const { return MaxColumns; }
-	void AddEmptySlots(FGameplayTag InCurrentCategoryTag);
 	void ProcessSlotWidget(const FItemSlotData& SlotData, UItemSlotWidget* NewWidget, FSlateBrush Brush);
+	void AddItemSlot(const FRPGInventoryEntry& Entry,const FMasterItemDefinition& ItemDefinition);
+	void AddEmptySlots(FGameplayTag InCurrentCategoryTag);
 	void CreateSlotWidget(int32 Index,const FItemSlotData& SlotData);
+	void ClearPanel();
+	
 	void ResetCategory(FGameplayTag CurrentCategoryTag);
+
+	void SortItems();
+	
+	FGameplayTag GetItemCategory(FGameplayTag ItemTag);
+	int32 GetMaxColums() const { return MaxColumns; }
 
 	void HandleItemDropped(UItemSlotWidget* DroppedSlot,UItemSlotWidget* NewSlot);
 	void HandleDraggedItemEntered(int32 EnteredIndex,int32 NewIndex);
@@ -65,7 +78,6 @@ public:
 	FGameplayTag CurrentCategoryTag;
 
 private:
-	virtual bool NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
 	
 	UPROPERTY(VisibleAnywhere, meta = (BindWidget), Category = "UI")
 	UUniformGridPanel* ItemsPanel;

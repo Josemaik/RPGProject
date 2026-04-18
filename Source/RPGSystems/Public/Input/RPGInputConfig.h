@@ -33,4 +33,7 @@ public:
 	
 	UPROPERTY(EditDefaultsOnly)
 	TArray<FRPGInputAction> RPGInputActions;
+
+	UPROPERTY(EditDefaultsOnly)
+	TArray<FRPGInputAction> RPGInventoryInputActions;
 };

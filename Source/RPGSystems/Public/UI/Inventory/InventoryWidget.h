@@ -7,6 +7,7 @@
 #include "InventorySection/InventoryComponent.h"
 #include "InventoryWidget.generated.h"
 
+class UKeyHintWidget;
 class UItemsDropToWorldWidget;
 class UItemsPanelWidget;
 class UEquipmentSlot;
@@ -53,6 +54,9 @@ class RPGSYSTEMS_API UInventoryWidget : public UUserWidget
 public:
 
 	void SetWidgetController(UInventoryWidgetController* InWidgetController);
+	void InitializeKeyHints();
+
+	void SortItems() const;
 protected:
 	void NativeConstruct() override;
 private:
@@ -65,6 +69,7 @@ private:
 	UItemSlotWidget* NewActiveItem(const FRPGInventoryEntry& Entry);
 	void BindItemSlotDelegates(UItemSlotWidget* CurrentItemSlotWidget);
 	void AddItemToGrid(const FRPGInventoryEntry& Entry, const FMasterItemDefinition& ItemDefinition);
+	
 	//callbacks
 	UFUNCTION()
 	void HandleInventoryItemReceived(const FRPGInventoryEntry& Entry);
@@ -159,6 +164,16 @@ private:
 
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget,AllowPrivateAccess="true"), Category = "UI")
 	UEquipmentSlot* RangedWeapon;
+
+	//Key Hints
+	UPROPERTY(meta = (BindWidget))
+	UKeyHintWidget* KeyHintWidget_SortItems;
+
+	UPROPERTY(meta = (BindWidget))
+	UKeyHintWidget* KeyHintWidget_DropItem;
+
+	UPROPERTY(meta = (BindWidget))
+	UKeyHintWidget* KeyHintWidget_EquipItem;
 };
 
 

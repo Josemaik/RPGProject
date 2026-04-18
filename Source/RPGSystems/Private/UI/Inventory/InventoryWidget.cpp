@@ -17,6 +17,7 @@
 #include "UI/Inventory/ItemsDropToWorldWidget.h"
 #include "UI/Inventory/ItemSlotWidget.h"
 #include "UI/Inventory/ItemsPanelWidget.h"
+#include "UI/Inventory/KeyHintWidget.h"
 #include "UI/Inventory/Equipment/EquipmentSlot.h"
 #include "UI/WidgetController/InventoryWidgetController.h"
 #include "UI/WidgetController/WidgetController.h"
@@ -54,6 +55,18 @@ void UInventoryWidget::SetWidgetController(UInventoryWidgetController* InWidgetC
 	}
 }
 
+void UInventoryWidget::InitializeKeyHints()
+{
+	if (!IsValid(KeyHintWidget_SortItems) || !IsValid(KeyHintWidget_SortItems) || !IsValid(KeyHintWidget_SortItems))
+	{
+		return;
+	}
+	
+	KeyHintWidget_SortItems->SetKeyHint(FText::FromString("[ Q ] "),FText::FromString("Sort Items Quickly"));
+	KeyHintWidget_DropItem->SetKeyHint(FText::FromString("[ R ]"),FText::FromString("Drop"));
+	KeyHintWidget_EquipItem->SetKeyHint(FText::FromString("[ Space ]"),FText::FromString("Equip"));
+}
+
 void UInventoryWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
@@ -69,6 +82,8 @@ void UInventoryWidget::NativeConstruct()
 
 	ItemsDropToWorldWidget->OnItemDroppedPanelDelegate.BindUObject(this, &ThisClass::HandleItemDropped);
 	MaxInventoryWeightText->SetText(FText::FromString("60"));
+
+	InitializeKeyHints();
 }
 
 void UInventoryWidget::FinishDestroy()
@@ -162,6 +177,12 @@ void UInventoryWidget::AddItemToGrid(const FRPGInventoryEntry& Entry, const FMas
 	}
 
 	ItemsContainer->AddItemSlot(Entry,ItemDefinition);
+}
+
+void UInventoryWidget::SortItems() const
+{
+	if (!IsValid(ItemsContainer)) return;
+	ItemsContainer->SortItems();
 }
 
 void UInventoryWidget::HandleInventoryItemReceived(const FRPGInventoryEntry& Entry)

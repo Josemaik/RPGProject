@@ -54,6 +54,7 @@ void ARPGPlayerController::SetupInputComponent()
 	}
 
 	RPGInputComp->BindAbilityActions(RPGInputConfig, this, &ThisClass::AbilityInputPressed, &ThisClass::AbilityInputReleased);
+	RPGInputComp->BindInventoryActions(RPGInputConfig,this, &ThisClass::OnInventoryInput);
 }
 
 void ARPGPlayerController::InitPlayerState()
@@ -103,6 +104,15 @@ void ARPGPlayerController::AbilityInputReleased(FGameplayTag InputTag)
 	}
 
 	RPGAbilitySystemComponent->AbilityInputReleased(InputTag);
+}
+
+void ARPGPlayerController::OnInventoryInput(FGameplayTag InputTag)
+{
+	GEngine->AddOnScreenDebugMessage(-1,3.f,FColor::Red,"OnInventoryInput");
+	if (InputTag.MatchesTagExact(FGameplayTag::RequestGameplayTag("Input.Inventory.SortItemsQuickly")))
+	{
+		InventoryWidget->SortItems();
+	}
 }
 
 void ARPGPlayerController::BindCallbacksToDependencies()
@@ -233,7 +243,12 @@ void ARPGPlayerController::EnableInventoryWidget()
 	Subsystem->RemoveMappingContext(GameplayIMC);
 	Subsystem->AddMappingContext(InventoryIMC, 1);
 
-	SetInputMode(FInputModeGameAndUI());
+	FInputModeGameAndUI InputMode;
+	InputMode.SetHideCursorDuringCapture(false);
+	InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+
+	SetInputMode(InputMode);
+	bShowMouseCursor = true;
 }
 
 void ARPGPlayerController::DisableInventoryWidget()

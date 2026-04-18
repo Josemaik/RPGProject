@@ -147,6 +147,7 @@ void UItemsPanelWidget::AddItemSlot(const FRPGInventoryEntry& Entry,const FMaste
 	ItemsArray[FreeIndex].Icon = ItemDefinition.Icon;
 	ItemsArray[FreeIndex].bIsEmpty = false;
 	ItemsArray[FreeIndex].Size = UniqueSlot;
+	ItemsArray[FreeIndex].ItemDefinition = ItemDefinition;
 	
 	FSlateBrush Brush;
 	Brush.SetResourceObject(ItemDefinition.Icon.Get());
@@ -158,6 +159,7 @@ void UItemsPanelWidget::AddItemSlot(const FRPGInventoryEntry& Entry,const FMaste
 		ItemsArray[FreeIndex + MaxColumns].Icon = ItemDefinition.Icon;
 		ItemsArray[FreeIndex + MaxColumns].bIsEmpty = false;
 		ItemsArray[FreeIndex + MaxColumns].Size = LowerSlotVertical;
+		ItemsArray[FreeIndex + MaxColumns].ItemDefinition = ItemDefinition;
 	}
 	
 	if (GetItemCategory(Entry.ItemTag) == CurrentCategoryTag)
@@ -292,15 +294,48 @@ void UItemsPanelWidget::ResetCategory(FGameplayTag InCurrentCategoryTag)
 	}
 }
 
-bool UItemsPanelWidget::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent,
-                                     UDragDropOperation* InOperation)
+void UItemsPanelWidget::SortItems()
 {
-	GEngine->AddOnScreenDebugMessage(-1,5.f,FColor::Red,FString::Printf(TEXT("Drop on Items Panel")));
-	//InOperation->Payload
-	// UItemSlotDroppedDragDrop* DragDropOperation = Cast<UItemSlotDroppedDragDrop>(InOperation);
-	// if (!IsValid(DragDropOperation)) return false;
+	TArray<FItemSlotData>& ItemsArray = *CategoryItemsMap.Find(CurrentCategoryTag);
+	if (ItemsArray.IsEmpty()) return;
 	
-	return true;
+	TArray<FLogicalItem> LogicalItems;
+
+	for (int32 i = 0; i < ItemsArray.Num(); i++)
+	{
+		const FItemSlotData& ItemSlot = ItemsArray[i];
+
+		if (ItemSlot.bIsEmpty) continue;
+
+		// get item root
+		if (ItemSlot.Size == LowerSlotVertical) continue;
+
+		FLogicalItem Item;
+		Item.Entry = ItemSlot.Entry;
+		Item.ItemDefinition = ItemSlot.ItemDefinition;
+		Item.Size = (ItemSlot.Size == SuperiorSlotVertical) ? 2 : 1;
+
+		LogicalItems.Add(Item);
+	}
+
+	//Sort by size
+	LogicalItems.Sort([](const FLogicalItem& A, const FLogicalItem& B)
+	{
+		return A.Size > B.Size;
+	});
+
+	//clean items array
+	for (FItemSlotData& ItemSlot : ItemsArray)
+	{
+		ItemSlot = FItemSlotData();
+		ItemSlot.bIsEmpty = true;
+	}
+
+	//Add sorted slots
+	for (const FLogicalItem& Item : LogicalItems)
+	{
+		AddItemSlot(Item.Entry, Item.ItemDefinition);
+	}
 }
 
 void UItemsPanelWidget::HandleItemDropped(UItemSlotWidget* DroppedSlot,UItemSlotWidget* NewSlot)

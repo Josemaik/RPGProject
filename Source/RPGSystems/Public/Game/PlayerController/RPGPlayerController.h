@@ -66,7 +66,8 @@ protected:
 	
 	void AbilityInputPressed(FGameplayTag InputTag);
 	void AbilityInputReleased(FGameplayTag InputTag);
-	
+
+	void OnInventoryInput(FGameplayTag InputTag);
 private:
 
 	void BindCallbacksToDependencies();
@@ -120,4 +121,4 @@ private:
 };
 
 
-
+ 
