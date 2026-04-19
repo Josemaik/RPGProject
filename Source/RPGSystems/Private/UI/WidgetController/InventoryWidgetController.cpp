@@ -49,3 +49,29 @@ void UInventoryWidgetController::BroadCastInitialValues() const
 		OnInventoryWeightChanged.Broadcast(TotalWeight);
 	}
 }
+
+void UInventoryWidgetController::EquipItem(const FRPGInventoryEntry& Entry) const
+{
+	if (!IsValid(OwningInventory)) return;
+	
+	OwningInventory->UseItem(Entry,1);
+}
+
+void UInventoryWidgetController::DropItemToWorld(const FRPGInventoryEntry& Entry) const
+{
+	if (!IsValid(OwningInventory)) return;
+
+	OwningInventory->DropItem(Entry,Entry.Quantity);
+}
+
+float UInventoryWidgetController::GetMaxInventoryWeight() const
+{
+	if (!IsValid(OwningInventory)) return 0;
+
+	return OwningInventory->GetMaxInventoryWeight();
+}
+
+const FMasterItemDefinition UInventoryWidgetController::GetInventoryItemDefinition(FGameplayTag ItemTag) const
+{
+	return OwningInventory->GetItemDefinitionByTag(ItemTag);
+}

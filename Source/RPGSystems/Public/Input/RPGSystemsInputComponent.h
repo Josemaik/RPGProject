@@ -23,6 +23,9 @@ public:
 	
 	template<class UserClass, typename FuncType>
 	void BindInventoryActions(URPGInputConfig* InputConfig, UserClass* Object, FuncType Func);
+
+	template<class UserClass, typename FuncType>
+	void BindGameplayActions(URPGInputConfig* InputConfig, UserClass* Object, FuncType Func);
 };
 
 template <class UserClass, typename PressedFuncType, typename ReleasedFuncType>
@@ -31,7 +34,7 @@ void URPGSystemsInputComponent::BindAbilityActions(URPGInputConfig* InputConfig,
 {
 	check(InputConfig);
 
-	for (const FRPGInputAction& Action : InputConfig->RPGInputActions)
+	for (const FRPGInputAction& Action : InputConfig->RPGAbilityInputActions)
 	{
 		if (!IsValid(Action.InputAction) || !Action.InputTag.IsValid())
 		{
@@ -55,6 +58,19 @@ void URPGSystemsInputComponent::BindInventoryActions(URPGInputConfig* InputConfi
 	check(InputConfig);
 
 	for (const FRPGInputAction& Action : InputConfig->RPGInventoryInputActions)
+	{
+		if (!IsValid(Action.InputAction)) continue;
+
+		BindAction(Action.InputAction, ETriggerEvent::Triggered, Object, Func, Action.InputTag);
+	}
+}
+
+template <class UserClass, typename FuncType>
+void URPGSystemsInputComponent::BindGameplayActions(URPGInputConfig* InputConfig, UserClass* Object, FuncType Func)
+{
+	check(InputConfig);
+
+	for (const FRPGInputAction& Action : InputConfig->RPGGameplayInputActions)
 	{
 		if (!IsValid(Action.InputAction)) continue;
 

@@ -6,6 +6,7 @@
 #include "UI/WidgetController/WidgetController.h"
 #include "InventoryWidgetController.generated.h"
 
+struct FGameplayTag;
 struct FRPGInventoryEntry;
 struct FMasterItemDefinition;
 class UInventoryComponent;
@@ -22,8 +23,6 @@ class RPGSYSTEMS_API UInventoryWidgetController : public UWidgetController
 {
 	GENERATED_BODY()
 public:
-
-	
 	FInventoryEntrySignature InventoryEntryDelegate;
 	
 	FOnInventoryItemRemoeved OnInventoryItemRemoved;
@@ -34,6 +33,12 @@ public:
 
 	void BindCallbacksToDependencies();
 	void BroadCastInitialValues() const;
+
+	void EquipItem(const FRPGInventoryEntry& Entry) const;
+	void DropItemToWorld(const FRPGInventoryEntry& Entry) const;
+
+	float GetMaxInventoryWeight() const;
+	const FMasterItemDefinition GetInventoryItemDefinition(FGameplayTag ItemTag) const;
 	
 private:
 	UPROPERTY()

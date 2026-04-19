@@ -31,9 +31,13 @@ class RPGSYSTEMS_API URPGInputConfig : public UDataAsset
 
 public:
 	
-	UPROPERTY(EditDefaultsOnly)
-	TArray<FRPGInputAction> RPGInputActions;
+	UPROPERTY(EditDefaultsOnly)	//Abilities
+	TArray<FRPGInputAction> RPGAbilityInputActions;
 
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditDefaultsOnly) //Inventory
 	TArray<FRPGInputAction> RPGInventoryInputActions;
+	
+	UPROPERTY(EditDefaultsOnly) //Gameplay Fast Access
+	TArray<FRPGInputAction> RPGGameplayInputActions;
+	
 };

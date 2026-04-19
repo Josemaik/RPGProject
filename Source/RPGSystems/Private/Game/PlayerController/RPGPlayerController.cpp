@@ -14,6 +14,7 @@
 #include "InventorySection/InventoryComponent.h"
 #include "UI/WidgetController/InventoryWidgetController.h"
 #include "UI/Inventory/InventoryWidget.h"
+#include "UI/SectionSwitcherMenu/SectionSwitcherWidget.h"
 
 
 ARPGPlayerController::ARPGPlayerController()
@@ -55,6 +56,7 @@ void ARPGPlayerController::SetupInputComponent()
 
 	RPGInputComp->BindAbilityActions(RPGInputConfig, this, &ThisClass::AbilityInputPressed, &ThisClass::AbilityInputReleased);
 	RPGInputComp->BindInventoryActions(RPGInputConfig,this, &ThisClass::OnInventoryInput);
+	RPGInputComp->BindGameplayActions(RPGInputConfig,this, &ThisClass::OnGameplayInput);
 }
 
 void ARPGPlayerController::InitPlayerState()
@@ -109,9 +111,33 @@ void ARPGPlayerController::AbilityInputReleased(FGameplayTag InputTag)
 void ARPGPlayerController::OnInventoryInput(FGameplayTag InputTag)
 {
 	GEngine->AddOnScreenDebugMessage(-1,3.f,FColor::Red,"OnInventoryInput");
-	if (InputTag.MatchesTagExact(FGameplayTag::RequestGameplayTag("Input.Inventory.SortItemsQuickly")))
+	if (InputTag.MatchesTagExact(FGameplayTag::RequestGameplayTag("Input.Inventory.Exit")))
 	{
-		InventoryWidget->SortItems();
+		DisableSectionWidget();
+	}
+}
+
+void ARPGPlayerController::OnGameplayInput(FGameplayTag InputTag)
+{
+	if (!IsValid(SectionSwitcherWidget))
+	{
+		SectionSwitcherWidget = CreateWidget<USectionSwitcherWidget>(this, SectionSwitcherWidgetClass);
+		if (!IsValid(SectionSwitcherWidget)) return;
+
+		SectionSwitcherWidget->SetPlayerControllerRef(this);
+	}
+
+	EnableSectionWidget();
+
+	if (!SectionSwitcherWidget->IsInViewport())
+	{
+		SectionSwitcherWidget->AddToViewport();
+	}
+	
+	if (InputTag.MatchesTagExact(FGameplayTag::RequestGameplayTag("Input.Inventory.Open")))
+	{
+		if (SectionSwitcherWidget->GetSection() == EUISections::INVENTORY) return;
+		SectionSwitcherWidget->ChangeSection(EUISections::INVENTORY);
 	}
 }
 
@@ -210,25 +236,11 @@ UInventoryWidgetController* ARPGPlayerController::GetInventoryWidgetController()
 	return InventoryWidgetController;
 }
 
-void ARPGPlayerController::CreateInventoryWidget()
+void ARPGPlayerController::EnableSectionWidget()
 {
- 	if (UUserWidget* Widget = CreateWidget<UInventoryWidget>(this, InventoryWidgetClass))
- 	{
- 		InventoryWidget = Cast<UInventoryWidget>(Widget);
- 		InventoryWidget->SetWidgetController(GetInventoryWidgetController());
- 		InventoryWidgetController->BroadCastInitialValues();
- 		InventoryWidget->AddToViewport();
- 	}
-}
-
-void ARPGPlayerController::EnableInventoryWidget()
-{
-	if (!IsValid(InventoryWidget))
-	{
-		CreateInventoryWidget();
-	}
+	if (!IsValid(SectionSwitcherWidget)) return;
 	
-	InventoryWidget->SetVisibility(ESlateVisibility::Visible);
+	SectionSwitcherWidget->SetVisibility(ESlateVisibility::Visible);
 	OverlayWidgetRef->SetVisibility(ESlateVisibility::Hidden);
 
 	if (!IsValid(RPGAbilitySystemComponent))
@@ -251,11 +263,11 @@ void ARPGPlayerController::EnableInventoryWidget()
 	bShowMouseCursor = true;
 }
 
-void ARPGPlayerController::DisableInventoryWidget()
+void ARPGPlayerController::DisableSectionWidget()
 {
-	if (!IsValid(InventoryWidget)) return;
+	if (!IsValid(SectionSwitcherWidget)) return;
 
-	InventoryWidget->SetVisibility(ESlateVisibility::Collapsed);
+	SectionSwitcherWidget->SetVisibility(ESlateVisibility::Collapsed);
 	OverlayWidgetRef->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
 
 	if (!IsValid(RPGAbilitySystemComponent))

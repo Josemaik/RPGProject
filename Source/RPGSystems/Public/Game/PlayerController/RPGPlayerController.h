@@ -10,6 +10,7 @@
 #include "Interfaces/RPGAbilitySystemInterface.h"
 #include "RPGPlayerController.generated.h"
 
+ class USectionSwitcherWidget;
  class UInputMappingContext;
  struct FRPGInventoryEntry;
  struct FRPGEquipmentEntry;
@@ -53,13 +54,10 @@ public:
 	UInventoryWidgetController* GetInventoryWidgetController();
 
 	UFUNCTION(BlueprintCallable)
-	void CreateInventoryWidget();
+	void EnableSectionWidget();
 
 	UFUNCTION(BlueprintCallable)
-	void EnableInventoryWidget();
-
-	UFUNCTION(BlueprintCallable)
-	void DisableInventoryWidget();
+	void DisableSectionWidget();
 	
 protected:
 	virtual void BeginPlay() override;
@@ -68,6 +66,7 @@ protected:
 	void AbilityInputReleased(FGameplayTag InputTag);
 
 	void OnInventoryInput(FGameplayTag InputTag);
+	void OnGameplayInput(FGameplayTag InputTag);
 private:
 
 	void BindCallbacksToDependencies();
@@ -80,12 +79,13 @@ private:
 	void HandleUnEquippedItem(const FRPGEquipmentEntry& UnEquippedEntry);
 	
 	void SpawnDroppedItem(const FRPGInventoryEntry* DroppedEntry, int32 NumItems) const;
-	
-	bool bCallbacksbound = false;
 
 	UPROPERTY(EditDefaultsOnly, Category="Custom Values|Item Spawn")
 	float ItemSpawnFordwardDistance = 250.f;
 
+	bool bToggleSectionSwitcherWidget = false;
+
+	//Components
 	UPROPERTY()
 	UInventoryComponent* InventoryComponent;
 
@@ -94,7 +94,8 @@ private:
 	
 	UPROPERTY()
 	TObjectPtr<URPGAbilitySystemComponent> RPGAbilitySystemComponent;
-	
+
+	//Input
 	UPROPERTY(EditDefaultsOnly, Category="Custom Values|Input")
 	TObjectPtr<URPGInputConfig> RPGInputConfig;
 
@@ -103,7 +104,8 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, Category="Custom Values|Input")
 	TObjectPtr<UInputMappingContext> InventoryIMC;
-	
+
+	//Widgets
 	UPROPERTY()
 	TObjectPtr<UInventoryWidgetController> InventoryWidgetController;
 
@@ -111,10 +113,16 @@ private:
 	TSubclassOf<UInventoryWidgetController> InventoryWidgetControllerClass;
 
 	UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = true))
-	TObjectPtr<UInventoryWidget> InventoryWidget;
+	TObjectPtr<USectionSwitcherWidget> SectionSwitcherWidget;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Custom Values|Widgets")
-	TSubclassOf<UInventoryWidget> InventoryWidgetClass;
+	TSubclassOf<USectionSwitcherWidget> SectionSwitcherWidgetClass;
+	
+	// UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = true))
+	// TObjectPtr<UInventoryWidget> InventoryWidget;
+
+	// UPROPERTY(EditDefaultsOnly, Category = "Custom Values|Widgets")
+	// TSubclassOf<UInventoryWidget> InventoryWidgetClass;
 
 	UPROPERTY(BlueprintReadWrite, meta = (AllowPrivateAccess = true))
 	TObjectPtr<UUserWidget> OverlayWidgetRef;

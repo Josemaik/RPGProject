@@ -54,7 +54,7 @@ class RPGSYSTEMS_API UInventoryWidget : public UUserWidget
 public:
 
 	void SetWidgetController(UInventoryWidgetController* InWidgetController);
-	void InitializeKeyHints();
+	//void InitializeKeyHints();
 
 	void SortItems() const;
 protected:
@@ -62,7 +62,7 @@ protected:
 private:
 	virtual void FinishDestroy() override;
 	//functions
-	void CacheEssentialVars();
+	//void CacheEssentialVars();
 	void BindInventoryItemDelegates();
 	void HandleCategorySelected(FGameplayTag CategorySelected);
 
@@ -78,13 +78,10 @@ private:
 	void HandleItemRowClicked(const FRPGInventoryEntry& Entry);
 
 	UFUNCTION()
-	void HandleItemDropped(const FRPGInventoryEntry& Entry);
+	void HandleItemDropped(const FRPGInventoryEntry& Entry) const;
 	
 	UFUNCTION()
 	void HandleInventoryItemRemoved(const FRPGInventoryEntry& Entry) const;
-
-	UFUNCTION()
-	void HandleInventoryWeight(const float Weight);
 	
 	UFUNCTION()
 	void OnSearchBarTextChanged(const FText& InText);
@@ -93,34 +90,13 @@ private:
 	void OnEquipItem(const FRPGInventoryEntry& Entry);
 	
 	//References
-	UPROPERTY(BlueprintReadOnly, meta=(allowPrivateAccess=true))
-	TObjectPtr<UWidgetController> WidgetController;
-
 	UPROPERTY(BlueprintReadOnly,meta=(allowPrivateAccess=true))
 	TObjectPtr<UInventoryWidgetController> InventoryWidgetController;
-
-	UPROPERTY()
-	UInventoryComponent* OwningInventory;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Data")
 	TSubclassOf<UItemSlotWidget> ItemSlotWidgetClass;
 	
 	FGameplayTag CurrentCategorySelected;
-
-	//Hierarchy
-	UPROPERTY(VisibleAnywhere, Category = "UI")
-	UCanvasPanel* CanvasPanel;
-
-	UPROPERTY(VisibleAnywhere, Category = "UI")
-	UTextBlock* MaxInventoryWeight;
-	
-	UPROPERTY(VisibleAnywhere, meta=(BindWidget), Category = "UI")
-	UTextBlock* CurrentInventoryWeightText;
-
-	bool WeightIsHiguerThanTheMaxAvailable = false;
-
-	UPROPERTY(VisibleAnywhere, meta=(BindWidget), Category = "UI")
-	UTextBlock* MaxInventoryWeightText;
 
 	/////////////////////////////////
 	//Categories Labels
@@ -164,16 +140,6 @@ private:
 
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget,AllowPrivateAccess="true"), Category = "UI")
 	UEquipmentSlot* RangedWeapon;
-
-	//Key Hints
-	UPROPERTY(meta = (BindWidget))
-	UKeyHintWidget* KeyHintWidget_SortItems;
-
-	UPROPERTY(meta = (BindWidget))
-	UKeyHintWidget* KeyHintWidget_DropItem;
-
-	UPROPERTY(meta = (BindWidget))
-	UKeyHintWidget* KeyHintWidget_EquipItem;
 };
 
 
