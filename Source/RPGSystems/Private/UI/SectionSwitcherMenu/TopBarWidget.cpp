@@ -10,7 +10,15 @@
 #include "Components/ProgressBar.h"
 #include "Components/SizeBox.h"
 #include "Components/TextBlock.h"
-#include "UI/WidgetController/InventoryWidgetController.h"
+//#include "UI/WidgetController/InventoryWidgetController.h"
+
+void UTopBarWidget::NativeConstruct()
+{
+	Super::NativeConstruct();
+
+	if (ButtomPreviousCategory) ButtomPreviousCategory->OnClicked.AddDynamic(this, &UTopBarWidget::OnPrevClicked);
+	if (ButtomNextCategory) ButtomNextCategory->OnClicked.AddDynamic(this, &UTopBarWidget::OnNextClicked);
+}
 
 void UTopBarWidget::InitCarousel(int32 NumSections)
 {
@@ -41,14 +49,14 @@ void UTopBarWidget::InitCarousel(int32 NumSections)
 	SetActiveSection(0);
 }
 
-void UTopBarWidget::UpdateExperience(int Level,float CurrentExperience,float RequiredExperience) const
-{
-	LevelText->SetText(FText::AsNumber(Level));
-	CurrentLevelExperienceText->SetText(FText::AsNumber(CurrentExperience));
-	CurrentLevelMaxExperienceText->SetText(FText::AsNumber(RequiredExperience));
-
-	ExperienceBar->SetPercent(CurrentExperience / RequiredExperience);
-}
+// void UTopBarWidget::UpdateExperience(int Level,float CurrentExperience,float RequiredExperience) const
+// {
+// 	LevelText->SetText(FText::AsNumber(Level));
+// 	CurrentLevelExperienceText->SetText(FText::AsNumber(CurrentExperience));
+// 	CurrentLevelMaxExperienceText->SetText(FText::AsNumber(RequiredExperience));
+//
+// 	ExperienceBar->SetPercent(CurrentExperience / RequiredExperience);
+// }
 
 void UTopBarWidget::SetActiveSection(int32 Index)
 {
@@ -60,51 +68,43 @@ void UTopBarWidget::SetActiveSection(int32 Index)
 	CurrentIndex = Index;
 }
 
-void UTopBarWidget::SetSectionData(FString PreviousSection, FString CurrentSection, FString NextSection) const
-{
-	PreviousSectionText->SetText(FText::FromString(PreviousSection));
-	CurrentSectionText->SetText(FText::FromString(CurrentSection));
-	NextSectionText->SetText(FText::FromString(NextSection));
-}
+// void UTopBarWidget::SetSectionData(FString PreviousSection, FString CurrentSection, FString NextSection) const
+// {
+// 	PreviousSectionText->SetText(FText::FromString(PreviousSection));
+// 	CurrentSectionText->SetText(FText::FromString(CurrentSection));
+// 	NextSectionText->SetText(FText::FromString(NextSection));
+// }
 
-void UTopBarWidget::SetInventoryWidgetController(UInventoryWidgetController* WidgetController)
-{
-	if (!IsValid(WidgetController)) return;
-	InventoryWidgetControllerRef = WidgetController;
+// void UTopBarWidget::SetInventoryWidgetController(UInventoryWidgetController* WidgetController)
+// {
+// 	if (!IsValid(WidgetController)) return;
+// 	InventoryWidgetControllerRef = WidgetController;
+//
+// 	if (!IsValid(InventoryWidgetControllerRef)) return;
+// 	InventoryWidgetControllerRef->OnInventoryWeightChanged.AddUObject(this,&UTopBarWidget::HandleInventoryWeightChanged);
+//
+// 	MaxInventoryWeightText->SetText(FText::FromString(FString::FromInt(InventoryWidgetControllerRef->GetMaxInventoryWeight())));
+// }
 
-	if (!IsValid(InventoryWidgetControllerRef)) return;
-	InventoryWidgetControllerRef->OnInventoryWeightChanged.AddUObject(this,&UTopBarWidget::HandleInventoryWeightChanged);
-
-	MaxInventoryWeightText->SetText(FText::FromString(FString::FromInt(InventoryWidgetControllerRef->GetMaxInventoryWeight())));
-}
-
-void UTopBarWidget::NativeConstruct()
-{
-	Super::NativeConstruct();
-
-	if (ButtomPreviousCategory) ButtomPreviousCategory->OnClicked.AddDynamic(this, &UTopBarWidget::OnPrevClicked);
-	if (ButtomNextCategory) ButtomNextCategory->OnClicked.AddDynamic(this, &UTopBarWidget::OnNextClicked);
-}
-
-void UTopBarWidget::HandleInventoryWeightChanged(float InInventoryWeight)
-{
-	float MaxInventoryWeight = InventoryWidgetControllerRef->GetMaxInventoryWeight();
-	
-	CurrentInventoryWeightText->SetText(FText::AsNumber(FMath::RoundToInt(InInventoryWeight)));
-	
-	if (bIsInventoryWeightGreaterThanAvailable && InInventoryWeight < MaxInventoryWeight)
-	{
-		CurrentInventoryWeightText->SetColorAndOpacity(FSlateColor(FLinearColor::White));
-		bIsInventoryWeightGreaterThanAvailable = false;
-		return;
-	}
-	
-	if (InInventoryWeight > MaxInventoryWeight)
-	{
-		bIsInventoryWeightGreaterThanAvailable = true;
-		CurrentInventoryWeightText->SetColorAndOpacity(FSlateColor(FLinearColor::Red));
-	}
-}
+// void UTopBarWidget::HandleInventoryWeightChanged(float InInventoryWeight)
+// {
+// 	float MaxInventoryWeight = InventoryWidgetControllerRef->GetMaxInventoryWeight();
+// 	
+// 	CurrentInventoryWeightText->SetText(FText::AsNumber(FMath::RoundToInt(InInventoryWeight)));
+// 	
+// 	if (bIsInventoryWeightGreaterThanAvailable && InInventoryWeight < MaxInventoryWeight)
+// 	{
+// 		CurrentInventoryWeightText->SetColorAndOpacity(FSlateColor(FLinearColor::White));
+// 		bIsInventoryWeightGreaterThanAvailable = false;
+// 		return;
+// 	}
+// 	
+// 	if (InInventoryWeight > MaxInventoryWeight)
+// 	{
+// 		bIsInventoryWeightGreaterThanAvailable = true;
+// 		CurrentInventoryWeightText->SetColorAndOpacity(FSlateColor(FLinearColor::Red));
+// 	}
+// }
 
 void UTopBarWidget::OnPrevClicked()
 {

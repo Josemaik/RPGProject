@@ -1,9 +1,5 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
-
 #include "UI//SectionSwitcherMenu/SectionSwitcherWidget.h"
 
-#include "Components/VerticalBox.h"
 #include "Components/WidgetSwitcher.h"
 #include "Game/PlayerController/RPGPlayerController.h"
 #include "UI/CharacterBuild/CharacterBuildWidget.h"
@@ -11,8 +7,10 @@
 #include "UI/Map/WorldMapWidget.h"
 #include "UI/Missions/MissionsWidget.h"
 #include "UI/SectionSwitcherMenu/InputContextWidget.h"
+#include "UI/SectionSwitcherMenu/TopBarViewModel.h"
 #include "UI/SectionSwitcherMenu/TopBarWidget.h"
 #include "UI/WidgetController/InventoryWidgetController.h"
+#include "MVVMSubsystem.h"
 
 void USectionSwitcherWidget::NativeConstruct()
 {
@@ -26,15 +24,64 @@ void USectionSwitcherWidget::NativeConstruct()
 void USectionSwitcherWidget::InitializeTopBarWidget()
 {
 	if (!IsValid(TopBarWidget)) return;
-	TopBarWidget->SetInventoryWidgetController(GetInventoryWidgetController());
+	
+	if (!IsValid(TopBarViewModelClass))
+	{
+		UE_LOG(LogTemp, Error, TEXT("TopBarViewModelClass is NULL — set it in the Blueprint defaults"));
+		return;
+	}
+	
+	UInventoryWidgetController* InvController = GetInventoryWidgetController();
+	
+	TopBarViewModelRef = NewObject<UTopBarViewModel>(this, TopBarViewModelClass);
+	TopBarWidget->TopBarViewModel = TopBarViewModelRef;
+	
+	// Weight
+	if (IsValid(InvController))
+	{
+		TopBarViewModelRef->SetMaxWeight(InvController->GetMaxInventoryWeight());
+ 
+		// Listen for live weight changes — push to ViewModel, NOT to widget
+		InvController->OnInventoryWeightChanged.AddLambda([this](float Weight)
+		{
+			if (IsValid(TopBarViewModelRef))
+			{
+				TopBarViewModelRef->SetCurrentWeight(Weight);
+			}
+		});
+	}
+ 
+	// Experience
+	TopBarViewModelRef->SetPlayerLevel(1);
+	TopBarViewModelRef->SetCurrentExperience(0.f);
+	TopBarViewModelRef->SetRequiredExperience(CachedPlayerState->GetRequiredExperience());
+ 
+	// Listen for XP changes
+	CachedPlayerState->OnExperienceChangedDelegate.AddLambda(
+		[this](int32 PlayerLevel, int32 NewExperience, int32 RequiredExperience)
+		{
+			if (IsValid(TopBarViewModelRef))
+			{
+				TopBarViewModelRef->SetPlayerLevel(PlayerLevel);
+				TopBarViewModelRef->SetCurrentExperience(NewExperience);
+				TopBarViewModelRef->SetRequiredExperience(RequiredExperience);
+			}
+		});
+	// UTopBarViewModel* VM = TopBarWidget->GetViewModel<UTopBarViewModel>(TEXT("TopBarViewModel"));
+	// TopBarViewModelRef = VM;
+	//Carousel visuals and Input Delegate
 	TopBarWidget->InitCarousel(SectionsCarousel.Num());
-	TopBarWidget->UpdateExperience(1, 0, CachedPlayerState->GetRequiredExperience());
-
-	//Bind Delegates
 	TopBarWidget->OnSectionChanged.BindUObject(this, &USectionSwitcherWidget::HandleSectionNavigation);
-	CachedPlayerState->OnExperienceChangedDelegate.AddLambda([this](int32 PlayerLevel, int32 NewExperience, int32 RequiredExperience){
-		TopBarWidget->UpdateExperience(PlayerLevel, NewExperience, RequiredExperience);
-	});
+	
+	// TopBarWidget->SetInventoryWidgetController(GetInventoryWidgetController());
+	// TopBarWidget->InitCarousel(SectionsCarousel.Num());
+	// TopBarWidget->UpdateExperience(1, 0, CachedPlayerState->GetRequiredExperience());
+	//
+	// //Bind Delegates
+	// TopBarWidget->OnSectionChanged.BindUObject(this, &USectionSwitcherWidget::HandleSectionNavigation);
+	// CachedPlayerState->OnExperienceChangedDelegate.AddLambda([this](int32 PlayerLevel, int32 NewExperience, int32 RequiredExperience){
+	// 	TopBarWidget->UpdateExperience(PlayerLevel, NewExperience, RequiredExperience);
+	// });
 }
 
 
@@ -65,7 +112,11 @@ void USectionSwitcherWidget::ChangeSection(EUISections Section)
 	EUISections PreviousSection = SectionsCarousel[PreviousIndex];
 	EUISections NextSection = SectionsCarousel[NextIndex];
 	
-	TopBarWidget->SetSectionData(EnumToString(PreviousSection),EnumToString(Section),EnumToString(NextSection));
+	//TopBarWidget->SetSectionData(EnumToString(PreviousSection),EnumToString(Section),EnumToString(NextSection));
+
+	TopBarViewModelRef->SetCurrentSectionName(FText::FromString(EnumToString(Section)));
+	TopBarViewModelRef->SetPreviousSectionName(FText::FromString(EnumToString(PreviousSection)));
+	TopBarViewModelRef->SetNextSectionName(FText::FromString(EnumToString(NextSection)));
 	
 	//Change Section
 	switch (Section)

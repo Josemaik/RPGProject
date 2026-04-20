@@ -8,6 +8,7 @@
 #include "Game/PlayerState/RPGPlayerState.h"
 #include "SectionSwitcherWidget.generated.h"
 
+class UTopBarViewModel;
 class ARPGPlayerState;
 class UMissionsWidget;
 class UCharacterBuildWidget;
@@ -35,6 +36,7 @@ public:
 	//Widget Controllers
 	UInventoryWidgetController* GetInventoryWidgetController();
 	void InitializeTopBarWidget();
+	
 private:
 	virtual void NativeConstruct() override;
 	
@@ -51,6 +53,10 @@ private:
 	UPROPERTY()
 	TObjectPtr<UInventoryWidgetController> InventoryWidgetControllerRef;
 
+	// Owns the data shown by TopBarWidget.
+	UPROPERTY(BlueprintReadWrite, meta=(AllowPrivateAccess=true))
+	TObjectPtr<UTopBarViewModel> TopBarViewModelRef;
+	
 	//Widgets Sections Refs
 	UPROPERTY()
 	UInventoryWidget* InventoryWidgetRef;
@@ -63,7 +69,7 @@ private:
 
 	UPROPERTY()
 	UMissionsWidget* MissionsWidgetRef;
-
+	
 	//Carousel 
 	TArray<EUISections> SectionsCarousel;
 	EUISections CurrentSection;
@@ -95,6 +101,9 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Custom Values|Widgets")
 	TSubclassOf<UMissionsWidget> MissionsdWidgetClass;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Custom Values|ViewModels")
+	TSubclassOf<UTopBarViewModel> TopBarViewModelClass;
 };
 
 

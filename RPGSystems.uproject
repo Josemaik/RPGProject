@@ -14,7 +14,8 @@
 				"UMG",
 				"CoreUObject",
 				"EnhancedInput",
-				"MotionWarping"
+				"MotionWarping",
+				"ModelViewViewModel"
 			]
 		}
 	],
@@ -36,6 +37,10 @@
 		},
 		{
 			"Name": "GameplayStateTree",
+			"Enabled": true
+		},
+		{
+			"Name": "ModelViewViewModel",
 			"Enabled": true
 		}
 	]
