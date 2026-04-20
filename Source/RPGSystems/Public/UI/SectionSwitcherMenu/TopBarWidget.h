@@ -6,6 +6,7 @@
 #include "Blueprint/UserWidget.h"
 #include "TopBarWidget.generated.h"
 
+class UProgressBar;
 class UButton;
 class UHorizontalBox;
 class UImage;
@@ -24,6 +25,7 @@ class RPGSYSTEMS_API UTopBarWidget : public UUserWidget
 
 public:
 	void InitCarousel(int32 NumSections);
+	void UpdateExperience(int Level, float CurrentExperience,float RequiredExperience) const;
 	void SetActiveSection(int32 Index);
 
 	void SetSectionData(FString PreviousSection, FString CurrentSection, FString NextSection) const;
@@ -44,6 +46,17 @@ private:
 	///References
 	UPROPERTY()
 	UInventoryWidgetController* InventoryWidgetControllerRef;
+
+	UPROPERTY(EditDefaultsOnly)
+	FLinearColor ActiveColor = FLinearColor::White;
+
+	UPROPERTY(EditDefaultsOnly)
+	FLinearColor InactiveColor = FLinearColor(0.3f, 0.3f, 0.3f, 1.f);
+	
+	TArray<UImage*> CarouselImages;
+	int32 CurrentIndex = 0;
+	
+	bool bIsInventoryWeightGreaterThanAvailable = false;
 	
 	//////////////////
 	//Layout
@@ -74,21 +87,21 @@ private:
 	UPROPERTY(meta = (BindWidget))
 	UButton* ButtomNextCategory;
 
+	UPROPERTY(EditDefaultsOnly, meta=(AllowPrivateAccess = true), Category = "UI")
+	TObjectPtr<UTexture2D> CircleTexture;
+
 	///Level
 	UPROPERTY(EditDefaultsOnly, meta = (BindWidget),Category = "UI")
 	UTextBlock* LevelText;
 
-	UPROPERTY(EditDefaultsOnly)
-	FLinearColor ActiveColor = FLinearColor::White;
+	UPROPERTY(EditDefaultsOnly, meta = (BindWidget),Category = "UI")
+	UProgressBar* ExperienceBar;
 
-	UPROPERTY(EditDefaultsOnly)
-	FLinearColor InactiveColor = FLinearColor(0.3f, 0.3f, 0.3f, 1.f);
+	UPROPERTY(EditDefaultsOnly, meta = (BindWidget),Category = "UI")
+	UTextBlock* CurrentLevelExperienceText;
 	
-	TArray<UImage*> CarouselImages;
-	int32 CurrentIndex = 0;
-	
-	bool bIsInventoryWeightGreaterThanAvailable = false;
-
+	UPROPERTY(EditDefaultsOnly, meta = (BindWidget),Category = "UI")
+	UTextBlock* CurrentLevelMaxExperienceText;
 };
 
 

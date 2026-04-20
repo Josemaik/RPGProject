@@ -13,6 +13,8 @@ class UEquipmentManagerComponent;
 class UInventoryComponent;
 class URPGAttributeSet;
 class URPGAbilitySystemComponent;
+
+DECLARE_MULTICAST_DELEGATE_ThreeParams(FOnExperienceChanged,int32 PlayerLevel, int32 NewExperience, int32 RequiredExperience)
 /**
  * 
  */
@@ -24,6 +26,8 @@ class RPGSYSTEMS_API ARPGPlayerState : public APlayerState, public IAbilitySyste
 public:
 
 	ARPGPlayerState();
+
+	FOnExperienceChanged OnExperienceChangedDelegate;
 	
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void BeginPlay() override;
@@ -42,6 +46,7 @@ public:
 	TObjectPtr<UEquipmentManagerComponent> EquipmentComponent;
 
 	void AddToExperience(const FScalableFloat& XPScale);
+	float GetRequiredExperience() const;
 	
 	UFUNCTION(BlueprintImplementableEvent)
 	void OnLevelUp(int32 CurrentLevel);

@@ -93,7 +93,13 @@ void ARPGPlayerState::AddToExperience(const FScalableFloat& XPScale)
 		LevelUp();
 	}
 
+	OnExperienceChangedDelegate.Broadcast(PlayerLevel,CurrentExperience,RequiredExperience);
 	OnExperienceChanged(CurrentExperience,RequiredExperience);
+}
+
+float ARPGPlayerState::GetRequiredExperience() const
+{
+	return RequiredLevelUpExperience.GetValueAtLevel(PlayerLevel);
 }
 
 void ARPGPlayerState::OnRep_InventoryComponent()

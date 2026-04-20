@@ -7,6 +7,8 @@
 #include "Components/HorizontalBox.h"
 #include "Components/HorizontalBoxSlot.h"
 #include "Components/Image.h"
+#include "Components/ProgressBar.h"
+#include "Components/SizeBox.h"
 #include "Components/TextBlock.h"
 #include "UI/WidgetController/InventoryWidgetController.h"
 
@@ -16,25 +18,36 @@ void UTopBarWidget::InitCarousel(int32 NumSections)
 	
 	for (int32 i = 0; i < NumSections; i++)
 	{
-		UImage* DotImage = NewObject<UImage>(this);
+		USizeBox* SizeBox = NewObject<USizeBox>(this);
+		SizeBox->SetWidthOverride(8.f);
+		SizeBox->SetHeightOverride(8.f);
 
-		UHorizontalBoxSlot* HorizontalBoxSlot = HorizontalBoxCarousel->AddChildToHorizontalBox(DotImage);
+		UImage* DotImage = NewObject<UImage>(this);
+		SizeBox->AddChild(DotImage);
+		
+		UHorizontalBoxSlot* HorizontalBoxSlot = HorizontalBoxCarousel->AddChildToHorizontalBox(SizeBox);
 		if (!IsValid(HorizontalBoxSlot)) return;
 		
 		HorizontalBoxSlot->SetPadding(FMargin(4.f, 0.f));
 		HorizontalBoxSlot->SetSize(FSlateChildSize(ESlateSizeRule::Automatic));
 
-		FSlateBrush Brush;
-		Brush.TintColor = FSlateColor(InactiveColor);
-		Brush.ImageSize = FVector2D(12.f, 12.f);
-		Brush.DrawAs = ESlateBrushDrawType::Type::RoundedBox;
-		Brush.OutlineSettings.CornerRadii = FVector4d(10.f);
-		DotImage->SetBrush(Brush);
+		//FSlateBrush Brush;
+		DotImage->SetBrushFromTexture(CircleTexture,true);
+		DotImage->SetColorAndOpacity(InactiveColor);
 		
 		CarouselImages.Add(DotImage);
 	}
 
 	SetActiveSection(0);
+}
+
+void UTopBarWidget::UpdateExperience(int Level,float CurrentExperience,float RequiredExperience) const
+{
+	LevelText->SetText(FText::AsNumber(Level));
+	CurrentLevelExperienceText->SetText(FText::AsNumber(CurrentExperience));
+	CurrentLevelMaxExperienceText->SetText(FText::AsNumber(RequiredExperience));
+
+	ExperienceBar->SetPercent(CurrentExperience / RequiredExperience);
 }
 
 void UTopBarWidget::SetActiveSection(int32 Index)
@@ -49,8 +62,8 @@ void UTopBarWidget::SetActiveSection(int32 Index)
 
 void UTopBarWidget::SetSectionData(FString PreviousSection, FString CurrentSection, FString NextSection) const
 {
-	CurrentSectionText->SetText(FText::FromString(PreviousSection));
-	PreviousSectionText->SetText(FText::FromString(CurrentSection));
+	PreviousSectionText->SetText(FText::FromString(PreviousSection));
+	CurrentSectionText->SetText(FText::FromString(CurrentSection));
 	NextSectionText->SetText(FText::FromString(NextSection));
 }
 
@@ -61,6 +74,8 @@ void UTopBarWidget::SetInventoryWidgetController(UInventoryWidgetController* Wid
 
 	if (!IsValid(InventoryWidgetControllerRef)) return;
 	InventoryWidgetControllerRef->OnInventoryWeightChanged.AddUObject(this,&UTopBarWidget::HandleInventoryWeightChanged);
+
+	MaxInventoryWeightText->SetText(FText::FromString(FString::FromInt(InventoryWidgetControllerRef->GetMaxInventoryWeight())));
 }
 
 void UTopBarWidget::NativeConstruct()

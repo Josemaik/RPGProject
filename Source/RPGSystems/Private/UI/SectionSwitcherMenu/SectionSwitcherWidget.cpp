@@ -6,7 +6,10 @@
 #include "Components/VerticalBox.h"
 #include "Components/WidgetSwitcher.h"
 #include "Game/PlayerController/RPGPlayerController.h"
+#include "UI/CharacterBuild/CharacterBuildWidget.h"
 #include "UI/Inventory/InventoryWidget.h"
+#include "UI/Map/WorldMapWidget.h"
+#include "UI/Missions/MissionsWidget.h"
 #include "UI/SectionSwitcherMenu/InputContextWidget.h"
 #include "UI/SectionSwitcherMenu/TopBarWidget.h"
 #include "UI/WidgetController/InventoryWidgetController.h"
@@ -17,7 +20,7 @@ void USectionSwitcherWidget::NativeConstruct()
 	
 	SectionsCarousel = {EUISections::CHARACTERBUILD, EUISections::INVENTORY, EUISections::WORLDMAP, EUISections::MISSIONS };
 	CurrentSectionIndex = 0;
-	InitializeTopBarWidget();
+	CurrentSection = EUISections::NONE;
 }
 
 void USectionSwitcherWidget::InitializeTopBarWidget()
@@ -25,19 +28,45 @@ void USectionSwitcherWidget::InitializeTopBarWidget()
 	if (!IsValid(TopBarWidget)) return;
 	TopBarWidget->SetInventoryWidgetController(GetInventoryWidgetController());
 	TopBarWidget->InitCarousel(SectionsCarousel.Num());
+	TopBarWidget->UpdateExperience(1, 0, CachedPlayerState->GetRequiredExperience());
+
 	//Bind Delegates
 	TopBarWidget->OnSectionChanged.BindUObject(this, &USectionSwitcherWidget::HandleSectionNavigation);
+	CachedPlayerState->OnExperienceChangedDelegate.AddLambda([this](int32 PlayerLevel, int32 NewExperience, int32 RequiredExperience){
+		TopBarWidget->UpdateExperience(PlayerLevel, NewExperience, RequiredExperience);
+	});
 }
 
 
-void USectionSwitcherWidget::SetPlayerControllerRef(ARPGPlayerController* PlayerController)
+void USectionSwitcherWidget::SetPlayerControllerRef(ARPGPlayerController* PlayerController,ARPGPlayerState* PlayerState)
 {
 	PlayerControllerRef = PlayerController;
+	CachedPlayerState = PlayerState;
+
+	InitializeTopBarWidget();
+}
+
+void USectionSwitcherWidget::OpenSection(EUISections Section)
+{
+	if (CurrentSection == Section) return;
+	int32 Index = SectionsCarousel.Find(Section);
+	CurrentSectionIndex = Index;
+	ChangeSection(Section);
 }
 
 void USectionSwitcherWidget::ChangeSection(EUISections Section)
 {
 	CurrentSection = Section;
+	//Update Carousel Data
+	TopBarWidget->SetActiveSection(CurrentSectionIndex);
+
+	int32 PreviousIndex = CurrentSectionIndex - 1 < 0 ? SectionsCarousel.Num() - 1 : CurrentSectionIndex - 1;
+	int32 NextIndex = CurrentSectionIndex + 1 == SectionsCarousel.Num() ? 0 : CurrentSectionIndex + 1;
+	EUISections PreviousSection = SectionsCarousel[PreviousIndex];
+	EUISections NextSection = SectionsCarousel[NextIndex];
+	
+	TopBarWidget->SetSectionData(EnumToString(PreviousSection),EnumToString(Section),EnumToString(NextSection));
+	
 	//Change Section
 	switch (Section)
 	{
@@ -63,9 +92,62 @@ void USectionSwitcherWidget::ChangeSection(EUISections Section)
 				
 				break;
 			}
-		case EUISections::CHARACTERBUILD: {  break; }
-		case EUISections::WORLDMAP:       {  break; }
-		case EUISections::MISSIONS:       {  break; }
+		case EUISections::CHARACTERBUILD:
+			{
+				if (!IsValid(CharacterBuildWidgetRef))
+				{
+					UUserWidget* Widget = CreateWidget<UCharacterBuildWidget>(PlayerControllerRef, CharacterBuildWidgetClass);
+					if (!IsValid(Widget)) return;
+					CharacterBuildWidgetRef = Cast<UCharacterBuildWidget>(Widget);
+					if (!IsValid(CharacterBuildWidgetRef)) return;
+					
+					SectionWidgetSwitcher->AddChild(CharacterBuildWidgetRef);
+				}
+
+				if (SectionWidgetSwitcher->GetActiveWidget() != CharacterBuildWidgetRef)
+				{
+					SectionWidgetSwitcher->SetActiveWidget(CharacterBuildWidgetRef);
+				}
+				
+				break;
+			}
+		case EUISections::WORLDMAP:
+			{
+				if (!IsValid(WorldMapWidgetRef))
+				{
+					UUserWidget* Widget = CreateWidget<UWorldMapWidget>(PlayerControllerRef, WorldMapWidgetClass);
+					if (!IsValid(Widget)) return;
+					WorldMapWidgetRef = Cast<UWorldMapWidget>(Widget);
+					if (!IsValid(WorldMapWidgetRef)) return;
+					
+					SectionWidgetSwitcher->AddChild(WorldMapWidgetRef);
+				}
+
+				if (SectionWidgetSwitcher->GetActiveWidget() != WorldMapWidgetRef)
+				{
+					SectionWidgetSwitcher->SetActiveWidget(WorldMapWidgetRef);
+				}
+				break;
+			}
+		case EUISections::MISSIONS:
+			{
+				if (!IsValid(MissionsWidgetRef))
+				{
+					UUserWidget* Widget = CreateWidget<UMissionsWidget>(PlayerControllerRef, MissionsdWidgetClass);
+					if (!IsValid(Widget)) return;
+					MissionsWidgetRef = Cast<UMissionsWidget>(Widget);
+					if (!IsValid(MissionsWidgetRef)) return;
+					
+					SectionWidgetSwitcher->AddChild(MissionsWidgetRef);
+				}
+
+				if (SectionWidgetSwitcher->GetActiveWidget() != MissionsWidgetRef)
+				{
+					SectionWidgetSwitcher->SetActiveWidget(MissionsWidgetRef);
+				}
+				
+				break;
+			}
 		default: break;
 	}
 
@@ -105,22 +187,10 @@ UInventoryWidgetController* USectionSwitcherWidget::GetInventoryWidgetController
 void USectionSwitcherWidget::HandleSectionNavigation(int32 Direction)
 {
 	int32 NumSections = SectionsCarousel.Num();
-	int32 NewIndex = (CurrentSectionIndex + Direction + NumSections) % NumSections;
-	
-	CurrentSectionIndex = NewIndex;
-
-	//Update Toip Bar Carousel
-	if (!IsValid(TopBarWidget)) return;
-	TopBarWidget->SetActiveSection(CurrentSectionIndex);
-	
-	EUISections PreviousSection = SectionsCarousel[CurrentSectionIndex - 1];
-	EUISections NextSection = SectionsCarousel[CurrentSectionIndex];
-	
-	TopBarWidget->SetSectionData(EnumToString(PreviousSection),
-		EnumToString(CurrentSection),EnumToString(NextSection));
+	CurrentSectionIndex = (CurrentSectionIndex + Direction + NumSections) % NumSections;
 	
 	//Update Section Content
-	ChangeSection(SectionsCarousel[NewIndex]);
+	ChangeSection(SectionsCarousel[CurrentSectionIndex]);
 }
 
 FString USectionSwitcherWidget::EnumToString(EUISections Section)

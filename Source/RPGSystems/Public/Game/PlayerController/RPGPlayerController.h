@@ -117,12 +117,6 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Custom Values|Widgets")
 	TSubclassOf<USectionSwitcherWidget> SectionSwitcherWidgetClass;
-	
-	// UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = true))
-	// TObjectPtr<UInventoryWidget> InventoryWidget;
-
-	// UPROPERTY(EditDefaultsOnly, Category = "Custom Values|Widgets")
-	// TSubclassOf<UInventoryWidget> InventoryWidgetClass;
 
 	UPROPERTY(BlueprintReadWrite, meta = (AllowPrivateAccess = true))
 	TObjectPtr<UUserWidget> OverlayWidgetRef;

@@ -5,8 +5,13 @@
 #include "CoreMinimal.h"
 #include "EnumSections.h"
 #include "Blueprint/UserWidget.h"
+#include "Game/PlayerState/RPGPlayerState.h"
 #include "SectionSwitcherWidget.generated.h"
 
+class ARPGPlayerState;
+class UMissionsWidget;
+class UCharacterBuildWidget;
+class UWorldMapWidget;
 class UWidgetSwitcher;
 class UInputContextWidget;
 class UTopBarWidget;
@@ -23,13 +28,13 @@ class RPGSYSTEMS_API USectionSwitcherWidget : public UUserWidget
 	GENERATED_BODY()
 
 public:
-	void SetPlayerControllerRef(ARPGPlayerController* PlayerController);
+	void SetPlayerControllerRef(ARPGPlayerController* PlayerController,ARPGPlayerState* PlayerState);
+	void OpenSection(EUISections Section);
 	void ChangeSection(EUISections Section);
 	
 	//Widget Controllers
 	UInventoryWidgetController* GetInventoryWidgetController();
 	void InitializeTopBarWidget();
-	EUISections GetSection() const { return CurrentSection; }
 private:
 	virtual void NativeConstruct() override;
 	
@@ -41,13 +46,27 @@ private:
 	ARPGPlayerController* PlayerControllerRef;
 
 	UPROPERTY()
+	ARPGPlayerState* CachedPlayerState;
+
+	UPROPERTY()
 	TObjectPtr<UInventoryWidgetController> InventoryWidgetControllerRef;
-	
+
+	//Widgets Sections Refs
 	UPROPERTY()
 	UInventoryWidget* InventoryWidgetRef;
+	
+	UPROPERTY()
+	UWorldMapWidget* WorldMapWidgetRef;
+	
+	UPROPERTY()
+	UCharacterBuildWidget* CharacterBuildWidgetRef;
 
-	EUISections CurrentSection;
+	UPROPERTY()
+	UMissionsWidget* MissionsWidgetRef;
+
+	//Carousel 
 	TArray<EUISections> SectionsCarousel;
+	EUISections CurrentSection;
 	int32 CurrentSectionIndex;
 	
 	//Layout
@@ -62,12 +81,20 @@ private:
 	
 	
 	//Classes
-	
 	UPROPERTY(EditDefaultsOnly, Category = "Custom Values|Widgets")
 	TSubclassOf<UInventoryWidget> InventoryWidgetClass;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Custom Values|Widgets")
 	TSubclassOf<UInventoryWidgetController> InventoryWidgetControllerClass;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Custom Values|Widgets")
+	TSubclassOf<UWorldMapWidget> WorldMapWidgetClass;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Custom Values|Widgets")
+	TSubclassOf<UCharacterBuildWidget> CharacterBuildWidgetClass;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Custom Values|Widgets")
+	TSubclassOf<UMissionsWidget> MissionsdWidgetClass;
 };
 
 

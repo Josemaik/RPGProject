@@ -124,7 +124,7 @@ void ARPGPlayerController::OnGameplayInput(FGameplayTag InputTag)
 		SectionSwitcherWidget = CreateWidget<USectionSwitcherWidget>(this, SectionSwitcherWidgetClass);
 		if (!IsValid(SectionSwitcherWidget)) return;
 
-		SectionSwitcherWidget->SetPlayerControllerRef(this);
+		SectionSwitcherWidget->SetPlayerControllerRef(this,GetPlayerState<ARPGPlayerState>());
 	}
 
 	EnableSectionWidget();
@@ -136,8 +136,7 @@ void ARPGPlayerController::OnGameplayInput(FGameplayTag InputTag)
 	
 	if (InputTag.MatchesTagExact(FGameplayTag::RequestGameplayTag("Input.Inventory.Open")))
 	{
-		if (SectionSwitcherWidget->GetSection() == EUISections::INVENTORY) return;
-		SectionSwitcherWidget->ChangeSection(EUISections::INVENTORY);
+		SectionSwitcherWidget->OpenSection(EUISections::INVENTORY);
 	}
 }
 
