@@ -23,7 +23,10 @@
 #include "Components/ArrowComponent.h"
 #include "Components/SceneCaptureComponent2D.h"
 #include "Equipment/EquipmentActor.h"
+#include "Equipment/EquipmentManagerComponent.h"
+#include "InventorySection/InventoryComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "Net/UnrealNetwork.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
@@ -77,6 +80,12 @@ ARPGSystemsCharacter::ARPGSystemsCharacter(const FObjectInitializer& ObjectIniti
 
 	CharacterCaptureComponent = CreateDefaultSubobject<USceneCaptureComponent2D>(TEXT("CharacterCaptureComponent"));
 	CharacterCaptureComponent->SetupAttachment(CharacterCaptureSpringArm);
+
+	InventoryComponent = CreateDefaultSubobject<UInventoryComponent>(TEXT("InventoryComponent"));
+	InventoryComponent->SetIsReplicated(true);
+	
+	EquipmentComponent = CreateDefaultSubobject<UEquipmentManagerComponent>(TEXT("EquipmentManagerComponent"));
+	EquipmentComponent->SetIsReplicated(true);
 	
 	GetCharacterMovement()->NavAgentProps.bCanCrouch = true;
 	VaultSphereRadiusFirstCheck = 5.f;
@@ -231,12 +240,41 @@ void ARPGSystemsCharacter::BeginPlay()
 	Super::BeginPlay();
 	
 	AddEquipmentToCharacterCapture(this);
+
+	if (InventoryComponent)
+	{
+		InventoryComponent->InventoryList.OwningObject = this;
+	}
+
+	if (EquipmentComponent)
+	{
+		EquipmentComponent->EquipmentList.OwningObject = this;
+		EquipmentComponent->BindInventoryDelegates(InventoryComponent);
+	}
+}
+
+void ARPGSystemsCharacter::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(ARPGSystemsCharacter, InventoryComponent);
+	DOREPLIFETIME(ARPGSystemsCharacter, EquipmentComponent);
 }
 
 void ARPGSystemsCharacter::AddEquipmentToCharacterCapture(AActor* Actor) const
 {
 	if (!IsValid(CharacterCaptureComponent)) return;
 	CharacterCaptureComponent->ShowOnlyActors.Add(Actor);
+}
+
+void ARPGSystemsCharacter::OnRep_InventoryComponent()
+{
+	InventoryComponent->InventoryList.OwningObject = this;
+}
+
+void ARPGSystemsCharacter::OnRep_EquipmentComponent()
+{
+	EquipmentComponent->EquipmentList.OwningObject = this;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -352,7 +390,7 @@ void ARPGSystemsCharacter::Look(const FInputActionValue& Value)
 	}
 }
 //////////////////////////////////
-/// Vaulting
+/// Vaulting -> Move To Component
 /// 
 void ARPGSystemsCharacter::TryVault()
 {

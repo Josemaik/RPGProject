@@ -40,7 +40,7 @@ public:
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category="Equipment")
 	UEquipmentManagerComponent* GetEquipmentComponent() const;
-	virtual UEquipmentManagerComponent* GetEquipmentComponent_Implementation() const;
+	virtual UEquipmentManagerComponent* GetEquipmentComponent_Implementation() const override;
 	
 	virtual void SetupInputComponent() override;
 	virtual void InitPlayerState() override;
@@ -52,7 +52,7 @@ public:
 	virtual void SetDynamicProjectile_Implementation(const FGameplayTag& ProjectileTag,int32 AbilityLevel) override;
 	
 	UInventoryWidgetController* GetInventoryWidgetController();
-
+	
 	UFUNCTION(BlueprintCallable)
 	void EnableSectionWidget();
 
@@ -69,28 +69,18 @@ protected:
 	void OnGameplayInput(FGameplayTag InputTag);
 private:
 
-	void BindCallbacksToDependencies();
-
-	UFUNCTION()
-	void HandleEquipmentRequested(const TSubclassOf<UEquipmentDefinition>& EquipmentDefinition,
-				   const FEquipmentEffectPackage& EffectPackage);
-
-	UFUNCTION()
-	void HandleUnEquippedItem(const FRPGEquipmentEntry& UnEquippedEntry);
-	
-	void SpawnDroppedItem(const FRPGInventoryEntry* DroppedEntry, int32 NumItems) const;
-
-	UPROPERTY(EditDefaultsOnly, Category="Custom Values|Item Spawn")
-	float ItemSpawnFordwardDistance = 250.f;
-
 	bool bToggleSectionSwitcherWidget = false;
 
+	//Controllers
+	UPROPERTY()
+	TObjectPtr<UInventoryWidgetController> InventoryWidgetControllerRef;
+	
 	//Components
-	UPROPERTY()
-	UInventoryComponent* InventoryComponent;
-
-	UPROPERTY()
-	UEquipmentManagerComponent* EquipmentComponent;
+	// UPROPERTY()
+	// UInventoryComponent* InventoryComponent;
+	//
+	// UPROPERTY()
+	// UEquipmentManagerComponent* EquipmentComponent;
 	
 	UPROPERTY()
 	TObjectPtr<URPGAbilitySystemComponent> RPGAbilitySystemComponent;

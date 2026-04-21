@@ -21,32 +21,29 @@ ARPGPlayerState::ARPGPlayerState()
 	RPGAbilitySystemComp->SetReplicationMode(EGameplayEffectReplicationMode::Mixed);
 
 	RPGAttributes = CreateDefaultSubobject<URPGAttributeSet>("AttributeSet");
-
-	InventoryComponent = CreateDefaultSubobject<UInventoryComponent>(TEXT("InventoryComponent"));
-	InventoryComponent->SetIsReplicated(true);
-	
-	EquipmentComponent = CreateDefaultSubobject<UEquipmentManagerComponent>(TEXT("EquipmentManagerComponent"));
-	EquipmentComponent->SetIsReplicated(true);
-
 }
 
-void ARPGPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
-{
-	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-
-	DOREPLIFETIME(ARPGPlayerState, InventoryComponent);
-	DOREPLIFETIME(ARPGPlayerState, EquipmentComponent);
-}
+// void ARPGPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+// {
+// 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+//
+// 	DOREPLIFETIME(ARPGPlayerState, InventoryComponent);
+// 	DOREPLIFETIME(ARPGPlayerState, EquipmentComponent);
+// }
 
 void ARPGPlayerState::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (InventoryComponent)
-		InventoryComponent->InventoryList.OwningObject = this;
-
-	if (EquipmentComponent)
-		EquipmentComponent->EquipmentList.OwningObject = this;
+	// if (InventoryComponent)
+	// 	InventoryComponent->InventoryList.OwningObject = this;
+	//
+	// if (EquipmentComponent)
+	// {
+	// 	EquipmentComponent->EquipmentList.OwningObject = this;
+	// 	EquipmentComponent->BindInventoryDelegates(InventoryComponent);
+	// }
+	
 }
 
 UAbilitySystemComponent* ARPGPlayerState::GetAbilitySystemComponent() const
@@ -102,13 +99,13 @@ float ARPGPlayerState::GetRequiredExperience() const
 	return RequiredLevelUpExperience.GetValueAtLevel(PlayerLevel);
 }
 
-void ARPGPlayerState::OnRep_InventoryComponent()
-{
-	InventoryComponent->InventoryList.OwningObject = this;
-}
-
-void ARPGPlayerState::OnRep_EquipmentComponent()
-{
-	EquipmentComponent->EquipmentList.OwningObject = this;
-}
+// void ARPGPlayerState::OnRep_InventoryComponent()
+// {
+// 	InventoryComponent->InventoryList.OwningObject = this;
+// }
+//
+// void ARPGPlayerState::OnRep_EquipmentComponent()
+// {
+// 	EquipmentComponent->EquipmentList.OwningObject = this;
+// }
 

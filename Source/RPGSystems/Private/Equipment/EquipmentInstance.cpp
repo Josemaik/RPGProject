@@ -86,9 +86,9 @@ void UEquipmentInstance::DestroySpawnedActors()
 
 ACharacter* UEquipmentInstance::GetCharacter()
 {
-	if (const APlayerState* PlayerState = Cast<APlayerState>(GetOuter()))
+	if (ACharacter* Character = Cast<ACharacter>(GetOuter()))
 	{
-		return Cast<ACharacter>(PlayerState->GetPawn());
+		return Character;
 	}
 	return nullptr;
 }

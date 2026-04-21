@@ -14,6 +14,7 @@ class URPGAbilitySystemComponent;
 class UEquipmentInstance;
 class UEquipmentDefinition;
 class UEquipmentManagerComponent;
+class UInventoryComponent;
 
 USTRUCT(BlueprintType)
 struct FRPGEquipmentEntry : public FFastArraySerializerItem
@@ -131,17 +132,24 @@ public:
 
 	UPROPERTY(Replicated)
 	FRPGEquipmentList EquipmentList;
-	
+
 	UEquipmentManagerComponent();
 	
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 	
 	void EquipItem(const TSubclassOf<UEquipmentDefinition>& EquipmentDefinition,const FEquipmentEffectPackage& EffectPackage);
 	void UnEquipItem(UEquipmentInstance* InEquipmentInstance);
+	void HandleEquipmentRequested(const TSubclassOf<UEquipmentDefinition>& EquipmentDefinition,
+	const FEquipmentEffectPackage& EffectPackage);
+	void HandleUnEquippedItem(const FRPGEquipmentEntry& UnEquippedEntry) const;
+
+	void BindInventoryDelegates(UInventoryComponent* InvComponent);
 protected:
 	virtual void BeginPlay() override;
 
 private:
+	UPROPERTY()
+	TObjectPtr<UInventoryComponent> InvComponentRef;
 
 	UFUNCTION(Server, Reliable) // RPC always need to copy/serialize ( const& references are not allowed)
 	void ServerEquipItem(TSubclassOf<UEquipmentDefinition> EquipmentDefiniton,const FEquipmentEffectPackage& EffectPackage);

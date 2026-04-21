@@ -33,8 +33,6 @@ public:
 	void OpenSection(EUISections Section);
 	void ChangeSection(EUISections Section);
 	
-	//Widget Controllers
-	UInventoryWidgetController* GetInventoryWidgetController();
 	void InitializeTopBarWidget();
 	
 private:
@@ -49,9 +47,6 @@ private:
 
 	UPROPERTY()
 	ARPGPlayerState* CachedPlayerState;
-
-	UPROPERTY()
-	TObjectPtr<UInventoryWidgetController> InventoryWidgetControllerRef;
 
 	// Owns the data shown by TopBarWidget.
 	UPROPERTY(BlueprintReadWrite, meta=(AllowPrivateAccess=true))

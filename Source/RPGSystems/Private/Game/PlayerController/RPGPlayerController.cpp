@@ -7,6 +7,7 @@
 #include "EnhancedInputSubsystems.h"
 #include "AbilitySystem/RPGAbilitySystemComponent.h"
 #include "Blueprint/UserWidget.h"
+#include "Character/RPGSystemsCharacter.h"
 #include "Equipment/EquipmentManagerComponent.h"
 #include "Game/PlayerState/RPGPlayerState.h"
 #include "Input/RPGInputConfig.h"
@@ -25,16 +26,16 @@ ARPGPlayerController::ARPGPlayerController()
 
 UInventoryComponent* ARPGPlayerController::GetInventoryComponent_Implementation() const
 {
-	if (const ARPGPlayerState* PS = GetPlayerState<ARPGPlayerState>())
-		return PS->InventoryComponent;
+	if (const ARPGSystemsCharacter* RPGCharacter = Cast<ARPGSystemsCharacter>(GetCharacter()))
+		return RPGCharacter->GetInventoryComponent();
 
 	return nullptr;
 }
 
 UEquipmentManagerComponent* ARPGPlayerController::GetEquipmentComponent_Implementation() const
 {
-	if (const ARPGPlayerState* PS = GetPlayerState<ARPGPlayerState>())
-		return PS->EquipmentComponent;
+	if (const ARPGSystemsCharacter* RPGCharacter = Cast<ARPGSystemsCharacter>(GetCharacter()))
+		return RPGCharacter->GetEquipmentComponent();
 
 	return nullptr;
 }
@@ -82,10 +83,10 @@ void ARPGPlayerController::OnRep_PlayerState()
 void ARPGPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
-	
-	GetWorldTimerManager().SetTimerForNextTick(
-	   this, &ARPGPlayerController::BindCallbacksToDependencies
-   );
+
+	//Create Section Switcher Widget Instance
+	SectionSwitcherWidget = CreateWidget<USectionSwitcherWidget>(this, SectionSwitcherWidgetClass);
+	SectionSwitcherWidget->SetPlayerControllerRef(this,GetPlayerState<ARPGPlayerState>());
 }
 
 void ARPGPlayerController::AbilityInputPressed(FGameplayTag InputTag)
@@ -115,98 +116,21 @@ void ARPGPlayerController::OnInventoryInput(FGameplayTag InputTag)
 	{
 		DisableSectionWidget();
 	}
+	if (InputTag.MatchesTagExact(FGameplayTag::RequestGameplayTag("Input.Inventory.SortItemsQuickly")))
+	{
+		GetInventoryWidgetController()->RequestSortItems();
+	}
 }
 
 void ARPGPlayerController::OnGameplayInput(FGameplayTag InputTag)
 {
-	if (!IsValid(SectionSwitcherWidget))
-	{
-		SectionSwitcherWidget = CreateWidget<USectionSwitcherWidget>(this, SectionSwitcherWidgetClass);
-		if (!IsValid(SectionSwitcherWidget)) return;
-
-		SectionSwitcherWidget->SetPlayerControllerRef(this,GetPlayerState<ARPGPlayerState>());
-	}
-
-	EnableSectionWidget();
-
-	if (!SectionSwitcherWidget->IsInViewport())
-	{
-		SectionSwitcherWidget->AddToViewport();
-	}
-	
 	if (InputTag.MatchesTagExact(FGameplayTag::RequestGameplayTag("Input.Inventory.Open")))
 	{
+		EnableSectionWidget();
 		SectionSwitcherWidget->OpenSection(EUISections::INVENTORY);
 	}
 }
 
-void ARPGPlayerController::BindCallbacksToDependencies()
-{
-	InventoryComponent = GetInventoryComponent();
-	EquipmentComponent = GetEquipmentComponent();
-
-	// ----------------------------
-	// Inventory → Equipment binding
-	// ----------------------------
-	if (IsValid(InventoryComponent))
-	{
-		InventoryComponent->EquipmentItemDelegate.AddUObject(
-			this, &ARPGPlayerController::HandleEquipmentRequested
-		);
-
-		InventoryComponent->ItemDroppedDelegate.AddLambda(
-			[this](const FRPGInventoryEntry* Entry,int32 NumItems)
-		{
-			SpawnDroppedItem(Entry, NumItems);
-		});
-	}
-
-	// ----------------------------
-	// Equipment → Inventory binding
-	// ----------------------------
-	if (IsValid(EquipmentComponent))
-	{
-		EquipmentComponent->EquipmentList.UnEquippedEntryDelegate.AddUObject(
-		   this, &ARPGPlayerController::HandleUnEquippedItem);
-	}
-}
-
-void ARPGPlayerController::HandleEquipmentRequested(const TSubclassOf<UEquipmentDefinition>& EquipmentDefinition,
-	const FEquipmentEffectPackage& EffectPackage)
-{
-	if (IsValid(EquipmentComponent))
-	{
-		EquipmentComponent->EquipItem(EquipmentDefinition, EffectPackage);
-	}
-}
-
-void ARPGPlayerController::HandleUnEquippedItem(const FRPGEquipmentEntry& UnEquippedEntry) 
-{
-	if (IsValid(InventoryComponent))
-	{
-		InventoryComponent->AddUnEquippedItemEntry(UnEquippedEntry.EntryTag, UnEquippedEntry.EffectPackage);
-	}
-}
-
-void ARPGPlayerController::SpawnDroppedItem(const FRPGInventoryEntry* DroppedEntry, int32 NumItems) const
-{
-	if (!DroppedEntry || !IsValid(InventoryComponent))
-	{
-		return;
-	}
-	
-	TObjectPtr<APawn> OwnerPawn = GetPawn();
-	if (!IsValid(OwnerPawn))
-	{
-		return;
-	}
-	
-	const FVector FordwardLocation = OwnerPawn->GetActorLocation() + OwnerPawn->GetActorForwardVector() * ItemSpawnFordwardDistance;
-	FTransform SpawnTransform;
-	SpawnTransform.SetLocation(FordwardLocation);
-
-	InventoryComponent->SpawnItem(SpawnTransform, DroppedEntry, NumItems);
-}
 
 UAbilitySystemComponent* ARPGPlayerController::GetAbilitySystemComponent() const
 {
@@ -225,19 +149,40 @@ void ARPGPlayerController::SetDynamicProjectile_Implementation(const FGameplayTa
 
 UInventoryWidgetController* ARPGPlayerController::GetInventoryWidgetController()
 {
- 	if (!IsValid(InventoryWidgetController))
- 	{
- 		InventoryWidgetController = NewObject<UInventoryWidgetController>(this, InventoryWidgetControllerClass); 
- 		InventoryWidgetController->SetOwningActor(this);
- 		InventoryWidgetController->BindCallbacksToDependencies();
- 	}
+	if (IsValid(InventoryWidgetControllerRef))
+	{
+		return InventoryWidgetControllerRef;
+	}
+	
+	if (!IsValid(InventoryWidgetControllerClass))
+	{
+		UE_LOG(LogTemp, Error, TEXT("InventoryWidgetControllerClass is NULL"));
+		return nullptr;
+	}
+	
+	InventoryWidgetControllerRef = NewObject<UInventoryWidgetController>(this, InventoryWidgetControllerClass);
 
-	return InventoryWidgetController;
+	if (!IsValid(InventoryWidgetControllerRef))
+	{
+		UE_LOG(LogTemp, Error, TEXT("Failed to create InventoryWidgetController"));
+		return nullptr;
+	}
+		
+	InventoryWidgetControllerRef->SetOwningActor(this);
+	InventoryWidgetControllerRef->BindCallbacksToDependencies();
+	InventoryWidgetControllerRef->BroadCastInitialValues();
+
+	return InventoryWidgetControllerRef;
 }
 
 void ARPGPlayerController::EnableSectionWidget()
 {
 	if (!IsValid(SectionSwitcherWidget)) return;
+
+	if (!SectionSwitcherWidget->IsInViewport())
+	{
+		SectionSwitcherWidget->AddToViewport();
+	}
 	
 	SectionSwitcherWidget->SetVisibility(ESlateVisibility::Visible);
 	OverlayWidgetRef->SetVisibility(ESlateVisibility::Hidden);

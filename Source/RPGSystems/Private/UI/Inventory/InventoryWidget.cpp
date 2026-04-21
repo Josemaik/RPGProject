@@ -106,7 +106,7 @@ void UInventoryWidget::BindInventoryItemDelegates()
 {
 	InventoryWidgetController->InventoryEntryDelegate.AddUObject(this,&UInventoryWidget::HandleInventoryItemReceived);
 	InventoryWidgetController->OnInventoryItemRemoved.AddUObject(this,&UInventoryWidget::HandleInventoryItemRemoved);
-	//InventoryWidgetController->OnInventoryWeightChanged.AddUObject(this,&UInventoryWidget::HandleInventoryWeight);
+	InventoryWidgetController->OnSortItemsRequested.AddUObject(this, &UInventoryWidget::SortItems);
 }
 
 void UInventoryWidget::HandleCategorySelected(FGameplayTag CategorySelected)

@@ -7,6 +7,7 @@
 #include "AbilitySystem/RPGAbilitySystemComponent.h"
 #include "Equipment/EquipmentDefinition.h"
 #include "Equipment/EquipmentInstance.h"
+#include "InventorySection/InventoryComponent.h"
 #include "Net/UnrealNetwork.h"
 
 
@@ -243,7 +244,15 @@ void UEquipmentManagerComponent::BeginPlay()
 	if (GetOwner()->HasAuthority())
 	{
 		EquipmentList.BindAbilitySystemDelegates();
+		EquipmentList.UnEquippedEntryDelegate.AddUObject(this, &UEquipmentManagerComponent::HandleUnEquippedItem);
 	}
+}
+
+void UEquipmentManagerComponent::BindInventoryDelegates(UInventoryComponent* InvComponent)
+{
+	if (!IsValid(InvComponent)) return;
+	InvComponent->EquipmentItemDelegate.AddUObject(this, &UEquipmentManagerComponent::HandleEquipmentRequested);
+	InvComponentRef = InvComponent;
 }
 
 void UEquipmentManagerComponent::EquipItem(const TSubclassOf<UEquipmentDefinition>& EquipmentDefinition,
@@ -273,8 +282,22 @@ void UEquipmentManagerComponent::UnEquipItem(UEquipmentInstance* InEquipmentInst
 	EquipmentList.RemoveEntry(InEquipmentInstance);
 }
 
-void UEquipmentManagerComponent::ServerEquipItem_Implementation(TSubclassOf<UEquipmentDefinition> EquipmentDefiniton,
+void UEquipmentManagerComponent::HandleEquipmentRequested(const TSubclassOf<UEquipmentDefinition>& EquipmentDefinition,
 	const FEquipmentEffectPackage& EffectPackage)
+{
+	EquipItem(EquipmentDefinition, EffectPackage);
+}
+
+void UEquipmentManagerComponent::HandleUnEquippedItem(const FRPGEquipmentEntry& UnEquippedEntry) const
+{
+	if (IsValid(InvComponentRef))
+	{
+		InvComponentRef->AddUnEquippedItemEntry(UnEquippedEntry.EntryTag, UnEquippedEntry.EffectPackage);
+	}
+}
+
+void UEquipmentManagerComponent::ServerEquipItem_Implementation(TSubclassOf<UEquipmentDefinition> EquipmentDefiniton,
+                                                                const FEquipmentEffectPackage& EffectPackage)
 {
 	EquipItem(EquipmentDefiniton,EffectPackage);
 }

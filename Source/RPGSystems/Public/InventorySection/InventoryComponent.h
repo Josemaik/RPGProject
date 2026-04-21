@@ -146,6 +146,8 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void DropItem(const FRPGInventoryEntry& Entry, int32 NumItems);
 
+	void SpawnDroppedItem(const FRPGInventoryEntry& DroppedEntry, int32 NumItems);
+	
 	UFUNCTION(BlueprintCallable)
 	void PickupItem(AItemActor* Item);
 	
@@ -163,6 +165,8 @@ public:
 
 	float GetMaxInventoryWeight() const { return MAX_INVENTORY_WEIGHT; };
 private:
+	UPROPERTY(EditDefaultsOnly, Category="Custom Values|Item Spawn")
+	float ItemSpawnFordwardDistance = 250.f;
 
 	float CurrentWeight = 0.f;
 	const float MAX_INVENTORY_WEIGHT = 60.f;

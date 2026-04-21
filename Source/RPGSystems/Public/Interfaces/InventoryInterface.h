@@ -7,6 +7,7 @@
 #include "InventoryInterface.generated.h"
 
 class UInventoryComponent;
+class UEquipmentManagerComponent;
 class UInventoryWidgetController;
 // This class does not need to be modified.
 UINTERFACE(MinimalAPI)
@@ -25,5 +26,8 @@ class RPGSYSTEMS_API IInventoryInterface
 	// Add interface functions to this class. This is the class that will be inherited to implement this interface.
 public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
-	UInventoryComponent* GetInventoryComponent() const; 
+	UInventoryComponent* GetInventoryComponent() const;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
+	UEquipmentManagerComponent* GetEquipmentComponent() const; 
 };

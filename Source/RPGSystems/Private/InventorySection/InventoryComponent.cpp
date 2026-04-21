@@ -312,9 +312,31 @@ void UInventoryComponent::DropItem(const FRPGInventoryEntry& Entry, int32 NumIte
 		return;
 	}
 
-	ItemDroppedDelegate.Broadcast(&Entry, NumItems);
+	//ItemDroppedDelegate.Broadcast(&Entry, NumItems);
+	SpawnDroppedItem(Entry, NumItems);
 	InventoryList.RemoveItem(Entry,NumItems);
 }
+
+void UInventoryComponent::SpawnDroppedItem(const FRPGInventoryEntry& DroppedEntry, int32 NumItems)
+{
+	if (!DroppedEntry.IsValid())
+	{
+		return;
+	}
+
+	const TObjectPtr<APawn> OwnerPawn = Cast<APawn>(InventoryList.OwningObject);
+	if (!IsValid(OwnerPawn))
+	{
+		return;
+	}
+	
+	const FVector FordwardLocation = OwnerPawn->GetActorLocation() + OwnerPawn->GetActorForwardVector() * ItemSpawnFordwardDistance;
+	FTransform SpawnTransform;
+	SpawnTransform.SetLocation(FordwardLocation);
+
+	SpawnItem(SpawnTransform, &DroppedEntry, NumItems);
+}
+
 
 void UInventoryComponent::PickupItem(AItemActor* Item)
 {

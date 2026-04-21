@@ -9,6 +9,8 @@
 #include "Logging/LogMacros.h"
 #include "RPGSystemsCharacter.generated.h"
 
+class UEquipmentManagerComponent;
+class UInventoryComponent;
 class URPGMotionWarpingComponent;
 class URPGAttributeSet;
 class URPGAbilitySystemComponent;
@@ -62,6 +64,12 @@ class ARPGSystemsCharacter : public ACharacterBase,public IAbilitySystemInterfac
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = CaptureCharacter, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<USceneCaptureComponent2D> CharacterCaptureComponent;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess=true), Replicated, ReplicatedUsing=OnRep_InventoryComponent)
+	TObjectPtr<UInventoryComponent> InventoryComponent;
+	
+	UPROPERTY(VisibleAnywhere, meta=(AllowPrivateAccess=true), Replicated, ReplicatedUsing=OnRep_EquipmentComponent)
+	TObjectPtr<UEquipmentManagerComponent> EquipmentComponent;
+
 public:
 	ARPGSystemsCharacter(const FObjectInitializer& ObjectInitializer);
 	
@@ -76,7 +84,10 @@ public:
 	
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
-
+	/*Inventory and Equipment Getters*/
+	UInventoryComponent* GetInventoryComponent() const { return InventoryComponent; }
+	UEquipmentManagerComponent* GetEquipmentComponent() const { return EquipmentComponent; }
+	
 	/*equipment instances*/
 	AEquipmentActor* GetRightHandEquipmentActor() const { return RightHandEquipment; }
 	AEquipmentActor* GetLeftHandEquipmentActor() const { return LeftHandEquipment; }
@@ -104,10 +115,16 @@ protected:
 	
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	virtual void BeginPlay() override;
+	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 
 	void AddEquipmentToCharacterCapture(AActor* Actor) const;
 	
 private:
+	UFUNCTION()
+	void OnRep_InventoryComponent();
+
+	UFUNCTION()
+	void OnRep_EquipmentComponent();
 
 	/*Move to Component***********************/
 	UFUNCTION(BlueprintCallable)

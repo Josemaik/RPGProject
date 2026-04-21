@@ -31,7 +31,7 @@ void USectionSwitcherWidget::InitializeTopBarWidget()
 		return;
 	}
 	
-	UInventoryWidgetController* InvController = GetInventoryWidgetController();
+	UInventoryWidgetController* InvController = PlayerControllerRef->GetInventoryWidgetController();
 	
 	TopBarViewModelRef = NewObject<UTopBarViewModel>(this, TopBarViewModelClass);
 	TopBarWidget->TopBarViewModel = TopBarViewModelRef;
@@ -67,21 +67,10 @@ void USectionSwitcherWidget::InitializeTopBarWidget()
 				TopBarViewModelRef->SetRequiredExperience(RequiredExperience);
 			}
 		});
-	// UTopBarViewModel* VM = TopBarWidget->GetViewModel<UTopBarViewModel>(TEXT("TopBarViewModel"));
-	// TopBarViewModelRef = VM;
+
 	//Carousel visuals and Input Delegate
 	TopBarWidget->InitCarousel(SectionsCarousel.Num());
 	TopBarWidget->OnSectionChanged.BindUObject(this, &USectionSwitcherWidget::HandleSectionNavigation);
-	
-	// TopBarWidget->SetInventoryWidgetController(GetInventoryWidgetController());
-	// TopBarWidget->InitCarousel(SectionsCarousel.Num());
-	// TopBarWidget->UpdateExperience(1, 0, CachedPlayerState->GetRequiredExperience());
-	//
-	// //Bind Delegates
-	// TopBarWidget->OnSectionChanged.BindUObject(this, &USectionSwitcherWidget::HandleSectionNavigation);
-	// CachedPlayerState->OnExperienceChangedDelegate.AddLambda([this](int32 PlayerLevel, int32 NewExperience, int32 RequiredExperience){
-	// 	TopBarWidget->UpdateExperience(PlayerLevel, NewExperience, RequiredExperience);
-	// });
 }
 
 
@@ -111,8 +100,6 @@ void USectionSwitcherWidget::ChangeSection(EUISections Section)
 	int32 NextIndex = CurrentSectionIndex + 1 == SectionsCarousel.Num() ? 0 : CurrentSectionIndex + 1;
 	EUISections PreviousSection = SectionsCarousel[PreviousIndex];
 	EUISections NextSection = SectionsCarousel[NextIndex];
-	
-	//TopBarWidget->SetSectionData(EnumToString(PreviousSection),EnumToString(Section),EnumToString(NextSection));
 
 	TopBarViewModelRef->SetCurrentSectionName(FText::FromString(EnumToString(Section)));
 	TopBarViewModelRef->SetPreviousSectionName(FText::FromString(EnumToString(PreviousSection)));
@@ -128,6 +115,8 @@ void USectionSwitcherWidget::ChangeSection(EUISections Section)
 					UUserWidget* Widget = CreateWidget<UInventoryWidget>(PlayerControllerRef, InventoryWidgetClass);
 					if (!IsValid(Widget)) return;
 					InventoryWidgetRef = Cast<UInventoryWidget>(Widget);
+					
+					UInventoryWidgetController* InventoryWidgetControllerRef = PlayerControllerRef->GetInventoryWidgetController();
 					if (!IsValid(InventoryWidgetRef) || !IsValid(InventoryWidgetControllerRef)) return;
 					
 					InventoryWidgetRef->SetWidgetController(InventoryWidgetControllerRef);
@@ -205,34 +194,6 @@ void USectionSwitcherWidget::ChangeSection(EUISections Section)
 	//Input Context
 	if (!IsValid(InputContextWidget)) return;
 	InputContextWidget->SetKeyHints(Section);
-}
-
-UInventoryWidgetController* USectionSwitcherWidget::GetInventoryWidgetController()
-{
-	if (IsValid(InventoryWidgetControllerRef))
-	{
-		return InventoryWidgetControllerRef;
-	}
-	
-	if (!IsValid(InventoryWidgetControllerClass))
-	{
-		UE_LOG(LogTemp, Error, TEXT("InventoryWidgetControllerClass is NULL"));
-		return nullptr;
-	}
-	
-	InventoryWidgetControllerRef = NewObject<UInventoryWidgetController>(this, InventoryWidgetControllerClass);
-
-	if (!IsValid(InventoryWidgetControllerRef))
-	{
-		UE_LOG(LogTemp, Error, TEXT("Failed to create InventoryWidgetController"));
-		return nullptr;
-	}
-		
-	InventoryWidgetControllerRef->SetOwningActor(PlayerControllerRef);
-	InventoryWidgetControllerRef->BindCallbacksToDependencies();
-	InventoryWidgetControllerRef->BroadCastInitialValues();
-
-	return InventoryWidgetControllerRef;
 }
 
 void USectionSwitcherWidget::HandleSectionNavigation(int32 Direction)

@@ -14,6 +14,7 @@ class UInventoryComponent;
 DECLARE_MULTICAST_DELEGATE_OneParam(FInventoryEntrySignature, const FRPGInventoryEntry&);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnInventoryItemRemoeved, const FRPGInventoryEntry&);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnInventoryWeightChanged, float);
+DECLARE_MULTICAST_DELEGATE(FOnSortItemsRequested);
 
 /**
  * 
@@ -24,9 +25,9 @@ class RPGSYSTEMS_API UInventoryWidgetController : public UWidgetController
 	GENERATED_BODY()
 public:
 	FInventoryEntrySignature InventoryEntryDelegate;
-	
 	FOnInventoryItemRemoeved OnInventoryItemRemoved;
 	FOnInventoryWeightChanged OnInventoryWeightChanged;
+	FOnSortItemsRequested OnSortItemsRequested;
 	
 	void SetOwningActor(AActor* InOwner);
 	FORCEINLINE AActor* GetOwningActor() { return OwningActor; };
@@ -36,6 +37,7 @@ public:
 
 	void EquipItem(const FRPGInventoryEntry& Entry) const;
 	void DropItemToWorld(const FRPGInventoryEntry& Entry) const;
+	void RequestSortItems() const;
 
 	float GetMaxInventoryWeight() const;
 	const FMasterItemDefinition GetInventoryItemDefinition(FGameplayTag ItemTag) const;
@@ -46,4 +48,7 @@ private:
 	
 	UPROPERTY()
 	TObjectPtr<UInventoryComponent> OwningInventory;
+	
+	UPROPERTY()
+	TObjectPtr<UInventoryComponent> OwningEquipment;
 };
