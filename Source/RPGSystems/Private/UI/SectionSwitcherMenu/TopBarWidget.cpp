@@ -49,15 +49,6 @@ void UTopBarWidget::InitCarousel(int32 NumSections)
 	SetActiveSection(0);
 }
 
-// void UTopBarWidget::UpdateExperience(int Level,float CurrentExperience,float RequiredExperience) const
-// {
-// 	LevelText->SetText(FText::AsNumber(Level));
-// 	CurrentLevelExperienceText->SetText(FText::AsNumber(CurrentExperience));
-// 	CurrentLevelMaxExperienceText->SetText(FText::AsNumber(RequiredExperience));
-//
-// 	ExperienceBar->SetPercent(CurrentExperience / RequiredExperience);
-// }
-
 void UTopBarWidget::SetActiveSection(int32 Index)
 {
 	if (!CarouselImages.IsValidIndex(Index)) return;
@@ -67,44 +58,6 @@ void UTopBarWidget::SetActiveSection(int32 Index)
 	
 	CurrentIndex = Index;
 }
-
-// void UTopBarWidget::SetSectionData(FString PreviousSection, FString CurrentSection, FString NextSection) const
-// {
-// 	PreviousSectionText->SetText(FText::FromString(PreviousSection));
-// 	CurrentSectionText->SetText(FText::FromString(CurrentSection));
-// 	NextSectionText->SetText(FText::FromString(NextSection));
-// }
-
-// void UTopBarWidget::SetInventoryWidgetController(UInventoryWidgetController* WidgetController)
-// {
-// 	if (!IsValid(WidgetController)) return;
-// 	InventoryWidgetControllerRef = WidgetController;
-//
-// 	if (!IsValid(InventoryWidgetControllerRef)) return;
-// 	InventoryWidgetControllerRef->OnInventoryWeightChanged.AddUObject(this,&UTopBarWidget::HandleInventoryWeightChanged);
-//
-// 	MaxInventoryWeightText->SetText(FText::FromString(FString::FromInt(InventoryWidgetControllerRef->GetMaxInventoryWeight())));
-// }
-
-// void UTopBarWidget::HandleInventoryWeightChanged(float InInventoryWeight)
-// {
-// 	float MaxInventoryWeight = InventoryWidgetControllerRef->GetMaxInventoryWeight();
-// 	
-// 	CurrentInventoryWeightText->SetText(FText::AsNumber(FMath::RoundToInt(InInventoryWeight)));
-// 	
-// 	if (bIsInventoryWeightGreaterThanAvailable && InInventoryWeight < MaxInventoryWeight)
-// 	{
-// 		CurrentInventoryWeightText->SetColorAndOpacity(FSlateColor(FLinearColor::White));
-// 		bIsInventoryWeightGreaterThanAvailable = false;
-// 		return;
-// 	}
-// 	
-// 	if (InInventoryWeight > MaxInventoryWeight)
-// 	{
-// 		bIsInventoryWeightGreaterThanAvailable = true;
-// 		CurrentInventoryWeightText->SetColorAndOpacity(FSlateColor(FLinearColor::Red));
-// 	}
-// }
 
 void UTopBarWidget::OnPrevClicked()
 {

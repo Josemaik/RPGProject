@@ -7,8 +7,10 @@
 #include "Components/UniformGridPanel.h"
 #include "Components/UniformGridSlot.h"
 #include "Engine/AssetManager.h"
+#include "UI/Inventory/InventoryWidget.h"
 #include "UI/Inventory/ItemSlotDroppedDragDrop.h"
 #include "UI/Inventory/ItemSlotWidget.h"
+#include "UI/Inventory/SortPanelWidget.h"
 
 struct FStreamableManager;
 
@@ -294,7 +296,7 @@ void UItemsPanelWidget::ResetCategory(FGameplayTag InCurrentCategoryTag)
 	}
 }
 
-void UItemsPanelWidget::SortItems()
+void UItemsPanelWidget::SortItemsQuicly()
 {
 	TArray<FItemSlotData>& ItemsArray = *CategoryItemsMap.Find(CurrentCategoryTag);
 	if (ItemsArray.IsEmpty()) return;
@@ -337,6 +339,12 @@ void UItemsPanelWidget::SortItems()
 		AddItemSlot(Item.Entry, Item.ItemDefinition);
 	}
 }
+
+void UItemsPanelWidget::SortItemsBy(EItemSortType Type)
+{
+	//to-do
+}
+
 
 void UItemsPanelWidget::HandleItemDropped(UItemSlotWidget* DroppedSlot,UItemSlotWidget* NewSlot)
 {

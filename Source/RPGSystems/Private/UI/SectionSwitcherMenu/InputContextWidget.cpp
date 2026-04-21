@@ -5,7 +5,7 @@
 
 #include "Components/HorizontalBox.h"
 #include "Input/URPGUIInputContextData.h"
-#include "UI/Inventory/KeyHintWidget.h"
+#include "UI/SectionSwitcherMenu/KeyHintWidget.h"
 
 void UInputContextWidget::SetKeyHints(EUISections Section) const
 {

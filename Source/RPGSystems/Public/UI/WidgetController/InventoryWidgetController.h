@@ -14,7 +14,7 @@ class UInventoryComponent;
 DECLARE_MULTICAST_DELEGATE_OneParam(FInventoryEntrySignature, const FRPGInventoryEntry&);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnInventoryItemRemoeved, const FRPGInventoryEntry&);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnInventoryWeightChanged, float);
-DECLARE_MULTICAST_DELEGATE(FOnSortItemsRequested);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnSortItemsRequested,bool);
 
 /**
  * 
@@ -37,7 +37,7 @@ public:
 
 	void EquipItem(const FRPGInventoryEntry& Entry) const;
 	void DropItemToWorld(const FRPGInventoryEntry& Entry) const;
-	void RequestSortItems() const;
+	void RequestSortItems(bool Quick) const;
 
 	float GetMaxInventoryWeight() const;
 	const FMasterItemDefinition GetInventoryItemDefinition(FGameplayTag ItemTag) const;

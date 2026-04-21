@@ -26,12 +26,8 @@ class RPGSYSTEMS_API UTopBarWidget : public UUserWidget
 
 public:
 	void InitCarousel(int32 NumSections);
-	//void UpdateExperience(int Level, float CurrentExperience,float RequiredExperience) const;
-	void SetActiveSection(int32 Index);
 
-	//void SetSectionData(FString PreviousSection, FString CurrentSection, FString NextSection) const;
-	
-	//void SetInventoryWidgetController(UInventoryWidgetController* WidgetController);
+	void SetActiveSection(int32 Index);
 
 	FOnSectionChanged OnSectionChanged;
 
@@ -39,17 +35,12 @@ public:
 	TObjectPtr<UTopBarViewModel> TopBarViewModel;
 private:
 	virtual void NativeConstruct() override;
-	//void HandleInventoryWeightChanged(float InInventoryWeight);
 	
 	UFUNCTION()
 	void OnPrevClicked();
 	
 	UFUNCTION()
 	void OnNextClicked();
-	
-	///References
-	// UPROPERTY()
-	// UInventoryWidgetController* InventoryWidgetControllerRef;
 
 	//Carousel state
 	UPROPERTY(EditDefaultsOnly)

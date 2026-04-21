@@ -64,9 +64,9 @@ void UInventoryWidgetController::DropItemToWorld(const FRPGInventoryEntry& Entry
 	OwningInventory->DropItem(Entry,Entry.Quantity);
 }
 
-void UInventoryWidgetController::RequestSortItems() const
+void UInventoryWidgetController::RequestSortItems(bool Quick) const
 {
-	OnSortItemsRequested.Broadcast();
+	OnSortItemsRequested.Broadcast(Quick);
 }
 
 float UInventoryWidgetController::GetMaxInventoryWeight() const

@@ -8,6 +8,8 @@
 #include "InventorySection/InventoryComponent.h"
 #include "ItemsPanelWidget.generated.h"
 
+enum class EItemSortType : uint8;
+class USortPanelWidget;
 enum ESlotSizeCategories : uint8;
 struct FMasterItemDefinition;
 struct FRPGInventoryEntry;
@@ -66,8 +68,9 @@ public:
 	
 	void ResetCategory(FGameplayTag CurrentCategoryTag);
 
-	void SortItems();
-	
+	void SortItemsQuicly();
+	void SortItemsBy(EItemSortType Type);
+
 	FGameplayTag GetItemCategory(FGameplayTag ItemTag);
 	int32 GetMaxColums() const { return MaxColumns; }
 
@@ -85,8 +88,6 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Data")
 	TSubclassOf<UItemSlotWidget> ItemSlotWidgetClass;
 	
-	//TMap<FGameplayTag, int32> CategoriesIndexMap;
-	//TMap<FGameplayTag, TArray<UItemSlotWidget*>> CategoryItemsMap;
 	TMap<FGameplayTag, TArray<FItemSlotData>> CategoryItemsMap;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(AllowPrivateAccess="true"), Category = "Data")

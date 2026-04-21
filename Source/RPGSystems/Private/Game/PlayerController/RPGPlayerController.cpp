@@ -120,6 +120,10 @@ void ARPGPlayerController::OnInventoryInput(FGameplayTag InputTag)
 	{
 		GetInventoryWidgetController()->RequestSortItems();
 	}
+	if (InputTag.MatchesTagExact(FGameplayTag::RequestGameplayTag("Input.Inventory.SortItems")))
+	{
+		GetInventoryWidgetController()->RequestSortItems();
+	}
 }
 
 void ARPGPlayerController::OnGameplayInput(FGameplayTag InputTag)

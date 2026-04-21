@@ -4,6 +4,7 @@
 #include "UI/Inventory/InventoryWidget.h"
 
 #include "AbilitySystem/RPGGameplayTags.h"
+#include "Components/Button.h"
 #include "Components/EditableText.h"
 #include "Components/HorizontalBox.h"
 #include "Components/Spacer.h"
@@ -14,6 +15,7 @@
 #include "UI/Inventory/ItemsDropToWorldWidget.h"
 #include "UI/Inventory/ItemSlotWidget.h"
 #include "UI/Inventory/ItemsPanelWidget.h"
+#include "UI/Inventory/SortPanelWidget.h"
 #include "UI/Inventory/Equipment/EquipmentSlot.h"
 #include "UI/WidgetController/InventoryWidgetController.h"
 
@@ -51,25 +53,12 @@ void UInventoryWidget::SetWidgetController(UInventoryWidgetController* InWidgetC
 	}
 }
 
-// void UInventoryWidget::InitializeKeyHints()
-// {
-// 	if (!IsValid(KeyHintWidget_SortItems) || !IsValid(KeyHintWidget_SortItems) || !IsValid(KeyHintWidget_SortItems))
-// 	{
-// 		return;
-// 	}
-// 	
-// 	KeyHintWidget_SortItems->SetKeyHint(FText::FromString("[ Q ] "),FText::FromString("Sort Items Quickly"));
-// 	KeyHintWidget_DropItem->SetKeyHint(FText::FromString("[ R ]"),FText::FromString("Drop"));
-// 	KeyHintWidget_EquipItem->SetKeyHint(FText::FromString("[ Space ]"),FText::FromString("Equip"));
-// }
-
 void UInventoryWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 	
 	SearchBar->OnTextChanged.AddDynamic(this, &ThisClass::OnSearchBarTextChanged);
-
-	//bind warpbox->childs->childs(castear a UEquipmentSlot) y delegate
+	
 	//funcion bind inventoryequipmentdelegates
 	SilverSword->OnEquipItem.BindUObject(this, &ThisClass::OnEquipItem);
 	SteelWeapon->OnEquipItem.BindUObject(this, &ThisClass::OnEquipItem);
@@ -77,6 +66,19 @@ void UInventoryWidget::NativeConstruct()
 	RangedWeapon->OnEquipItem.BindUObject(this, &ThisClass::OnEquipItem);
 
 	ItemsDropToWorldWidget->OnItemDroppedPanelDelegate.BindUObject(this, &ThisClass::HandleItemDropped);
+
+	QuickSortButton->OnClicked.AddDynamic(this, &ThisClass::OnQuickSortButtonClicked);
+	SortButton->OnClicked.AddDynamic(this, &ThisClass::OnSortButtonClicked);
+
+	SortPanelWidget->OnCloseButtonClicked.BindLambda([this]
+	{
+		HideSortPanel();
+	});
+
+	SortPanelWidget->OnOptionChanged.BindLambda([this](EItemSortType Type)
+	{
+		ItemsContainer->SortItemsBy(Type);
+	});
 }
 
 void UInventoryWidget::FinishDestroy()
@@ -169,10 +171,28 @@ void UInventoryWidget::AddItemToGrid(const FRPGInventoryEntry& Entry, const FMas
 	ItemsContainer->AddItemSlot(Entry,ItemDefinition);
 }
 
-void UInventoryWidget::SortItems() const
+void UInventoryWidget::SortItems(bool Quickly)
 {
 	if (!IsValid(ItemsContainer)) return;
-	ItemsContainer->SortItems();
+	
+	if (Quickly)
+	{
+		ItemsContainer->SortItemsQuicly();
+	}
+	else
+	{
+		ShowSortPanel();
+	}
+}
+
+void UInventoryWidget::OnQuickSortButtonClicked()
+{
+	SortItems(true);
+}
+
+void UInventoryWidget::OnSortButtonClicked()
+{
+	SortItems(false);
 }
 
 void UInventoryWidget::HandleInventoryItemReceived(const FRPGInventoryEntry& Entry)
@@ -210,24 +230,6 @@ void UInventoryWidget::HandleInventoryItemRemoved(const FRPGInventoryEntry& Entr
 	
 }
 
-// void UInventoryWidget::HandleInventoryWeight(const float Weight)
-// {
-// 	CurrentInventoryWeightText->SetText(FText::AsNumber(FMath::RoundToInt(Weight)));
-//
-// 	if (WeightIsHiguerThanTheMaxAvailable && Weight < OwningInventory->GetMaxInventoryWeight())
-// 	{
-// 		CurrentInventoryWeightText->SetColorAndOpacity(FSlateColor(FLinearColor::White));
-// 		WeightIsHiguerThanTheMaxAvailable = false;
-// 		return;
-// 	}
-// 	
-// 	if (Weight > OwningInventory->GetMaxInventoryWeight())
-// 	{
-// 		WeightIsHiguerThanTheMaxAvailable = true;
-// 		CurrentInventoryWeightText->SetColorAndOpacity(FSlateColor(FLinearColor::Red));
-// 	}
-// }
-
 void UInventoryWidget::OnSearchBarTextChanged(const FText& InText)
 {
 	// if (!IsValid(OwningInventory))
@@ -262,4 +264,14 @@ void UInventoryWidget::OnEquipItem(const FRPGInventoryEntry& Entry)
 	if (!IsValid(InventoryWidgetController)) return;
 	
 	InventoryWidgetController->EquipItem(Entry);
+}
+
+void UInventoryWidget::ShowSortPanel()
+{
+	SortPanelWidget->SetVisibility(ESlateVisibility::Visible);
+}
+
+void UInventoryWidget::HideSortPanel()
+{
+	SortPanelWidget->SetVisibility(ESlateVisibility::Collapsed);
 }

@@ -7,6 +7,8 @@
 #include "InventorySection/InventoryComponent.h"
 #include "InventoryWidget.generated.h"
 
+class USortPanelWidget;
+class UButton;
 class UKeyHintWidget;
 class UItemsDropToWorldWidget;
 class UItemsPanelWidget;
@@ -55,9 +57,16 @@ public:
 
 	void SetWidgetController(UInventoryWidgetController* InWidgetController);
 	//void InitializeKeyHints();
+	
+	void SortItems(bool Quickly);
 
-	void SortItems() const;
 protected:
+	UFUNCTION()
+	void OnQuickSortButtonClicked();
+
+	UFUNCTION()
+	void OnSortButtonClicked();
+	
 	void NativeConstruct() override;
 private:
 	virtual void FinishDestroy() override;
@@ -88,6 +97,9 @@ private:
 
 	UFUNCTION()
 	void OnEquipItem(const FRPGInventoryEntry& Entry);
+	
+	void ShowSortPanel();
+	void HideSortPanel();
 	
 	//References
 	UPROPERTY(BlueprintReadOnly,meta=(allowPrivateAccess=true))
@@ -122,6 +134,17 @@ private:
 
 	UPROPERTY(VisibleAnywhere, meta = (BindWidget), Category = "UI")
 	UItemsPanelWidget* ItemsContainer;
+
+	///Sort Panel
+	UPROPERTY(VisibleAnywhere, meta = (BindWidget), Category = "UI")
+	TObjectPtr<USortPanelWidget> SortPanelWidget;
+
+	//Sort items buttons
+	UPROPERTY(VisibleAnywhere, meta = (BindWidget), Category = "UI")
+	UButton* SortButton;
+
+	UPROPERTY(VisibleAnywhere, meta = (BindWidget), Category = "UI")
+	UButton* QuickSortButton;
 
 	/////////////////////////////////
 	//Drop To World Panel
