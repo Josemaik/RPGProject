@@ -60,8 +60,8 @@ void URPGSystemsInputComponent::BindInventoryActions(URPGInputConfig* InputConfi
 	for (const FRPGInputAction& Action : InputConfig->RPGInventoryInputActions)
 	{
 		if (!IsValid(Action.InputAction)) continue;
-
-		BindAction(Action.InputAction, ETriggerEvent::Triggered, Object, Func, Action.InputTag);
+		
+		BindAction(Action.InputAction, ETriggerEvent::Completed, Object, Func, Action.InputTag);
 	}
 }
 

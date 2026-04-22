@@ -340,7 +340,7 @@ void UItemsPanelWidget::SortItemsQuicly()
 	}
 }
 
-void UItemsPanelWidget::SortItemsBy(EItemSortType Type)
+void UItemsPanelWidget::SortItemsBy(EItemSortType SortType)
 {
 	//to-do
 }
@@ -358,7 +358,8 @@ void UItemsPanelWidget::HandleItemDropped(UItemSlotWidget* DroppedSlot,UItemSlot
 	
 	if (!ItemsArray.IsValidIndex(FromIndex) || !ItemsArray.IsValidIndex(ToIndex)) return;
 
-	ESlotSizeCategories FromSize = DroppedSlot->GetCurrentSlotSize();
+	//ESlotSizeCategories FromSize = DroppedSlot->GetCurrentSlotSize();
+	ESlotSizeCategories FromSize = ItemsArray[FromIndex].Size;
 	
 	//Save Data origin
 	FItemSlotData& FromMain = ItemsArray[FromIndex];
@@ -384,17 +385,17 @@ void UItemsPanelWidget::HandleItemDropped(UItemSlotWidget* DroppedSlot,UItemSlot
 		FItemSlotData& LowerSlot = ItemsArray[LowerToIndex];
 		if (!LowerSlot.bIsEmpty) return;
 		LowerSlot = ItemsArray[FromIndex + MaxColumns];
+		ItemsArray[ToIndex] = FromMain;
 	}
 	else if (FromSize == LowerSlotVertical && ItemsArray.IsValidIndex(FromIndex - MaxColumns))
 	{
-		int32 SuperiorToIndex = ToIndex - MaxColumns;
-		if (ToIndex <= 0 || ToIndex >= ItemsArray.Num()) return;
-		FItemSlotData& SuperiorSlot = ItemsArray[ToIndex];
-		if (!SuperiorSlot.bIsEmpty) return;
-		SuperiorSlot = ItemsArray[FromIndex - MaxColumns];
+		int32 LowerToIndex = ToIndex + MaxColumns;
+		if (LowerToIndex <= 0 || LowerToIndex >= ItemsArray.Num()) return;
+		FItemSlotData& LowerSlot = ItemsArray[LowerToIndex];
+		if (!LowerSlot.bIsEmpty) return;
+		LowerSlot = ItemsArray[FromIndex];
+		ItemsArray[ToIndex] = ItemsArray[FromIndex - MaxColumns];
 	}
-	
-	ItemsArray[ToIndex] = FromMain;
 
 	//Clean origin
 	ItemsArray[FromIndex] = FItemSlotData();
@@ -422,6 +423,8 @@ void UItemsPanelWidget::HandleDraggedItemEntered(int32 EnteredIndex, int32 NewIn
 	const FItemSlotData& NewSlot = ItemsArrayPtr[NewIndex];
 	const FItemSlotData& EnteredSlot = ItemsArrayPtr[EnteredIndex];
 
+	if (!ItemsArrayPtr.IsValidIndex(NewIndex + MaxColumns)) return;
+	
 	const FItemSlotData& LowerSlot = ItemsArrayPtr[NewIndex + MaxColumns];
 	if (!LowerSlot.bIsEmpty) return;
 	

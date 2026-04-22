@@ -13,23 +13,14 @@ void USortPanelWidget::NativeConstruct()
 
 	if (!IsValid(OptionsEntryVerticalBox)) return;
 	
-	for (int32 i = 0; i < static_cast<int32>(EItemSortType::MAX); ++i)
+	for (EItemSortType Option : TEnumRange<EItemSortType>())
 	{
 		USortOptionEntryWidget* OptionEntryWidget = CreateWidget<USortOptionEntryWidget>(this,SortOptionEntryClass);
 		if (!IsValid(OptionEntryWidget)) return;
 		
-		EItemSortType Option = static_cast<EItemSortType>(i);
-		
-		FString FullName = UEnum::GetValueAsString(Option);
-		FString ShortName;
-		FullName.Split(TEXT("::"), nullptr, &ShortName);
-		
-		OptionEntryWidget->SetOptionText(FText::FromString(ShortName));
+		OptionEntryWidget->SetOption(Option);
 
-		OptionEntryWidget->OnButtonClicked.BindLambda([this,Option]
-		{
-			OnOptionChanged.ExecuteIfBound(Option);
-		});
+		OptionEntryWidget->OnButtonClicked.BindUObject(this, &USortPanelWidget::OnPressedOptionEntry);
 
 		OptionsEntryVerticalBox->AddChild(OptionEntryWidget);
 	}
@@ -40,4 +31,16 @@ void USortPanelWidget::NativeConstruct()
 void USortPanelWidget::OnCloseButtonClick()
 {
 	OnCloseButtonClicked.ExecuteIfBound();
+}
+
+void USortPanelWidget::OnPressedOptionEntry(USortOptionEntryWidget* OptionEntry, EItemSortType Option)
+{
+	if (IsValid(LastPressedOptionEntryWidget))
+	{
+		LastPressedOptionEntryWidget->UnCheck();
+	}
+			
+	LastPressedOptionEntryWidget = OptionEntry;
+			
+	OnOptionChanged.ExecuteIfBound(Option);
 }

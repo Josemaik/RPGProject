@@ -143,7 +143,7 @@ void UItemSlotWidget::SetIconPadding(bool reset) const
 		return;
 	}
 	
-	if (GetCurrentSlotSize() == ESlotSizeCategories::UniqueSlot) return;
+	if (CurrentSlotSize == ESlotSizeCategories::UniqueSlot) return;
 	
 	if (CurrentSlotSize == ESlotSizeCategories::SuperiorSlotVertical)
 	{
@@ -179,6 +179,7 @@ void UItemSlotWidget::NativeOnDragDetected(const FGeometry& InGeometry, const FP
 	DragDropOperation->Payload = this;
 	DragDropOperation->ItemSlot_Payload = this;
 	DragDropOperation->ItemEntry = &ItemEntry;
+	DragDropOperation->SlotSize = CurrentSlotSize;
 	DragDropOperation->IconTexture = SoftIconTexture.Get();
 	
 	OutOperation = DragDropOperation;
@@ -211,7 +212,7 @@ void UItemSlotWidget::NativeOnDragEnter(const FGeometry& InGeometry, const FDrag
 
 	if (!bIsEmpty || DroppedItem == this) return; //Ignorar a mi mismo
 	
-	if (DroppedItem->GetCurrentSlotSize() == ESlotSizeCategories::UniqueSlot)
+	if (DragDropOp->SlotSize == ESlotSizeCategories::UniqueSlot)
 	{
 		OutlineSlot(DroppedItem->GetCurrentSlotSize());
 		return;
@@ -230,8 +231,10 @@ void UItemSlotWidget::NativeOnDragLeave(const FDragDropEvent& InDragDropEvent, U
 	
 	UItemSlotWidget* DroppedItem = DragDropOp->ItemSlot_Payload;
 	if (!IsValid(DroppedItem)) return;
+
+	if (DroppedItem == this) return;
 	
-	if (DroppedItem->GetCurrentSlotSize() == ESlotSizeCategories::UniqueSlot)
+	if (DragDropOp->SlotSize == ESlotSizeCategories::UniqueSlot)
 	{
 		if (!bIsEmpty) return;
 		RemoveOutLineSlot(false);

@@ -3,14 +3,16 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "ItemSortTypes.h"
 #include "Blueprint/UserWidget.h"
 #include "SortOptionEntryWidget.generated.h"
 
 class UButton;
 class UTextBlock;
 class UCheckBox;
+class USortOptionEntryWidget;
 
-DECLARE_DELEGATE(FOnOptionButtonClicked);
+DECLARE_DELEGATE_TwoParams(FOnOptionButtonClicked, USortOptionEntryWidget*, EItemSortType);
 /**
  * 
  */
@@ -20,8 +22,12 @@ class RPGSYSTEMS_API USortOptionEntryWidget : public UUserWidget
 	GENERATED_BODY()
 public:
 	FOnOptionButtonClicked OnButtonClicked;
-	void SetOptionText(FText InOptionText);
+	void SetOption(EItemSortType SortType);
+	void UnCheck() const;
 private:
+	UPROPERTY()
+	EItemSortType Option;
+	
 	virtual void NativeConstruct() override;
 
 	UFUNCTION()

@@ -26,4 +26,6 @@ public:
 
 	UPROPERTY()
 	UTexture2D* IconTexture;
+	
+	ESlotSizeCategories SlotSize;
 };

@@ -69,7 +69,7 @@ public:
 	void ResetCategory(FGameplayTag CurrentCategoryTag);
 
 	void SortItemsQuicly();
-	void SortItemsBy(EItemSortType Type);
+	void SortItemsBy(EItemSortType SortType);
 
 	FGameplayTag GetItemCategory(FGameplayTag ItemTag);
 	int32 GetMaxColums() const { return MaxColumns; }

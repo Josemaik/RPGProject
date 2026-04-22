@@ -7,10 +7,22 @@
 #include "Components/CheckBox.h"
 #include "Components/TextBlock.h"
 
-void USortOptionEntryWidget::SetOptionText(FText InOptionText)
+void USortOptionEntryWidget::SetOption(EItemSortType SortType)
 {
 	if (!IsValid(OptionText)) return;
-	OptionText->SetText(InOptionText);
+	
+	FString SrtTypeEnum = UEnum::GetValueAsString(SortType);
+	FString SortTypeName;
+	SrtTypeEnum.Split(TEXT("::"), nullptr, &SortTypeName);
+
+	Option = SortType;
+	OptionText->SetText(FText::FromString(SortTypeName));
+}
+
+void USortOptionEntryWidget::UnCheck() const
+{
+	if (!IsValid(CheckBox)) return;
+	CheckBox->SetCheckedState(ECheckBoxState::Unchecked);
 }
 
 void USortOptionEntryWidget::NativeConstruct()
@@ -26,5 +38,5 @@ void USortOptionEntryWidget::OnOptionButtonClicked()
 	
 	CheckBox->SetCheckedState(ECheckBoxState::Checked);
 	
-	OnButtonClicked.ExecuteIfBound();
+	OnButtonClicked.ExecuteIfBound(this,Option);
 }

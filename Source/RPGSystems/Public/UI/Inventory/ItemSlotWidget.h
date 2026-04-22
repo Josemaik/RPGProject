@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameplayTagContainer.h"
+#include "SlotSizeCategories.h"
 #include "Blueprint/UserWidget.h"
 #include "InventorySection/InventoryComponent.h"
 #include "ItemSlotWidget.generated.h"
@@ -17,16 +18,6 @@ struct FRPGInventoryEntry;
 struct FMasterItemDefinition;
 class UTextBlock;
 class UButton;
-
-
-
-UENUM()
-enum ESlotSizeCategories : uint8
-{
-	UniqueSlot,
-	SuperiorSlotVertical,
-	LowerSlotVertical
-};
 
 class UItemSlotWidget;
 

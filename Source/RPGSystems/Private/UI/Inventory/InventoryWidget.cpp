@@ -92,18 +92,6 @@ void UInventoryWidget::FinishDestroy()
 	InventoryWidgetController->InventoryEntryDelegate.RemoveAll(this);
 }
 
-// void UInventoryWidget::CacheEssentialVars()
-// {
-// 	if (!IsValid(InventoryWidgetController)) return;
-// 	
-// 	OwningInventory = IInventoryInterface::Execute_GetInventoryComponent(InventoryWidgetController->GetOwningActor());
-//
-// 	if (!IsValid(OwningInventory))
-// 	{
-// 		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red,FString::Printf(TEXT("No valid Inventory")));
-// 	}
-// }
-
 void UInventoryWidget::BindInventoryItemDelegates()
 {
 	InventoryWidgetController->InventoryEntryDelegate.AddUObject(this,&UInventoryWidget::HandleInventoryItemReceived);
@@ -181,7 +169,7 @@ void UInventoryWidget::SortItems(bool Quickly)
 	}
 	else
 	{
-		ShowSortPanel();
+		SetSortPanelVisibility();
 	}
 }
 
@@ -266,12 +254,21 @@ void UInventoryWidget::OnEquipItem(const FRPGInventoryEntry& Entry)
 	InventoryWidgetController->EquipItem(Entry);
 }
 
-void UInventoryWidget::ShowSortPanel()
+void UInventoryWidget::SetSortPanelVisibility()
 {
-	SortPanelWidget->SetVisibility(ESlateVisibility::Visible);
+	bShowSortPanelToggle = !bShowSortPanelToggle;
+	if (bShowSortPanelToggle)
+	{
+		SortPanelWidget->SetVisibility(ESlateVisibility::Visible);
+	}
+	else
+	{
+		HideSortPanel();
+	}
 }
 
 void UInventoryWidget::HideSortPanel()
 {
+	bShowSortPanelToggle = false;
 	SortPanelWidget->SetVisibility(ESlateVisibility::Collapsed);
 }

@@ -71,7 +71,6 @@ protected:
 private:
 	virtual void FinishDestroy() override;
 	//functions
-	//void CacheEssentialVars();
 	void BindInventoryItemDelegates();
 	void HandleCategorySelected(FGameplayTag CategorySelected);
 
@@ -98,8 +97,10 @@ private:
 	UFUNCTION()
 	void OnEquipItem(const FRPGInventoryEntry& Entry);
 	
-	void ShowSortPanel();
+	void SetSortPanelVisibility();
 	void HideSortPanel();
+
+	bool bShowSortPanelToggle = false;
 	
 	//References
 	UPROPERTY(BlueprintReadOnly,meta=(allowPrivateAccess=true))
