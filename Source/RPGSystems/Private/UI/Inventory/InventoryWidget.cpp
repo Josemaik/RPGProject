@@ -3,7 +3,7 @@
 
 #include "UI/Inventory/InventoryWidget.h"
 
-#include "AbilitySystem/RPGGameplayTags.h"
+#include "AbilitySystem/NativeTags/RPGInventoryTags.h"
 #include "Components/Button.h"
 #include "Components/EditableText.h"
 #include "Components/HorizontalBox.h"
@@ -23,7 +23,7 @@ void UInventoryWidget::SetWidgetController(UInventoryWidgetController* InWidgetC
 {
 	InventoryWidgetController = InWidgetController;
 	
-	CurrentCategorySelected = RPGGameplayTags::InventoryItems::EquipmentTag;
+	CurrentCategorySelected = RPGInventoryTags::ItemsCategory::Equipment;
 	ItemsContainer->CurrentCategoryTag = CurrentCategorySelected;
 	//CacheEssentialVars();
 	BindInventoryItemDelegates();
@@ -70,15 +70,8 @@ void UInventoryWidget::NativeConstruct()
 	QuickSortButton->OnClicked.AddDynamic(this, &ThisClass::OnQuickSortButtonClicked);
 	SortButton->OnClicked.AddDynamic(this, &ThisClass::OnSortButtonClicked);
 
-	SortPanelWidget->OnCloseButtonClicked.BindLambda([this]
-	{
-		HideSortPanel();
-	});
-
-	SortPanelWidget->OnOptionChanged.BindLambda([this](EItemSortType Type)
-	{
-		ItemsContainer->SortItemsBy(Type);
-	});
+	SortPanelWidget->OnCloseButtonClicked.BindUObject(this, &ThisClass::OnSortPanelCloseButtonClicked);
+	SortPanelWidget->OnOptionChanged.BindUObject(this, &ThisClass::OnSortPanelOptionChanged);
 }
 
 void UInventoryWidget::FinishDestroy()
@@ -181,6 +174,17 @@ void UInventoryWidget::OnQuickSortButtonClicked()
 void UInventoryWidget::OnSortButtonClicked()
 {
 	SortItems(false);
+}
+
+void UInventoryWidget::OnSortPanelCloseButtonClicked()
+{
+	HideSortPanel();
+}
+
+void UInventoryWidget::OnSortPanelOptionChanged(EItemSortType ItemSort)
+{
+	HideSortPanel();
+	ItemsContainer->SortItemsBy(ItemSort);
 }
 
 void UInventoryWidget::HandleInventoryItemReceived(const FRPGInventoryEntry& Entry)

@@ -6,7 +6,7 @@
 #include "AbilitySystemComponent.h"
 #include "AbilitySystemGlobals.h"
 #include "Abilities/GameplayAbilityTypes.h"
-#include "AbilitySystem/RPGGameplayTags.h"
+#include "AbilitySystem/NativeTags/RPGGameplayTags.h"
 
 class UAbilitySystemComponent;
 

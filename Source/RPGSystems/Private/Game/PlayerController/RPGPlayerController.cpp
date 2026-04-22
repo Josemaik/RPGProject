@@ -14,8 +14,8 @@
 #include "Input/RPGSystemsInputComponent.h"
 #include "InventorySection/InventoryComponent.h"
 #include "UI/WidgetController/InventoryWidgetController.h"
-#include "UI/Inventory/InventoryWidget.h"
 #include "UI/SectionSwitcherMenu/SectionSwitcherWidget.h"
+#include "AbilitySystem/NativeTags/RPGInputTags.h"
 
 
 ARPGPlayerController::ARPGPlayerController()
@@ -111,16 +111,15 @@ void ARPGPlayerController::AbilityInputReleased(FGameplayTag InputTag)
 
 void ARPGPlayerController::OnInventoryInput(FGameplayTag InputTag)
 {
-	GEngine->AddOnScreenDebugMessage(-1,3.f,FColor::Red,"OnInventoryInput");
-	if (InputTag.MatchesTagExact(FGameplayTag::RequestGameplayTag("Input.Inventory.Exit")))
+	if (InputTag.MatchesTagExact(RPGInputTags::Inventory::Exit))
 	{
 		DisableSectionWidget();
 	}
-	if (InputTag.MatchesTagExact(FGameplayTag::RequestGameplayTag("Input.Inventory.SortItemsQuickly")))
+	if (InputTag.MatchesTagExact(RPGInputTags::Inventory::SortItemsQuickly))
 	{
 		GetInventoryWidgetController()->RequestSortItems(true);
 	}
-	if (InputTag.MatchesTagExact(FGameplayTag::RequestGameplayTag("Input.Inventory.SortItems")))
+	if (InputTag.MatchesTagExact(RPGInputTags::Inventory::SortItems))
 	{
 		GetInventoryWidgetController()->RequestSortItems(false);
 	}
@@ -128,7 +127,7 @@ void ARPGPlayerController::OnInventoryInput(FGameplayTag InputTag)
 
 void ARPGPlayerController::OnGameplayInput(FGameplayTag InputTag)
 {
-	if (InputTag.MatchesTagExact(FGameplayTag::RequestGameplayTag("Input.Inventory.Open")))
+	if (InputTag.MatchesTagExact(RPGInputTags::Inventory::Open))
 	{
 		EnableSectionWidget();
 		SectionSwitcherWidget->OpenSection(EUISections::INVENTORY);
@@ -196,7 +195,7 @@ void ARPGPlayerController::EnableSectionWidget()
 		return;
 	}
  		
-	RPGAbilitySystemComponent->AddLooseGameplayTag(FGameplayTag::RequestGameplayTag(FName("Input.BlockInput.InventoryOpen")));
+	RPGAbilitySystemComponent->AddLooseGameplayTag(RPGInputTags::BlockInput::InventoryIsOpen);
 	UEnhancedInputLocalPlayerSubsystem* Subsystem =
 		ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer());
 
@@ -223,7 +222,7 @@ void ARPGPlayerController::DisableSectionWidget()
 		return;
 	}
  		
-	RPGAbilitySystemComponent->RemoveLooseGameplayTag(FGameplayTag::RequestGameplayTag(FName("Input.BlockInput.InventoryOpen")));
+	RPGAbilitySystemComponent->RemoveLooseGameplayTag(RPGInputTags::BlockInput::InventoryIsOpen);
 
 	UEnhancedInputLocalPlayerSubsystem* Subsystem =
 		ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer());

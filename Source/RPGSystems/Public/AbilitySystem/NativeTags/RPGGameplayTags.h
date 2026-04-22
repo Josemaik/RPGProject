@@ -24,6 +24,11 @@ namespace RPGGameplayTags::Combat
 			UE_DECLARE_GAMEPLAY_TAG_EXTERN(HitEnd);
 		}
 
+		namespace State
+		{
+			UE_DECLARE_GAMEPLAY_TAG_EXTERN(HitReact);
+		}
+
 		namespace Actions
 		{
 			UE_DECLARE_GAMEPLAY_TAG_EXTERN(KickHit);
@@ -34,10 +39,4 @@ namespace RPGGameplayTags::Combat
 namespace RPGGameplayTags::Player::State
 {
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Crouch);
-}
-
-namespace RPGGameplayTags::InventoryItems
-{
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(ConsumableTag);
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(EquipmentTag);
 }

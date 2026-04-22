@@ -4,6 +4,7 @@
 #include "Character/EnemyBase.h"
 #include "AbilitySystem/RPGAbilitySystemComponent.h"
 #include "AbilitySystem/Attributes/RPGAttributeSet.h"
+#include "AbilitySystem/NativeTags/RPGGameplayTags.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/WidgetComponent.h"
 #include "Data/CharacterClassInfo.h"
@@ -124,7 +125,7 @@ void AEnemyBase::RegisterCombatEvents()
 	{
 		RPGAbilitySystemComponent
 			->RegisterGameplayTagEvent(
-				FGameplayTag::RequestGameplayTag("Combat.Event.State.HitReact"),
+				RPGGameplayTags::Combat::Events::State::HitReact, 
 				EGameplayTagEventType::NewOrRemoved)
 			.AddUObject(this, &AEnemyBase::OnHitReactTagChanged);
 	}

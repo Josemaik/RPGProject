@@ -5,7 +5,7 @@
 
 #include "AbilitySystemComponent.h"
 #include "AbilitySystemGlobals.h"
-#include "AbilitySystem/RPGGameplayTags.h"
+#include "AbilitySystem/NativeTags/RPGGameplayTags.h"
 
 void URPGCharacterMovement::Crouch(bool bClientSimulation)
 {

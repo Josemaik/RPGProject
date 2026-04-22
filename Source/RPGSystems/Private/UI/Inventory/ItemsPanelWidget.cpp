@@ -3,7 +3,6 @@
 
 #include "UI/Inventory/ItemsPanelWidget.h"
 
-#include "AbilitySystem/RPGGameplayTags.h"
 #include "Components/UniformGridPanel.h"
 #include "Components/UniformGridSlot.h"
 #include "Engine/AssetManager.h"
@@ -11,13 +10,10 @@
 #include "UI/Inventory/ItemSlotDroppedDragDrop.h"
 #include "UI/Inventory/ItemSlotWidget.h"
 #include "UI/Inventory/SortPanelWidget.h"
+#include "AbilitySystem/NativeTags/RPGInventoryTags.h"
 
 struct FStreamableManager;
 
-namespace FGameplayTags
-{
-	UE_DEFINE_GAMEPLAY_TAG(Category_Equipment, "Item.Equipment");
-}
 
 void UItemsPanelWidget::AddItemToGrid(UItemSlotWidget* Item,const int32 Index)
 {
@@ -121,7 +117,7 @@ FGameplayTag UItemsPanelWidget::GetItemCategory(FGameplayTag ItemTag)
 	return Category;
 }
 
-void UItemsPanelWidget::AddItemSlot(const FRPGInventoryEntry& Entry,const FMasterItemDefinition& ItemDefinition)
+void UItemsPanelWidget::AddItemSlot(const FRPGInventoryEntry& Entry,const FMasterItemDefinition& ItemDefinition,bool bResetPanel)
 {
 	TArray<FItemSlotData>* ItemsArrayPtr = CategoryItemsMap.Find(GetItemCategory(Entry.ItemTag));
 	if (!ItemsArrayPtr) return;
@@ -154,7 +150,7 @@ void UItemsPanelWidget::AddItemSlot(const FRPGInventoryEntry& Entry,const FMaste
 	FSlateBrush Brush;
 	Brush.SetResourceObject(ItemDefinition.Icon.Get());
 	
-	if (Entry.ItemTag.MatchesTag(FGameplayTags::Category_Equipment) && ItemDefinition.SlotsSize == 2)
+	if (Entry.ItemTag.MatchesTag(RPGInventoryTags::ItemsCategory::Equipment) && ItemDefinition.SlotsSize == 2)
 	{   //Slot Size == 2
 		ItemsArray[FreeIndex].Size = SuperiorSlotVertical;
 		ItemsArray[FreeIndex + MaxColumns].Entry = Entry;
@@ -164,7 +160,7 @@ void UItemsPanelWidget::AddItemSlot(const FRPGInventoryEntry& Entry,const FMaste
 		ItemsArray[FreeIndex + MaxColumns].ItemDefinition = ItemDefinition;
 	}
 	
-	if (GetItemCategory(Entry.ItemTag) == CurrentCategoryTag)
+	if (GetItemCategory(Entry.ItemTag) == CurrentCategoryTag && bResetPanel)
 	{
 		ResetCategory(CurrentCategoryTag);
 	}
@@ -336,13 +332,94 @@ void UItemsPanelWidget::SortItemsQuicly()
 	//Add sorted slots
 	for (const FLogicalItem& Item : LogicalItems)
 	{
-		AddItemSlot(Item.Entry, Item.ItemDefinition);
+		AddItemSlot(Item.Entry, Item.ItemDefinition,false);
 	}
+
+	ResetCategory(CurrentCategoryTag);
 }
 
 void UItemsPanelWidget::SortItemsBy(EItemSortType SortType)
 {
-	//to-do
+	TArray<FItemSlotData>* ItemsArrayPtr = CategoryItemsMap.Find(CurrentCategoryTag);
+	if (!ItemsArrayPtr || ItemsArrayPtr->IsEmpty()) return;
+
+	TArray<FItemSlotData> SortedItems;
+
+	for (const FItemSlotData& ItemSlot : *ItemsArrayPtr)
+	{
+		if (ItemSlot.bIsEmpty) continue;
+		if (ItemSlot.Size == LowerSlotVertical) continue; //Skip lower and empties slots
+		SortedItems.Add(ItemSlot);
+	}
+	
+	switch (SortType)
+	{
+		case EItemSortType::Weight :
+		{
+				SortedItems.Sort([](const FItemSlotData& A, const FItemSlotData& B)
+				{
+					return A.ItemDefinition.Weight > B.ItemDefinition.Weight;
+				});
+				break;
+		}
+	case EItemSortType::Price :
+			{
+				SortedItems.Sort([](const FItemSlotData& A, const FItemSlotData& B)
+				{
+					return A.ItemDefinition.Price > B.ItemDefinition.Price;
+				});
+				break;
+			}
+	case EItemSortType::Rarity :
+			{
+				SortedItems.Sort([&](const FItemSlotData& A, const FItemSlotData& B)
+				{
+					if (A.ItemDefinition.Rarity != B.ItemDefinition.Rarity)
+						return A.ItemDefinition.Rarity > B.ItemDefinition.Rarity;
+					
+					if (CurrentCategoryTag == RPGInventoryTags::ItemsCategory::Consumable)
+					{
+						return A.ItemDefinition.ConsumableType > B.ItemDefinition.ConsumableType;
+					}
+					return A.ItemDefinition.EquipmentType > B.ItemDefinition.EquipmentType;
+				});
+				break;
+			}
+		case EItemSortType::Type :
+			{
+				SortedItems.Sort([&](const FItemSlotData& A, const FItemSlotData& B)
+					{
+						if (CurrentCategoryTag == RPGInventoryTags::ItemsCategory::Consumable)
+						{
+							if (A.ItemDefinition.ConsumableType != B.ItemDefinition.ConsumableType)
+								return A.ItemDefinition.ConsumableType > B.ItemDefinition.ConsumableType;
+						}
+						else
+						{
+							if (A.ItemDefinition.EquipmentType != B.ItemDefinition.EquipmentType)
+								return A.ItemDefinition.EquipmentType > B.ItemDefinition.EquipmentType;
+						}
+
+						return A.ItemDefinition.Rarity > B.ItemDefinition.Rarity;
+				});
+				break;
+			}
+		default: break;
+	}
+	// Clean
+	for (FItemSlotData& ItemSlot : *ItemsArrayPtr)
+	{
+		ItemSlot = FItemSlotData();
+		ItemSlot.bIsEmpty = true;
+	}
+
+	// Re-add sorted
+	for (const FItemSlotData& Item : SortedItems)
+	{
+		AddItemSlot(Item.Entry, Item.ItemDefinition,false);
+	}
+
+	ResetCategory(CurrentCategoryTag);
 }
 
 
@@ -357,13 +434,11 @@ void UItemsPanelWidget::HandleItemDropped(UItemSlotWidget* DroppedSlot,UItemSlot
 	int32 ToIndex = NewSlot->GetGridIndex();
 	
 	if (!ItemsArray.IsValidIndex(FromIndex) || !ItemsArray.IsValidIndex(ToIndex)) return;
-
-	//ESlotSizeCategories FromSize = DroppedSlot->GetCurrentSlotSize();
+	
 	ESlotSizeCategories FromSize = ItemsArray[FromIndex].Size;
 	
 	//Save Data origin
 	FItemSlotData& FromMain = ItemsArray[FromIndex];
-	FItemSlotData FromSecond;
 	
 	if (FromSize == UniqueSlot)
 	{
@@ -385,7 +460,7 @@ void UItemsPanelWidget::HandleItemDropped(UItemSlotWidget* DroppedSlot,UItemSlot
 		FItemSlotData& LowerSlot = ItemsArray[LowerToIndex];
 		if (!LowerSlot.bIsEmpty) return;
 		LowerSlot = ItemsArray[FromIndex + MaxColumns];
-		ItemsArray[ToIndex] = FromMain;
+		ItemsArray[ToIndex] = ItemsArray[FromIndex];
 	}
 	else if (FromSize == LowerSlotVertical && ItemsArray.IsValidIndex(FromIndex - MaxColumns))
 	{
@@ -413,6 +488,18 @@ void UItemsPanelWidget::HandleItemDropped(UItemSlotWidget* DroppedSlot,UItemSlot
 	ResetCategory(CurrentCategoryTag);
 }
 
+void UItemsPanelWidget::SetSlotOutline(int32 NewIndex,bool enable,ESlotSizeCategories Size) const
+{
+	if (UWidget* Child = ItemsPanel->GetChildAt(NewIndex))
+	{
+		if (UItemSlotWidget* ItemSlotWidget = Cast<UItemSlotWidget>(Child))
+		{
+			enable ? ItemSlotWidget->OutlineSlot(Size) :
+			ItemSlotWidget->RemoveOutLineSlot(false);
+		}
+	}
+}
+
 void UItemsPanelWidget::HandleDraggedItemEntered(int32 EnteredIndex, int32 NewIndex)
 {
 	if (!ItemsPanel) return;
@@ -421,31 +508,17 @@ void UItemsPanelWidget::HandleDraggedItemEntered(int32 EnteredIndex, int32 NewIn
 	if (ItemsArrayPtr.IsEmpty()) return;
 
 	const FItemSlotData& NewSlot = ItemsArrayPtr[NewIndex];
-	const FItemSlotData& EnteredSlot = ItemsArrayPtr[EnteredIndex];
 
 	if (!ItemsArrayPtr.IsValidIndex(NewIndex + MaxColumns)) return;
-	
 	const FItemSlotData& LowerSlot = ItemsArrayPtr[NewIndex + MaxColumns];
+	
 	if (!LowerSlot.bIsEmpty) return;
 	
 	if (NewSlot.Size == SuperiorSlotVertical && EnteredIndex == NewIndex + MaxColumns) return;
 	if (NewSlot.Size == LowerSlotVertical && EnteredIndex == NewIndex - MaxColumns) return;
 
-	if (UWidget* Child = ItemsPanel->GetChildAt(NewIndex))
-	{
-		if (UItemSlotWidget* ItemSlotWidget = Cast<UItemSlotWidget>(Child))
-		{
-			ItemSlotWidget->OutlineSlot(ESlotSizeCategories::SuperiorSlotVertical);
-		}
-	}
-	
-	if (UWidget* Child = ItemsPanel->GetChildAt(NewIndex + MaxColumns))
-	{
-		if (UItemSlotWidget* ItemSlotWidget = Cast<UItemSlotWidget>(Child))
-		{
-			ItemSlotWidget->OutlineSlot(ESlotSizeCategories::LowerSlotVertical);
-		}
-	}
+	SetSlotOutline(NewIndex, true, SuperiorSlotVertical);
+	SetSlotOutline(NewIndex + MaxColumns, true, LowerSlotVertical);
 }
 
 void UItemsPanelWidget::HandleDraggedItemLeaved(int32 DraggedIndex,int32 NewIndex)
@@ -454,28 +527,15 @@ void UItemsPanelWidget::HandleDraggedItemLeaved(int32 DraggedIndex,int32 NewInde
 
 	const TArray<FItemSlotData>& ItemsArrayPtr = *CategoryItemsMap.Find(CurrentCategoryTag);
 	if (ItemsArrayPtr.IsEmpty()) return;
-
-	const FItemSlotData& NewSlot = ItemsArrayPtr[NewIndex];
-	const FItemSlotData& DraggedSlot = ItemsArrayPtr[DraggedIndex];
-	if (DraggedSlot.Size == SuperiorSlotVertical && NewIndex == DraggedIndex + MaxColumns) return;
-	if (DraggedSlot.Size == LowerSlotVertical && NewIndex == DraggedIndex - MaxColumns) return;
-
+	
 	const FItemSlotData& LowerSlot = ItemsArrayPtr[NewIndex + MaxColumns];
 	if (!LowerSlot.bIsEmpty) return;
 	
-	if (UWidget* Child = ItemsPanel->GetChildAt(NewIndex))
-	{
-		if (UItemSlotWidget* ItemSlotWidget = Cast<UItemSlotWidget>(Child))
-		{
-			ItemSlotWidget->RemoveOutLineSlot(false);
-		}
-	}
+	const FItemSlotData& DraggedSlot = ItemsArrayPtr[DraggedIndex];
+	if (DraggedSlot.Size == SuperiorSlotVertical && NewIndex == DraggedIndex + MaxColumns) return;
+	if (DraggedSlot.Size == LowerSlotVertical && NewIndex == DraggedIndex - MaxColumns) return;
 	
-	if (UWidget* Child = ItemsPanel->GetChildAt(NewIndex + MaxColumns))
-	{
-		if (UItemSlotWidget* ItemSlotWidget = Cast<UItemSlotWidget>(Child))
-		{
-			ItemSlotWidget->RemoveOutLineSlot(false);
-		}
-	}
+	SetSlotOutline(NewIndex, false);
+	SetSlotOutline(NewIndex + MaxColumns, false);
 }
+

@@ -7,7 +7,7 @@
 #include "AbilitySystemComponent.h"
 #include "GameplayEffectTypes.h"
 #include "AbilitySystem/RPGAbilityTypes.h"
-#include "AbilitySystem/RPGGameplayTags.h"
+#include "AbilitySystem/NativeTags/RPGGameplayTags.h"
 #include "Game/GameMode/RPGGameMode.h"
 #include "Kismet/GameplayStatics.h"
 

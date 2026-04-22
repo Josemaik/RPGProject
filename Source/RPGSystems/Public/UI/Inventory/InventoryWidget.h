@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "ItemSortTypes.h"
 #include "Blueprint/UserWidget.h"
 #include "InventorySection/InventoryComponent.h"
 #include "InventoryWidget.generated.h"
@@ -66,6 +67,12 @@ protected:
 
 	UFUNCTION()
 	void OnSortButtonClicked();
+
+	UFUNCTION()
+	void OnSortPanelCloseButtonClicked();
+
+	UFUNCTION()
+	void OnSortPanelOptionChanged(EItemSortType ItemSort);
 	
 	void NativeConstruct() override;
 private:

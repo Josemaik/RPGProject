@@ -15,7 +15,6 @@ class UInventoryWidgetController;
 class USizeBox;
 class UItemSlotIcon;
 struct FRPGInventoryEntry;
-struct FMasterItemDefinition;
 class UTextBlock;
 class UButton;
 

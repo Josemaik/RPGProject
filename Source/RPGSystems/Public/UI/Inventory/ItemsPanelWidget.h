@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameplayTagContainer.h"
+#include "SlotSizeCategories.h"
 #include "Blueprint/UserWidget.h"
 #include "InventorySection/InventoryComponent.h"
 #include "ItemsPanelWidget.generated.h"
@@ -61,7 +62,7 @@ public:
 	
 	void UpdateItemSlot(const FRPGInventoryEntry& Entry);
 	void ProcessSlotWidget(const FItemSlotData& SlotData, UItemSlotWidget* NewWidget, FSlateBrush Brush);
-	void AddItemSlot(const FRPGInventoryEntry& Entry,const FMasterItemDefinition& ItemDefinition);
+	void AddItemSlot(const FRPGInventoryEntry& Entry,const FMasterItemDefinition& ItemDefinition,bool bResetPanel = true);
 	void AddEmptySlots(FGameplayTag InCurrentCategoryTag);
 	void CreateSlotWidget(int32 Index,const FItemSlotData& SlotData);
 	void ClearPanel();
@@ -76,6 +77,7 @@ public:
 
 	void HandleItemDropped(UItemSlotWidget* DroppedSlot,UItemSlotWidget* NewSlot);
 	void HandleDraggedItemEntered(int32 EnteredIndex,int32 NewIndex);
+	void SetSlotOutline(int32 NewIndex,bool enable,ESlotSizeCategories Size = ESlotSizeCategories::UniqueSlot) const;
 	void HandleDraggedItemLeaved(int32 DraggedIndex,int32 NewIndex);
 	
 	FGameplayTag CurrentCategoryTag;

@@ -4,18 +4,14 @@
 #include "UI/Inventory/ItemSlotWidget.h"
 
 #include "GameplayTagContainer.h"
-#include "AbilitySystem/RPGGameplayTags.h"
+#include "AbilitySystem/NativeTags/RPGInventoryTags.h"
 #include "Blueprint/WidgetBlueprintLibrary.h"
 #include "Components/Image.h"
-#include "Components/SizeBox.h"
 #include "Components/TextBlock.h"
 #include "InventorySection/InventoryComponent.h"
 #include "UI/Inventory/ItemSlotDroppedDragDrop.h"
 #include "UI/Inventory/ItemSlotIcon.h"
-#include "Components/Image.h"
 #include "Components/OverlaySlot.h"
-#include "Misc/Iteration.h"
-#include "UI/WidgetController/InventoryWidgetController.h"
 
 
 void UItemSlotWidget::SetItemNameText(FText Text)
@@ -27,7 +23,7 @@ void UItemSlotWidget::SetQuantityText(int32 Quantity)
 {
 	if (!IsValid(this)) return;
 	
-	if (!ItemEntry.ItemTag.IsValid() || ItemEntry.ItemTag.MatchesTag(RPGGameplayTags::InventoryItems::EquipmentTag)) return;
+	if (!ItemEntry.ItemTag.IsValid() || ItemEntry.ItemTag.MatchesTag(RPGInventoryTags::ItemsCategory::Equipment)) return;
 
 	if (!ItemQuantity) return;
 	
@@ -79,7 +75,7 @@ void UItemSlotWidget::NativeDestruct()
 void UItemSlotWidget::Init(const FRPGInventoryEntry& Entry,const TSoftObjectPtr<UTexture2D>& Icon,const FSlateBrush& Brush,ESlotSizeCategories SlotSize)
 {
 	ItemEntry = Entry;
-	SetItemNameText(ItemEntry.ItemName);
+	//SetItemNameText(Name);
 	SetQuantityText(ItemEntry.Quantity);
 
 	SoftIconTexture = Icon;

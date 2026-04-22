@@ -4,6 +4,7 @@
 #include "Equipment/EquipmentInstance.h"
 
 
+#include "AbilitySystem/NativeTags/RPGInventoryTags.h"
 #include "Character/RPGSystemsCharacter.h"
 #include "Engine/AssetManager.h"
 #include "Engine/StreamableManager.h"
@@ -36,7 +37,7 @@ void UEquipmentInstance::SpawnEquipmentActors(const TArray<FEquipmentActorsToSpa
 				NewActor->FinishSpawning(FTransform::Identity);
 				NewActor->AttachToComponent(OwningCharacter->GetMesh(), FAttachmentTransformRules::KeepRelativeTransform, ActorToSpawn.AttachName);
 
-				if (SlotTag.MatchesTagExact(FGameplayTag::RequestGameplayTag("Equipment.Slot.RightHand")))
+				if (SlotTag.MatchesTagExact(RPGInventoryTags::ItemsCategory::EquipmentData::Slot::RightHand))
 				{
 					OwningCharacter->SetRightHandEquipment(NewActor);
 				}
@@ -60,7 +61,7 @@ void UEquipmentInstance::SpawnEquipmentActors(const TArray<FEquipmentActorsToSpa
 						NewActor->FinishSpawning(FTransform::Identity);
 						NewActor->AttachToComponent(OwningCharacter->GetMesh(), FAttachmentTransformRules::KeepRelativeTransform, ActorToSpawn.AttachName);
 
-						if (SlotTag.MatchesTagExact(FGameplayTag::RequestGameplayTag("Equipment.Slot.RightHand")))
+						if (SlotTag.MatchesTagExact(RPGInventoryTags::ItemsCategory::EquipmentData::Slot::RightHand))
 						{
 							OwningCharacter->SetRightHandEquipment(NewActor);
 						}

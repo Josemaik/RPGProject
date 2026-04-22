@@ -43,8 +43,9 @@ void UInventoryWidgetController::BroadCastInitialValues() const
 		float TotalWeight = 0;
 		for (const FRPGInventoryEntry& Entry : OwningInventory->GetInventoryEntries())
 		{
+			const FMasterItemDefinition& EntryDefinition = GetInventoryItemDefinition(Entry.ItemTag);
 			InventoryEntryDelegate.Broadcast(Entry);
-			TotalWeight += Entry.Weight;
+			TotalWeight += EntryDefinition.Weight;
 		}
 		OnInventoryWeightChanged.Broadcast(TotalWeight);
 	}

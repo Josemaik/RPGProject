@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "AbilitySystem/RPGGameplayTags.h"
+#include "AbilitySystem/NativeTags/RPGGameplayTags.h"
 
 namespace RPGGameplayTags::Combat
 {
@@ -21,6 +21,11 @@ namespace RPGGameplayTags::Combat
 			UE_DEFINE_GAMEPLAY_TAG_COMMENT(HitEnd, "Combat.Event.HitEnd", "End Check hits");
 		}
 
+		namespace State
+		{
+			UE_DEFINE_GAMEPLAY_TAG_COMMENT(HitReact, "Combat.Event.State.HitReact","Hit Reaction");
+		}
+
 		namespace Actions
 		{
 			UE_DEFINE_GAMEPLAY_TAG_COMMENT(KickHit, "Combat.Event.Kick","kick has been thrown");
@@ -32,10 +37,3 @@ namespace RPGGameplayTags::Player::State
 {
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Crouch, "Player.State.Crouch", "Player is Actively Crouching");
 }
-
-namespace RPGGameplayTags::InventoryItems
-{
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(ConsumableTag,"Item.Consumable","Inventory Item consumable by player");
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(EquipmentTag,"Item.Equipment","Inventory Item by player");
-}
-

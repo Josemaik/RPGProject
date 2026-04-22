@@ -47,7 +47,6 @@ UEquipmentInstance* FRPGEquipmentList::AddEntry(const TSubclassOf<UEquipmentDefi
 
 	FRPGEquipmentEntry& NewEntry = Entries.AddDefaulted_GetRef();
 	NewEntry.EntryTag = EquipmentCTO->ItemTag;
-	NewEntry.RarityTag = EquipmentCTO->RarityTag;
 	NewEntry.SlotTag = EquipmentCTO->SlotTag;
 	NewEntry.EquipmentDefinition = InEquipmentDefinition;
 	NewEntry.EffectPackage = EffectPackage;

@@ -74,15 +74,11 @@ class RPGSYSTEMS_API UEquipmentDefinition : public UObject
 	GENERATED_BODY()
 
 public:
-
 	UPROPERTY(EditDefaultsOnly, Category="Custom Values|Info")
 	FGameplayTag ItemTag;
-
+	
 	UPROPERTY(EditDefaultsOnly, Category="Custom Values|Info")
 	FGameplayTag SlotTag;
-
-	UPROPERTY(EditDefaultsOnly, Category="Custom Values|Info")
-	FGameplayTag RarityTag;
 	
 	UPROPERTY(EditDefaultsOnly, Category="Custom Values|Info")
 	TSubclassOf<UEquipmentInstance> InstanceType;
@@ -109,7 +105,10 @@ public:
 	float ProbabilityToRollAbility = 0.f;
 
 	UPROPERTY(EditDefaultsOnly, Category="Custom Values|Ability")
-	float MinNumRollAbilities = 1.f;
+	int32 MinNumRollAbilities = 1;
+
+	UPROPERTY(EditDefaultsOnly, Category="Custom Values|Ability")
+	int32 MaxNumRollAbilities = 1;
 	
 	UPROPERTY(EditDefaultsOnly, Category="Custom Values|Ability")
 	bool bForceRollAllAbilities = false;

@@ -8,7 +8,7 @@
 #include "Abilities/Tasks/AbilityTask_WaitGameplayEvent.h"
 #include "Abilities/Tasks/AbilityTask_WaitInputPress.h"
 #include "AbilitySystem/RPGAbilityTypes.h"
-#include "AbilitySystem/RPGGameplayTags.h"
+#include "AbilitySystem/NativeTags/RPGGameplayTags.h"
 #include "AbilitySystem/AbilityTasks/AbilityTask_KickTrace.h"
 #include "AbilitySystem/AbilityTasks/AbilityTask_SwordTrace.h"
 #include "Kismet/GameplayStatics.h"

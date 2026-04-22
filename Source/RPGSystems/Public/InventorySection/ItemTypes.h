@@ -9,6 +9,35 @@
 class UEquipmentDefinition;
 class UGameplayEffect;
 
+UENUM(BlueprintType)
+enum class EItemRarity : uint8
+{
+	Common  = 0,
+	Master  = 1,
+	Magic   = 2,
+	Relic   = 3,
+	Witcher = 4
+};
+
+UENUM(BlueprintType)
+enum class EEquipmentType : uint8
+{
+	Shield = 0,
+	Axe = 1,
+	Mace = 2,
+	Crossbow  = 3,
+	Sword = 4,
+};
+
+UENUM(BlueprintType)
+enum class EConsumableType : uint8
+{
+	Food    = 0,
+	Potion  = 1,
+	Bomb    = 2,
+	Oil     = 3
+};
+
 USTRUCT(BlueprintType)
 struct FEquipmentItemProps
 {
@@ -37,28 +66,36 @@ struct FMasterItemDefinition : public FTableRowBase
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	FGameplayTag ItemTag = FGameplayTag();
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	EItemRarity Rarity = EItemRarity::Common;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(EditCondition="CategoryTag == Item.Equipment", EditConditionHides))
+	EEquipmentType EquipmentType;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(EditCondition="CategoryTag == Item.Consumable", EditConditionHides))
+	EConsumableType ConsumableType;
 
 	UPROPERTY(EditDefaultsOnly,BlueprintReadOnly)
 	FText ItemName = FText();
 
-	UPROPERTY(EditDefaultsOnly,BlueprintReadOnly)
-	TSoftObjectPtr<UStaticMesh> ItemMesh = nullptr;
-	
-	UPROPERTY(BlueprintReadOnly)
-	int32 ItemQuantity = 0;
-
-	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	FText ItemDescription = FText();
-
+	
 	UPROPERTY(EditDefaultsOnly,BlueprintReadOnly)
 	TSoftObjectPtr<UTexture2D> Icon = nullptr;
 
 	UPROPERTY(EditDefaultsOnly,BlueprintReadOnly)
-	uint8 SlotsSize = 1;
+	TSoftObjectPtr<UStaticMesh> ItemMesh = nullptr;
+
+	UPROPERTY(EditDefaultsOnly,BlueprintReadOnly)
+	int32 SlotsSize = 0;
 	
 	UPROPERTY(EditDefaultsOnly,BlueprintReadOnly)
-	int32 ItemWeightCost = 0;
+	float Weight = 0.f;
+
+	UPROPERTY(EditDefaultsOnly,BlueprintReadOnly)
+	float Price = 0.f;	
 
 	UPROPERTY(EditDefaultsOnly,BlueprintReadOnly)
 	FConsumableProps ConsumableProps = FConsumableProps();

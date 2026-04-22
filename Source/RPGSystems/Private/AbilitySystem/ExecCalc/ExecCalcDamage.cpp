@@ -5,7 +5,7 @@
 
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystem/RPGAbilityTypes.h"
-#include "AbilitySystem/RPGGameplayTags.h"
+#include "AbilitySystem/NativeTags/RPGGameplayTags.h"
 #include "AbilitySystem/Attributes/RPGAttributeSet.h"
 #include "Libraries/RPGAbilitySystemLibrary.h"
 

@@ -26,9 +26,6 @@ struct FRPGInventoryEntry : public FFastArraySerializerItem
 
 	UPROPERTY(BlueprintReadWrite)
 	FGameplayTag ItemTag = FGameplayTag::EmptyTag;
-
-	UPROPERTY(BlueprintReadWrite)
-	FText ItemName = FText();
 	
 	UPROPERTY(BlueprintReadOnly)
 	int Quantity = 0;
@@ -36,8 +33,8 @@ struct FRPGInventoryEntry : public FFastArraySerializerItem
 	UPROPERTY(BlueprintReadOnly)
 	int64 ItemID = 0;
 
-	UPROPERTY(BlueprintReadWrite)
-	float Weight = 0.f;
+	UPROPERTY(BlueprintReadOnly)
+	float CachedDurability = 1.f; // 1 = 100%
 
 	UPROPERTY(BlueprintReadWrite)
 	FEquipmentEffectPackage EffectPackage = FEquipmentEffectPackage();

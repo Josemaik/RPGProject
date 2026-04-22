@@ -6,6 +6,7 @@
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemComponent.h"
 #include "NativeGameplayTags.h"
+#include "AbilitySystem/NativeTags/RPGInventoryTags.h"
 #include "Data/EquipmentStaffEfects.h"
 #include "Engine/AssetManager.h"
 #include "Engine/StreamableManager.h"
@@ -18,10 +19,6 @@
 #include "Net/UnrealNetwork.h"
 #include "RPGSystems/RPGSystems.h"
 
-namespace FGameplayTags::Static
-{
-	UE_DEFINE_GAMEPLAY_TAG_STATIC(Category_Equipment, "Item.Equipment");
-}
 
 ///////////////////////////////
 //* UInventoryList Methods
@@ -29,7 +26,7 @@ namespace FGameplayTags::Static
 
 FRPGInventoryEntry* FRPGInventoryList::AddItem(const FGameplayTag& ItemTag, int32 NumItems)
 {
-	if (ItemTag.MatchesTag(FGameplayTags::Static::Category_Equipment))
+	if (ItemTag.MatchesTag(RPGInventoryTags::ItemsCategory::Equipment))
 	{
 		//cannot stack these categories, do nothing	
 	}
@@ -45,12 +42,10 @@ FRPGInventoryEntry* FRPGInventoryList::AddItem(const FGameplayTag& ItemTag, int3
 	
 	FRPGInventoryEntry& NewEntry = Entries.AddDefaulted_GetRef();
 	NewEntry.ItemTag = ItemTag;
-	NewEntry.ItemName = Item.ItemName;
 	NewEntry.Quantity = NumItems;
 	NewEntry.ItemID = GenerateID();
-	NewEntry.Weight = Item.ItemWeightCost;
 
-	if (NewEntry.ItemTag.MatchesTag(FGameplayTags::Static::Category_Equipment) && IsValid(WeakStats.Get()))
+	if (NewEntry.ItemTag.MatchesTag(RPGInventoryTags::ItemsCategory::Equipment) && IsValid(WeakStats.Get()))
 	{
 		UEquipmentGenerator::RollForStats(NewEntry.EffectPackage,Item.EquipmentItemProps.EquipmentClass,WeakStats.Get());
 	}
@@ -89,7 +84,7 @@ FRPGInventoryEntry* FRPGInventoryList::TryStackItem(const FGameplayTag& ItemTag,
 void FRPGInventoryList::AddUnEquippedItem(const FGameplayTag& ItemTag,
                                           const FEquipmentEffectPackage& EffectPackage,int32 NumItems)
 {
-	if (!ItemTag.MatchesTag(FGameplayTags::Static::Category_Equipment))
+	if (!ItemTag.MatchesTag(RPGInventoryTags::ItemsCategory::Equipment))
 	{   //if not an equipment try to stack
 		if (TryStackItem(ItemTag, NumItems)) return;
 	}
@@ -98,11 +93,9 @@ void FRPGInventoryList::AddUnEquippedItem(const FGameplayTag& ItemTag,
 	
 	FRPGInventoryEntry& NewEntry = Entries.AddDefaulted_GetRef();
 	NewEntry.ItemTag = ItemTag;
-	NewEntry.ItemName = Item.ItemName;
 	NewEntry.Quantity = NumItems;
 	NewEntry.ItemID = GenerateID();
 	NewEntry.EffectPackage = EffectPackage;
-	NewEntry.Weight = Item.ItemWeightCost;
 	
 	MarkItemDirty(NewEntry);
 	DirtyItemDelegate.Broadcast(NewEntry);
@@ -297,7 +290,7 @@ void UInventoryComponent::UseItem(const FRPGInventoryEntry& Entry, int32 NumItem
 			}
 			if (IsValid(Item.EquipmentItemProps.EquipmentClass))
 			{
-				EquipmentItemDelegate.Broadcast(Item.EquipmentItemProps.EquipmentClass, Entry.EffectPackage);
+				EquipmentItemDelegate.Broadcast(Item.EquipmentItemProps.EquipmentClass,Entry.EffectPackage);
 				InventoryList.RemoveItem(Entry);
 			}
 		}
@@ -386,7 +379,8 @@ TArray<FRPGInventoryEntry> UInventoryComponent::GetEntriesByString(const FString
 	for (auto EntryIt = InventoryList.Entries.CreateConstIterator(); EntryIt; ++EntryIt)
 	{
 		const FRPGInventoryEntry& Entry = *EntryIt;
-		if (Entry.ItemName.ToString().Contains(InString))
+		const FMasterItemDefinition& EntryDefinition = GetItemDefinitionByTag(Entry.ItemTag);
+		if (EntryDefinition.ItemName.ToString().Contains(InString))
 		{
 			MatchEntries.Add(Entry);
 		}
@@ -475,7 +469,8 @@ void UInventoryComponent::UpdateWeight()
 
 	for (auto& Item : InventoryList.GetEntries())
 	{
-		CurrentWeight += Item.Weight * static_cast<float>(Item.Quantity);
+		const FMasterItemDefinition& EntryDefinition = GetItemDefinitionByTag(Item.ItemTag);
+		CurrentWeight += EntryDefinition.Weight * static_cast<float>(Item.Quantity);
 	}
 
 	OnWeightChanged.Broadcast(CurrentWeight);
