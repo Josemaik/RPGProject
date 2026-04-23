@@ -428,143 +428,6 @@ void UItemsPanelWidget::SortItemsBy(EItemSortType SortType)
 //  Drag & Drop – Panel-side logic
 // -------------------------------------
 
-void UItemsPanelWidget::HandleItemDropped(int32 DroppedIndex,int32 NewIndex)
-{
-	if (TryDropInNewSlot(DroppedIndex,NewIndex))
-	{
-		ResetCategory(CurrentCategoryTag);
-	}
-
-	//call function that drops fail
-}
-
-bool UItemsPanelWidget::TryDropInNewSlot(int32 FromIndex,int32 ToIndex)
-{
-	TArray<FItemSlotData>& ItemsArray = *CategoryItemsMap.Find(CurrentCategoryTag);
-	if (ItemsArray.IsEmpty()) return false;
-	if (!ItemsArray.IsValidIndex(FromIndex) || !ItemsArray.IsValidIndex(ToIndex)) return false;
-	
-	ESlotSizeCategories FromSize = ItemsArray[FromIndex].Size;
-	FItemSlotData& ToSlot = ItemsArray[ToIndex];
-
-	//From Index is unique slot
-	if (FromSize == UniqueSlot)
-	{
-		if (ToSlot.bIsEmpty)
-		{
-			ToSlot = ItemsArray[FromIndex];
-			ResetSlotData(ItemsArray[FromIndex]);
-			return true;
-		}
-		if (ToSlot.Size == UniqueSlot && ToIndex != FromIndex)
-		{
-			ItemsArray.Swap(ToIndex,FromIndex);
-			return true;
-		}
-		return false;
-	}
-	
-	
-	//From Index is part of a two size slot
-	if (ToSlot.Size == UniqueSlot && !ToSlot.bIsEmpty) return false;
-
-	const int32 FromSuperiorIndex = (FromSize == SuperiorSlotVertical) ? FromIndex : FromIndex - MaxColumns;
-	const int32 FromLowerIndex    = FromSuperiorIndex + MaxColumns;
-
-	if (!ItemsArray.IsValidIndex(FromLowerIndex)) return false;
-	
-	const int32 ToSuperiorIndex = (ToSlot.Size == LowerSlotVertical) ? ToIndex - MaxColumns : ToIndex;
-	const int32 ToLowerIndex    = ToSuperiorIndex + MaxColumns;
-
-	if (!ItemsArray.IsValidIndex(ToLowerIndex)) return false;
-
-	FItemSlotData& ToSuperiorSlot = ItemsArray[ToSuperiorIndex];
-	FItemSlotData& ToLowerSlot    = ItemsArray[ToLowerIndex];
-	
-	if (ToSuperiorSlot.bIsEmpty && ToLowerSlot.bIsEmpty)
-	{
-		ToSuperiorSlot = ItemsArray[FromSuperiorIndex];
-		ToLowerSlot    = ItemsArray[FromLowerIndex];
-		ResetSlotData(ItemsArray[FromSuperiorIndex]);
-		ResetSlotData(ItemsArray[FromLowerIndex]);
-		return true;
-	}
-
-	if (ToSuperiorSlot.Size == SuperiorSlotVertical || ToSuperiorSlot.Size == LowerSlotVertical)
-	{
-		if (ToSuperiorIndex == FromSuperiorIndex) return false; // same item
- 
-		// Swap both halves
-		ItemsArray.Swap(FromSuperiorIndex, ToSuperiorIndex);
-		ItemsArray.Swap(FromLowerIndex,    ToLowerIndex);
-		return true;
-	}
-	
-	return false;
-}
-
-void UItemsPanelWidget::SetSlotOutline(int32 NewIndex,bool enable,ESlotSizeCategories Size) const
-{
-	UItemSlotWidget* ItemSlotWidget = GetItemSlotbyIndex(NewIndex);
-	if (!IsValid(ItemSlotWidget)) return;
-	
-	enable ? ItemSlotWidget->OutlineSlot(Size) :
-	ItemSlotWidget->RemoveOutLineSlot(false);
-}
-
-void UItemsPanelWidget::HandleDraggedItemEntered(int32 DraggedIndex, int32 TargetIndex)
-{
-	if (!ItemsPanel) return;
-	
-	TArray<FItemSlotData>& ItemsArray = *CategoryItemsMap.Find(CurrentCategoryTag);
-	if (ItemsArray.IsEmpty()) return;
-	if (!ItemsArray.IsValidIndex(DraggedIndex) || !ItemsArray.IsValidIndex(TargetIndex)) return;
-
-	const FItemSlotData& DraggedSlot = ItemsArray[DraggedIndex];
-	const FItemSlotData& TargetSlot  = ItemsArray[TargetIndex];
-
-	const int32 TargetSuperiorIndex = (TargetSlot.Size == LowerSlotVertical)? TargetIndex - MaxColumns : TargetIndex;
-	const int32 TargetLowerIndex = TargetSuperiorIndex + MaxColumns;
-
-	if (!ItemsArray.IsValidIndex(TargetLowerIndex)) return;
-
-	const FItemSlotData& TargetSuperiorSlot = ItemsArray[TargetSuperiorIndex];
-	const FItemSlotData& TargetLowerSlot    = ItemsArray[TargetLowerIndex];
-	
-	const int32 DraggedSuperiorIndex = (DraggedSlot.Size == SuperiorSlotVertical) ? DraggedIndex : DraggedIndex - MaxColumns;
-
-	EDragOverResult Result = EDragOverResult::Invalid;
-
-	if (TargetSlot.Size == UniqueSlot && !TargetSlot.bIsEmpty)
-	{
-		// Can't fit a 2-slot item on a unique slot
-		Result = EDragOverResult::Invalid;
-	}else if (TargetSuperiorSlot.bIsEmpty && TargetLowerSlot.bIsEmpty)
-	{
-		// Both target cells are free → drop
-		Result = EDragOverResult::Drop;
-	}else if (TargetSuperiorSlot.Size == SuperiorSlotVertical || TargetSuperiorSlot.Size == LowerSlotVertical)
-	{
-		// Target is another 2-slot item
-		if (TargetSuperiorIndex == DraggedSuperiorIndex)
-		{
-			// Hovering over self – for the "inferior" half case described in spec:
-			// if TargetIndex == DroppedIndex → allow (same item, just show drop)
-			Result = EDragOverResult::Drop;
-		}
-		else
-		{
-			Result = EDragOverResult::Swap;
-		}
-	}
-
-	UItemSlotWidget* TopWidget    = GetItemSlotbyIndex(TargetSuperiorIndex);
-	UItemSlotWidget* BottomWidget = GetItemSlotbyIndex(TargetLowerIndex);
- 
-	if (IsValid(TopWidget))    TopWidget->EnableDragOverPreview(Result);
-	if (IsValid(BottomWidget)) BottomWidget->EnableDragOverPreview(Result);
-}
-
 UItemSlotWidget* UItemsPanelWidget::GetItemSlotbyIndex(int32 Index) const
 {
 	if (UWidget* Child = ItemsPanel->GetChildAt(Index))
@@ -577,24 +440,336 @@ UItemSlotWidget* UItemsPanelWidget::GetItemSlotbyIndex(int32 Index) const
 	return nullptr;
 }
 
-void UItemsPanelWidget::HandleDraggedItemLeaved(int32 DraggedIndex,int32 TargetIndex)
+void UItemsPanelWidget::ResolvePair(const TArray<FItemSlotData>& ItemsArray, int32 TargetIndex,
+	ESlotSizeCategories DraggedSize, int32 MaxColumns, int32& OutSuperior, int32& OutLower)
+{
+	//  Given TargetIndex and DraggedSize,
+	//  Determines the pair (SuperiorIndex, LowerIndex) that should fill.
+	const FItemSlotData& TargetSlot = ItemsArray[TargetIndex];
+
+	if (TargetSlot.Size == SuperiorSlotVertical)
+	{
+		OutSuperior = TargetIndex;
+		OutLower    = TargetIndex + MaxColumns;
+	}
+	else if (TargetSlot.Size == LowerSlotVertical)
+	{
+		OutSuperior = TargetIndex - MaxColumns;
+		OutLower    = TargetIndex;
+	}
+	else // empty or UniqueSlot busy
+	{
+		if (DraggedSize == SuperiorSlotVertical)
+		{
+			OutSuperior = TargetIndex;
+			OutLower    = TargetIndex + MaxColumns;
+		}
+		else 
+		{
+			OutSuperior = TargetIndex - MaxColumns;
+			OutLower    = TargetIndex;
+		}
+	}
+}
+
+void UItemsPanelWidget::HandleItemDropped(int32 DroppedIndex,int32 NewIndex)
+{
+	if (TryDropInNewSlot(DroppedIndex,NewIndex))
+	{
+		ResetCategory(CurrentCategoryTag);
+	}
+}
+
+
+void UItemsPanelWidget::HandleDraggedItemEntered(int32 DraggedIndex, int32 TargetIndex)
+{
+	if (!ItemsPanel) return;
+	TArray<FItemSlotData>& ItemsArray = *CategoryItemsMap.Find(CurrentCategoryTag);
+	if (ItemsArray.IsEmpty()) return;
+	if (!ItemsArray.IsValidIndex(DraggedIndex) || !ItemsArray.IsValidIndex(TargetIndex)) return;
+ 
+	const FItemSlotData& DraggedSlot = ItemsArray[DraggedIndex];
+ 
+	// Dragged Item Pair
+	const int32 DraggedSuperiorIndex = (DraggedSlot.Size == SuperiorSlotVertical)
+	                                     ? DraggedIndex
+	                                     : DraggedIndex - MaxColumns;
+	const int32 DraggedLowerIndex = DraggedSuperiorIndex + MaxColumns;
+
+	// Detect Overlapings before Resolve Pair
+	const int32 EmptyAboveTheTop = DraggedSuperiorIndex - MaxColumns;
+	const int32 EmptyBelowTheLower     = DraggedLowerIndex    + MaxColumns;
+ 
+	const bool bIsOwnSuperior    = (TargetIndex == DraggedSuperiorIndex);
+	const bool bIsOwnLower       = (TargetIndex == DraggedLowerIndex);
+	const bool bIsAboveOwn       = (TargetIndex == EmptyAboveTheTop);
+	const bool bIsBelowOwn       = (TargetIndex == EmptyBelowTheLower);
+ 
+	if (bIsOwnSuperior || bIsOwnLower)
+	{
+		// Hover over the item (Superior or Lower)
+		UItemSlotWidget* TopWidget    = GetItemSlotbyIndex(DraggedSuperiorIndex);
+		UItemSlotWidget* BottomWidget = GetItemSlotbyIndex(DraggedLowerIndex);
+		if (IsValid(TopWidget))
+		{
+			TopWidget->EnableDragOverPreview(EDragOverResult::Drop);
+			TopWidget->EnableDragOverResultIcon(EDragOverResult::Drop, DraggedSlot.Size);
+		}
+		if (IsValid(BottomWidget)) BottomWidget->EnableDragOverPreview(EDragOverResult::Drop);
+		return;
+	}
+ 
+	if (bIsAboveOwn)
+	{
+		// Empty space just ABOVE the Superior
+		const bool bCanDrop = ItemsArray[TargetIndex].bIsEmpty;
+		const EDragOverResult Result = bCanDrop ? EDragOverResult::Drop : EDragOverResult::Invalid;
+ 
+		UItemSlotWidget* TopWidget    = GetItemSlotbyIndex(TargetIndex);           
+		UItemSlotWidget* BottomWidget = GetItemSlotbyIndex(DraggedSuperiorIndex);  
+		if (IsValid(TopWidget))
+		{
+			TopWidget->EnableDragOverPreview(Result);
+			TopWidget->EnableDragOverResultIcon(Result, DraggedSlot.Size);
+		}
+		if (IsValid(BottomWidget)) BottomWidget->EnableDragOverPreview(Result);
+		return;
+	}
+ 
+	if (bIsBelowOwn)
+	{
+		// Empty space BELOW the Lower
+		const bool bCanDrop = ItemsArray[TargetIndex].bIsEmpty;
+		const EDragOverResult Result = bCanDrop ? EDragOverResult::Drop : EDragOverResult::Invalid;
+ 
+		UItemSlotWidget* TopWidget    = GetItemSlotbyIndex(DraggedLowerIndex);  
+		UItemSlotWidget* BottomWidget = GetItemSlotbyIndex(TargetIndex);        
+		if (IsValid(TopWidget))
+		{
+			TopWidget->EnableDragOverPreview(Result);
+			TopWidget->EnableDragOverResultIcon(Result, DraggedSlot.Size);
+		}
+		if (IsValid(BottomWidget)) BottomWidget->EnableDragOverPreview(Result);
+		return;
+	}
+ 
+	// Resolve Pair
+	int32 TargetSuperiorIndex = INDEX_NONE;
+	int32 TargetLowerIndex    = INDEX_NONE;
+	ResolvePair(ItemsArray, TargetIndex, DraggedSlot.Size, MaxColumns, TargetSuperiorIndex, TargetLowerIndex);
+ 
+	if (!ItemsArray.IsValidIndex(TargetSuperiorIndex) || !ItemsArray.IsValidIndex(TargetLowerIndex)) return;
+ 
+	const FItemSlotData& TargetSuperiorSlot = ItemsArray[TargetSuperiorIndex];
+	const FItemSlotData& TargetLowerSlot    = ItemsArray[TargetLowerIndex];
+	const FItemSlotData& TargetSlot         = ItemsArray[TargetIndex];
+ 
+	EDragOverResult Result = EDragOverResult::Invalid;
+ 
+	if (TargetSlot.Size == UniqueSlot && !TargetSlot.bIsEmpty)
+	{
+		Result = EDragOverResult::Invalid;
+	}
+	else if (TargetSuperiorSlot.bIsEmpty && TargetLowerSlot.bIsEmpty)
+	{
+		Result = EDragOverResult::Drop;
+	}
+	else if (TargetSuperiorSlot.bIsEmpty != TargetLowerSlot.bIsEmpty)
+	{
+		Result = EDragOverResult::Invalid;
+	}
+	else if (TargetSuperiorSlot.Size == SuperiorSlotVertical || TargetSuperiorSlot.Size == LowerSlotVertical)
+	{
+		Result = EDragOverResult::Swap;
+	}
+	else
+	{
+		Result = EDragOverResult::Invalid;
+	}
+ 
+	UItemSlotWidget* TopWidget    = GetItemSlotbyIndex(TargetSuperiorIndex);
+	UItemSlotWidget* BottomWidget = GetItemSlotbyIndex(TargetLowerIndex);
+	if (IsValid(TopWidget))
+	{
+		TopWidget->EnableDragOverPreview(Result);
+		TopWidget->EnableDragOverResultIcon(Result, DraggedSlot.Size);
+	}
+	if (IsValid(BottomWidget)) BottomWidget->EnableDragOverPreview(Result);
+}
+ 
+ 
+
+bool UItemsPanelWidget::TryDropInNewSlot(int32 FromIndex, int32 ToIndex)
+{
+	TArray<FItemSlotData>& ItemsArray = *CategoryItemsMap.Find(CurrentCategoryTag);
+	if (ItemsArray.IsEmpty()) return false;
+	if (!ItemsArray.IsValidIndex(FromIndex) || !ItemsArray.IsValidIndex(ToIndex)) return false;
+ 
+	const ESlotSizeCategories FromSize = ItemsArray[FromIndex].Size;
+	FItemSlotData& ToSlot = ItemsArray[ToIndex];
+ 
+	// From is Unique
+	if (FromSize == UniqueSlot)
+	{
+		if (ToSlot.bIsEmpty)
+		{
+			ToSlot = ItemsArray[FromIndex];
+			ResetSlotData(ItemsArray[FromIndex]);
+			return true;
+		}
+		if (ToSlot.Size == UniqueSlot && ToIndex != FromIndex)
+		{
+			ItemsArray.Swap(ToIndex, FromIndex);
+			return true;
+		}
+		return false;
+	}
+ 
+	// From is Superior or Lower
+	if (ToSlot.Size == UniqueSlot && !ToSlot.bIsEmpty) return false;
+ 
+	const int32 FromSuperiorIndex = (FromSize == SuperiorSlotVertical)
+	                                  ? FromIndex
+	                                  : FromIndex - MaxColumns;
+	const int32 FromLowerIndex = FromSuperiorIndex + MaxColumns;
+	if (!ItemsArray.IsValidIndex(FromLowerIndex)) return false;
+ 
+	// Detect overlaping
+	const int32 VacioArribaDelSuperior = FromSuperiorIndex - MaxColumns;
+	const int32 VacioAbajoDelLower     = FromLowerIndex    + MaxColumns;
+ 
+	const bool bIsOwnSuperior = (ToIndex == FromSuperiorIndex);
+	const bool bIsOwnLower    = (ToIndex == FromLowerIndex);
+	const bool bIsAboveOwn    = (ToIndex == VacioArribaDelSuperior);
+	const bool bIsBelowOwn    = (ToIndex == VacioAbajoDelLower);
+ 
+	if (bIsOwnSuperior || bIsOwnLower)
+	{
+		// Self-drop
+		return false;
+	}
+ 
+	if (bIsAboveOwn)
+	{
+		// Upward shift
+		if (!ItemsArray[ToIndex].bIsEmpty) return false;
+ 
+		FItemSlotData SavedSuperior = ItemsArray[FromSuperiorIndex];
+		FItemSlotData SavedLower    = ItemsArray[FromLowerIndex];
+		ResetSlotData(ItemsArray[FromSuperiorIndex]);
+		ResetSlotData(ItemsArray[FromLowerIndex]);
+		ItemsArray[ToIndex]             = SavedSuperior;
+		ItemsArray[FromSuperiorIndex]   = SavedLower;
+		return true;
+	}
+ 
+	if (bIsBelowOwn)
+	{
+		// Downward shift
+		if (!ItemsArray[ToIndex].bIsEmpty) return false;
+ 
+		FItemSlotData SavedSuperior = ItemsArray[FromSuperiorIndex];
+		FItemSlotData SavedLower    = ItemsArray[FromLowerIndex];
+		ResetSlotData(ItemsArray[FromSuperiorIndex]);
+		ResetSlotData(ItemsArray[FromLowerIndex]);
+		ItemsArray[FromLowerIndex] = SavedSuperior;
+		ItemsArray[ToIndex]        = SavedLower;
+		return true;
+	}
+ 
+	//No overlap
+	int32 ToSuperiorIndex = INDEX_NONE;
+	int32 ToLowerIndex    = INDEX_NONE;
+	ResolvePair(ItemsArray, ToIndex, FromSize, MaxColumns, ToSuperiorIndex, ToLowerIndex);
+ 
+	if (!ItemsArray.IsValidIndex(ToSuperiorIndex) || !ItemsArray.IsValidIndex(ToLowerIndex)) return false;
+	if (ToSuperiorIndex == FromSuperiorIndex) return false;
+ 
+	FItemSlotData& ToSuperiorSlot = ItemsArray[ToSuperiorIndex];
+	FItemSlotData& ToLowerSlot    = ItemsArray[ToLowerIndex];
+ 
+	if (ToSuperiorSlot.bIsEmpty && ToLowerSlot.bIsEmpty)
+	{
+		ToSuperiorSlot = ItemsArray[FromSuperiorIndex];
+		ToLowerSlot    = ItemsArray[FromLowerIndex];
+		ResetSlotData(ItemsArray[FromSuperiorIndex]);
+		ResetSlotData(ItemsArray[FromLowerIndex]);
+		return true;
+	}
+ 
+	if (ToSuperiorSlot.bIsEmpty != ToLowerSlot.bIsEmpty) return false;
+ 
+	if (ToSuperiorSlot.Size == SuperiorSlotVertical || ToSuperiorSlot.Size == LowerSlotVertical)
+	{
+		ItemsArray.Swap(FromSuperiorIndex, ToSuperiorIndex);
+		ItemsArray.Swap(FromLowerIndex,    ToLowerIndex);
+		return true;
+	}
+ 
+	return false;
+}
+ 
+
+void UItemsPanelWidget::HandleDraggedItemLeaved(int32 DraggedIndex, int32 TargetIndex)
 {
 	const TArray<FItemSlotData>& ItemsArray = *CategoryItemsMap.Find(CurrentCategoryTag);
 	if (ItemsArray.IsEmpty()) return;
-	if (!ItemsArray.IsValidIndex(TargetIndex)) return;
+	if (!ItemsArray.IsValidIndex(DraggedIndex) || !ItemsArray.IsValidIndex(TargetIndex)) return;
  
-	const FItemSlotData& TargetSlot = ItemsArray[TargetIndex];
+	const FItemSlotData& DraggedSlot = ItemsArray[DraggedIndex];
  
-	// Resolve the superior index so we always disable the right pair
-	const int32 TargetSuperiorIndex = (TargetSlot.Size == LowerSlotVertical) ? TargetIndex - MaxColumns : TargetIndex;
-	const int32 TargetLowerIndex    = TargetSuperiorIndex + MaxColumns;
-
-	UItemSlotWidget* TopWidget    = GetItemSlotbyIndex(TargetSuperiorIndex);
-	UItemSlotWidget* BottomWidget = GetItemSlotbyIndex(TargetLowerIndex);
+	const int32 DraggedSuperiorIndex = (DraggedSlot.Size == SuperiorSlotVertical)
+	                                     ? DraggedIndex
+	                                     : DraggedIndex - MaxColumns;
+	const int32 DraggedLowerIndex    = DraggedSuperiorIndex + MaxColumns;
  
-	if (IsValid(TopWidget))    TopWidget->DisableDragOverPreview();
+	const int32 VacioArribaDelSuperior = DraggedSuperiorIndex - MaxColumns;
+	const int32 VacioAbajoDelLower     = DraggedLowerIndex    + MaxColumns;
+ 
+	const bool bIsOwnSuperior = (TargetIndex == DraggedSuperiorIndex);
+	const bool bIsOwnLower    = (TargetIndex == DraggedLowerIndex);
+	const bool bIsAboveOwn    = (TargetIndex == VacioArribaDelSuperior);
+	const bool bIsBelowOwn    = (TargetIndex == VacioAbajoDelLower);
+ 
+	int32 CleanTopIndex    = INDEX_NONE;
+	int32 CleanBottomIndex = INDEX_NONE;
+ 
+	if (bIsOwnSuperior || bIsOwnLower)
+	{
+		CleanTopIndex    = DraggedSuperiorIndex;
+		CleanBottomIndex = DraggedLowerIndex;
+	}
+	else if (bIsAboveOwn)
+	{
+		CleanTopIndex    = TargetIndex;          
+		CleanBottomIndex = DraggedSuperiorIndex;  
+	}
+	else if (bIsBelowOwn)
+	{
+		CleanTopIndex    = DraggedLowerIndex;  
+		CleanBottomIndex = TargetIndex;        
+	}
+	else
+	{
+		// no overlap
+		ResolvePair(ItemsArray, TargetIndex, DraggedSlot.Size, MaxColumns, CleanTopIndex, CleanBottomIndex);
+	}
+ 
+	if (CleanTopIndex == INDEX_NONE) return;
+ 
+	UItemSlotWidget* TopWidget    = GetItemSlotbyIndex(CleanTopIndex);
+	UItemSlotWidget* BottomWidget = ItemsArray.IsValidIndex(CleanBottomIndex)
+	                                  ? GetItemSlotbyIndex(CleanBottomIndex)
+	                                  : nullptr;
+ 
+	if (IsValid(TopWidget))
+	{
+		TopWidget->DisableDragOverPreview();
+		TopWidget->DisableDragOverResultIcon();
+	}
 	if (IsValid(BottomWidget)) BottomWidget->DisableDragOverPreview();
 }
+ 
 
 void UItemsPanelWidget::HandleDragCancelled(int LastEnterIndex) const
 {
@@ -603,16 +778,24 @@ void UItemsPanelWidget::HandleDragCancelled(int LastEnterIndex) const
 	if (!ItemsArray.IsValidIndex(LastEnterIndex)) return;
  
 	const FItemSlotData& LastEnterSlot = ItemsArray[LastEnterIndex];
+	const ESlotSizeCategories DraggedSizeGuess =
+		(LastEnterSlot.Size == LowerSlotVertical || LastEnterSlot.Size == SuperiorSlotVertical)
+		? LastEnterSlot.Size.GetValue()
+		: SuperiorSlotVertical;
  
-	// Resolve the superior index so we always disable the right pair
-	const int32 TargetSuperiorIndex = (LastEnterSlot.Size == LowerSlotVertical) ? LastEnterIndex - MaxColumns : LastEnterIndex + MaxColumns;
-
+	int32 TargetSuperiorIndex = INDEX_NONE;
+	int32 TargetLowerIndex    = INDEX_NONE;
+	ResolvePair(ItemsArray, LastEnterIndex, DraggedSizeGuess, MaxColumns, TargetSuperiorIndex, TargetLowerIndex);
+ 
 	UItemSlotWidget* TopWidget    = GetItemSlotbyIndex(TargetSuperiorIndex);
-	UItemSlotWidget* BottomWidget = GetItemSlotbyIndex(LastEnterIndex);
+	UItemSlotWidget* BottomWidget = ItemsArray.IsValidIndex(TargetLowerIndex)
+	                                  ? GetItemSlotbyIndex(TargetLowerIndex)
+	                                  : nullptr;
  
-	if (IsValid(TopWidget))    TopWidget->DisableDragOverPreview();
-	if (IsValid(BottomWidget)) BottomWidget->DisableDragOverPreview();
+	if (IsValid(TopWidget))    { TopWidget->DisableDragOverPreview(); TopWidget->DisableDragOverResultIcon(); }
+	if (IsValid(BottomWidget))   BottomWidget->DisableDragOverPreview();
 }
+
 
 void UItemsPanelWidget::ResetSlotData(FItemSlotData& ItemSlotData)
 {

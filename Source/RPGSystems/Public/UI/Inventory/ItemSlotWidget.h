@@ -60,6 +60,8 @@ public:
 	
 	void EnableDragOverPreview(EDragOverResult Result);
 	void DisableDragOverPreview();
+	void EnableDragOverResultIcon(EDragOverResult Result,ESlotSizeCategories DraggedSize);
+	void DisableDragOverResultIcon();
 	
 	void SetIconPadding(bool reset) const;
 	bool IsEmpty() const { return bIsEmpty; }
@@ -84,6 +86,15 @@ protected:
 private:
 	UPROPERTY(EditDefaultsOnly, Category="Style")
 	FLinearColor DragOverPreviewColor;
+
+	UPROPERTY(EditDefaultsOnly, Category="Style")
+	TObjectPtr<UTexture2D> DragOverResultDropTexture;
+
+	UPROPERTY(EditDefaultsOnly, Category="Style")
+	TObjectPtr<UTexture2D> DragOverResultSwapTexture;
+
+	UPROPERTY(EditDefaultsOnly, Category="Style")
+	TObjectPtr<UTexture2D> DragOverResultInvalidTexture;
 	
 	ESlotSizeCategories CurrentSlotSize = ESlotSizeCategories::UniqueSlot;
 	bool bIsEmpty = true;
@@ -115,6 +126,9 @@ private:
 
 	UPROPERTY(VisibleAnywhere,BlueprintReadWrite, meta = (BindWidget,AllowPrivateAccess="true"), Category = "UI")
 	UImage* BackgroundRarity;
+
+	UPROPERTY(VisibleAnywhere,BlueprintReadWrite, meta = (BindWidget,AllowPrivateAccess="true"), Category = "UI")
+	UImage* DragOverResultIcon;
 
 	UPROPERTY(VisibleAnywhere,BlueprintReadWrite, meta = (BindWidget,AllowPrivateAccess="true"), Category = "UI")
 	UImage* Border;

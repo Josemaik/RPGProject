@@ -4,8 +4,15 @@
 #include "UI/Inventory/ItemSlotIcon.h"
 
 #include "Components/Image.h"
+#include "Components/SizeBox.h"
+#include "UI/Inventory/SlotSizeCategories.h"
 
-void UItemSlotIcon::SetIcon(TSoftObjectPtr<UTexture2D>& Texture)
+void UItemSlotIcon::SetIcon(TObjectPtr<UTexture2D> IconTexture, ESlotSizeCategories Size)
 {
-	Icon->SetBrushFromSoftTexture(Texture);
+	FVector2f IconSize = (Size == LowerSlotVertical || Size == SuperiorSlotVertical) ?
+		IconSizeTwoSlots : IconSizeUniqueSlot;
+	
+	SizeBox->SetWidthOverride(IconSize.X);
+	SizeBox->SetHeightOverride(IconSize.Y);
+	Icon->SetBrushFromTexture(IconTexture);
 }
