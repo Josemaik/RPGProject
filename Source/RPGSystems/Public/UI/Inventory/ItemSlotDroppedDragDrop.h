@@ -22,6 +22,9 @@ public:
 	UPROPERTY()
 	UItemSlotWidget* ItemSlot_Payload;
 
+	UPROPERTY()
+	UItemSlotWidget* LastEnterSlotWidget;
+
 	FRPGInventoryEntry* ItemEntry;
 
 	UPROPERTY()

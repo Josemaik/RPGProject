@@ -74,15 +74,20 @@ public:
 
 	FGameplayTag GetItemCategory(FGameplayTag ItemTag);
 	int32 GetMaxColums() const { return MaxColumns; }
-
-	void HandleItemDropped(UItemSlotWidget* DroppedSlot,UItemSlotWidget* NewSlot);
-	void HandleDraggedItemEntered(int32 EnteredIndex,int32 NewIndex);
+	
+	UItemSlotWidget* GetItemSlotbyIndex(int32 Index) const;
 	void SetSlotOutline(int32 NewIndex,bool enable,ESlotSizeCategories Size = ESlotSizeCategories::UniqueSlot) const;
-	void HandleDraggedItemLeaved(int32 DraggedIndex,int32 NewIndex);
 	
 	FGameplayTag CurrentCategoryTag;
 
 private:
+	void HandleItemDropped(int32 DroppedIndex,int32 NewIndex);
+	bool TryDropInNewSlot(int32 DroppedIndex,int32 NewIndex);
+	void HandleDraggedItemEntered(int32 EnteredIndex,int32 NewIndex);
+	void HandleDraggedItemLeaved(int32 DraggedIndex,int32 NewIndex);
+	void HandleDragCancelled(int LastEnterIndex) const;
+	
+	void ResetSlotData(FItemSlotData& ItemSlotData);
 	
 	UPROPERTY(VisibleAnywhere, meta = (BindWidget), Category = "UI")
 	UUniformGridPanel* ItemsPanel;

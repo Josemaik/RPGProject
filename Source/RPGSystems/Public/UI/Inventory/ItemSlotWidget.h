@@ -20,10 +20,19 @@ class UButton;
 
 class UItemSlotWidget;
 
+UENUM(BlueprintType)
+enum class EDragOverResult : uint8
+{
+	Drop    UMETA(DisplayName = "Drop"), 
+	Swap    UMETA(DisplayName = "Swap"),    
+	Invalid UMETA(DisplayName = "Invalid")
+};
+
 DECLARE_DELEGATE_OneParam(FOnItemRowClicked, const FRPGInventoryEntry&);
-DECLARE_DELEGATE_TwoParams(FOnItemDroppedPanel, UItemSlotWidget* OldSlot, UItemSlotWidget* NewSlot);
-DECLARE_DELEGATE_TwoParams(FOnDragEntered,int32 OldIndex, int32 NewIndex);
-DECLARE_DELEGATE_TwoParams(FOnDragLeaved, int32 OldIndex,int32 NewIndex);
+DECLARE_DELEGATE_TwoParams(FOnItemDroppedPanel, int32 DroppedItemIndex, int32 DropItemIndex);
+DECLARE_DELEGATE_TwoParams(FOnDragEntered,int32 DraggedItemIndex, int32 EnterItemIndex);
+DECLARE_DELEGATE_TwoParams(FOnDragLeaved, int32 DraggedItemIndex,int32 LeaveItemIndex);
+DECLARE_DELEGATE_OneParam(FOnDragCancelled,int32 LastEnterItemIndex);
 /**
  * 
  */
@@ -36,6 +45,7 @@ public:
 	FOnItemDroppedPanel OnItemDroppedPanelDelegate;
 	FOnDragEntered OnDragEnteredDelegate;
 	FOnDragLeaved OnDragLeavedDelegate;
+	FOnDragCancelled OnDragCancelledDelegate;
 	
 	void SetItemNameText(FText Text);
 	void SetQuantityText(int32 Quantity);
@@ -47,6 +57,10 @@ public:
 	void EmptySlot();
 	void OutlineSlot(ESlotSizeCategories SlotSize);
 	void RemoveOutLineSlot(bool OnDrop);
+	
+	void EnableDragOverPreview(EDragOverResult Result);
+	void DisableDragOverPreview();
+	
 	void SetIconPadding(bool reset) const;
 	bool IsEmpty() const { return bIsEmpty; }
 	TSoftObjectPtr<UTexture2D> GetIconTexture() const { return  SoftIconTexture; }
@@ -68,12 +82,12 @@ protected:
 	virtual void NativeOnDragLeave(const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
 	virtual bool NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
 private:
-	ESlotSizeCategories CurrentSlotSize;
+	UPROPERTY(EditDefaultsOnly, Category="Style")
+	FLinearColor DragOverPreviewColor;
 	
+	ESlotSizeCategories CurrentSlotSize = ESlotSizeCategories::UniqueSlot;
 	bool bIsEmpty = true;
-	
 	int32 CurrentGridIndex = 0;
-	
 	FSlateBrush CurrentIconBrush;
 
 	UPROPERTY()
@@ -95,6 +109,12 @@ private:
 	
 	UPROPERTY(VisibleAnywhere,BlueprintReadWrite, meta = (BindWidget,AllowPrivateAccess="true"), Category = "UI")
 	UImage* IconBox;
+
+	UPROPERTY(VisibleAnywhere,BlueprintReadWrite, meta = (BindWidget,AllowPrivateAccess="true"), Category = "UI")
+	UImage* DragOverPreview;
+
+	UPROPERTY(VisibleAnywhere,BlueprintReadWrite, meta = (BindWidget,AllowPrivateAccess="true"), Category = "UI")
+	UImage* BackgroundRarity;
 
 	UPROPERTY(VisibleAnywhere,BlueprintReadWrite, meta = (BindWidget,AllowPrivateAccess="true"), Category = "UI")
 	UImage* Border;

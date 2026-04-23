@@ -75,7 +75,6 @@ void UItemSlotWidget::NativeDestruct()
 void UItemSlotWidget::Init(const FRPGInventoryEntry& Entry,const TSoftObjectPtr<UTexture2D>& Icon,const FSlateBrush& Brush,ESlotSizeCategories SlotSize)
 {
 	ItemEntry = Entry;
-	//SetItemNameText(Name);
 	SetQuantityText(ItemEntry.Quantity);
 
 	SoftIconTexture = Icon;
@@ -91,14 +90,14 @@ void UItemSlotWidget::Init(const FRPGInventoryEntry& Entry,const TSoftObjectPtr<
 
 void UItemSlotWidget::EmptySlot()
 {
-	//Border->SetColorAndOpacity(FLinearColor(FColor::FromHex(TEXT("121212FF"))));
 	ItemEntry = FRPGInventoryEntry();
 	ItemQuantity = 0;
 	IconBox->SetColorAndOpacity(FLinearColor(FColor::FromHex(TEXT("121212FF"))));
 	IconBox->SetBrushFromTexture(nullptr);
 	CurrentIconBrush = FSlateBrush();
 	bIsEmpty = true;
-
+	CurrentSlotSize = ESlotSizeCategories::UniqueSlot;
+ 
 	if (UOverlaySlot* IconBoxSlot = Cast<UOverlaySlot>(IconBox->Slot))
 	{
 		IconBoxSlot->SetPadding(FMargin(5.f, 5.f, 5.f, 5.f));
@@ -124,6 +123,27 @@ void UItemSlotWidget::RemoveOutLineSlot(bool OnDrop)
 	CurrentSlotSize = ESlotSizeCategories::UniqueSlot;
 	SetIconPadding(true);
 	Border->SetColorAndOpacity(FLinearColor(FColor::FromHex(TEXT("121212FF"))));
+}
+
+void UItemSlotWidget::EnableDragOverPreview(EDragOverResult Result)
+{
+	switch (Result)
+	{
+	case EDragOverResult::Drop:
+		DragOverPreview->SetColorAndOpacity(DragOverPreviewColor);
+		break;
+	case EDragOverResult::Swap:
+		DragOverPreview->SetColorAndOpacity(DragOverPreviewColor);
+		break;
+	case EDragOverResult::Invalid:
+		DragOverPreview->SetColorAndOpacity(FLinearColor(1.f, 0.f, 0.f, 0.4f));
+		break;
+	}
+}
+
+void UItemSlotWidget::DisableDragOverPreview()
+{
+	DragOverPreview->SetColorAndOpacity(FLinearColor(1.f, 1.f, 1.f, 0.f));
 }
 
 void UItemSlotWidget::SetIconPadding(bool reset) const
@@ -179,6 +199,8 @@ void UItemSlotWidget::NativeOnDragDetected(const FGeometry& InGeometry, const FP
 	DragDropOperation->IconTexture = SoftIconTexture.Get();
 	
 	OutOperation = DragDropOperation;
+
+	//Change colour to grey or something like that
 }
 
 void UItemSlotWidget::NativeOnDragCancelled(const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation)
@@ -190,13 +212,25 @@ void UItemSlotWidget::NativeOnDragCancelled(const FDragDropEvent& InDragDropEven
 		
 	UItemSlotDroppedDragDrop* DragDropOp = Cast<UItemSlotDroppedDragDrop>(InOperation);
 	if (!IsValid(DragDropOp)) return;
-	UItemSlotWidget* DraggedSlot = DragDropOp->ItemSlot_Payload;
-	if (!IsValid(DraggedSlot)) return;
+	
+	UItemSlotWidget* DroppedItem = DragDropOp->ItemSlot_Payload;
+	if (!IsValid(DroppedItem)) return;
+	
+	if (!IsValid(DragDropOp->LastEnterSlotWidget)) return;
+	if (DroppedItem->GetCurrentSlotSize() == UniqueSlot)
+	{
+		DragDropOp->LastEnterSlotWidget->DisableDragOverPreview();
+		return;
+	}
+
+	OnDragCancelledDelegate.ExecuteIfBound(DragDropOp->LastEnterSlotWidget->GetGridIndex());
 }
 
 void UItemSlotWidget::NativeOnDragEnter(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent,
 	UDragDropOperation* InOperation)
 {
+	Super::NativeOnDragEnter(InGeometry, InDragDropEvent, InOperation);
+	
 	GEngine->AddOnScreenDebugMessage(-1,5.f,FColor::Emerald,FString::Printf(TEXT("Drag Enter")));
 	Super::NativeOnDragEnter(InGeometry, InDragDropEvent, InOperation);
 	
@@ -206,11 +240,30 @@ void UItemSlotWidget::NativeOnDragEnter(const FGeometry& InGeometry, const FDrag
 	UItemSlotWidget* DroppedItem = DragDropOp->ItemSlot_Payload;
 	if (!IsValid(DroppedItem)) return;
 
-	if (!bIsEmpty || DroppedItem == this) return; //Ignorar a mi mismo
+	const ESlotSizeCategories DroppedSize = DragDropOp->SlotSize;
+
+	DragDropOp->LastEnterSlotWidget = this;
 	
-	if (DragDropOp->SlotSize == ESlotSizeCategories::UniqueSlot)
+	if (DroppedSize == ESlotSizeCategories::UniqueSlot)
 	{
-		OutlineSlot(DroppedItem->GetCurrentSlotSize());
+		if (bIsEmpty)
+		{
+			// Empty target → can drop
+			EnableDragOverPreview(EDragOverResult::Drop);
+			//DragDropOp->SetOperationImage(EDragOverResult::Drop);
+		}
+		else if (CurrentSlotSize == ESlotSizeCategories::UniqueSlot)
+		{
+			// Unique → Unique: swap
+			EnableDragOverPreview(EDragOverResult::Swap);
+			//DragDropOp->SetOperationImage(EDragOverResult::Swap);
+		}
+		else
+		{
+			// Target is Superior or Lower → invalid
+			EnableDragOverPreview(EDragOverResult::Invalid);
+			//DragDropOp->SetOperationImage(EDragOverResult::Invalid);
+		}
 		return;
 	}
 	
@@ -228,12 +281,13 @@ void UItemSlotWidget::NativeOnDragLeave(const FDragDropEvent& InDragDropEvent, U
 	UItemSlotWidget* DroppedItem = DragDropOp->ItemSlot_Payload;
 	if (!IsValid(DroppedItem)) return;
 
-	if (DroppedItem == this) return;
+	const ESlotSizeCategories DroppedSize = DragDropOp->SlotSize;
 	
-	if (DragDropOp->SlotSize == ESlotSizeCategories::UniqueSlot)
+	if (DroppedSize == ESlotSizeCategories::UniqueSlot)
 	{
-		if (!bIsEmpty) return;
-		RemoveOutLineSlot(false);
+		// Only this slot was highlighted
+		DisableDragOverPreview();
+		//DragDropOp->SetOperationImage(EDragOverResult::Invalid); // hide / reset
 		return;
 	}
 	
@@ -250,9 +304,32 @@ bool UItemSlotWidget::NativeOnDrop(const FGeometry& InGeometry, const FDragDropE
 	UItemSlotWidget* DroppedItem = DragDropOp->ItemSlot_Payload;
 	if (!IsValid(DroppedItem)) return false;
 	
-	if (!bIsEmpty || DroppedItem == this) return false; //Slot is Busy or is self
+	const ESlotSizeCategories DroppedSize = DragDropOp->SlotSize;
 	
-	OnItemDroppedPanelDelegate.ExecuteIfBound(DroppedItem,this);
-		
+	if (DroppedSize == ESlotSizeCategories::UniqueSlot)
+	{
+		if (bIsEmpty)
+		{
+			// Move to empty slot
+			OnItemDroppedPanelDelegate.ExecuteIfBound(DroppedItem->GetGridIndex(), CurrentGridIndex);
+			return true;
+		}
+		if (CurrentSlotSize == ESlotSizeCategories::UniqueSlot)
+		{
+			// Swap two unique slots
+			OnItemDroppedPanelDelegate.ExecuteIfBound(DroppedItem->GetGridIndex(), CurrentGridIndex);
+			return true;
+		}
+		// Target is Superior or Lower → reject
+		return false;
+	}
+
+	if (CurrentSlotSize == ESlotSizeCategories::UniqueSlot && !bIsEmpty)
+	{
+		// Can't place a 2-slot item on top of a single unique item
+		return false;
+	}
+	
+	OnItemDroppedPanelDelegate.ExecuteIfBound(DroppedItem->GetGridIndex(),CurrentGridIndex);
 	return true;
 }
