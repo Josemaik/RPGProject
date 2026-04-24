@@ -6,6 +6,7 @@
 #include "GameFramework/GameMode.h"
 #include "RPGGameMode.generated.h"
 
+class URarityDataAsset;
 class UProjectileInfo;
 class UCharacterClassInfo;
 /**
@@ -19,10 +20,15 @@ public:
 	UCharacterClassInfo* GetCharacterClassDefaultInfo() const;
 
 	UProjectileInfo* GetProjectileInfo() const;
+
+	URarityDataAsset* GetRPGUIStatics();
 private:
 	UPROPERTY(EditDefaultsOnly, Category= "Default Values|Class Defaults")
 	TObjectPtr<UCharacterClassInfo> ClassDefaults;
 
 	UPROPERTY(EditDefaultsOnly, Category= "Default Values|Class Defaults")
-	TObjectPtr<UProjectileInfo>		ProjectileInfo;
+	TObjectPtr<UProjectileInfo> ProjectileInfo;
+
+	UPROPERTY(EditDefaultsOnly, Category= "Default Values|Class Defaults")
+	TObjectPtr<URarityDataAsset> RarityColorInfo;
 };

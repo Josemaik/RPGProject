@@ -21,9 +21,12 @@ class RPGSYSTEMS_API UEquipmentSlot : public UUserWidget
 	GENERATED_BODY()
 public:
 	virtual bool NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
-
+	
 	FOnEquipItem OnEquipItem;
+	
+	void EquipItemSlot(const FRPGInventoryEntry& Entry,UTexture2D* Texture);
 private:
+	
 	UPROPERTY(EditDefaultsOnly,BlueprintReadOnly,meta=(BindWidget,AllowPrivateAccess=true))
 	UImage* EquipmentSlotImage;
 

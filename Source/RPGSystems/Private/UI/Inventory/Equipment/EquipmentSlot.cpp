@@ -13,7 +13,14 @@ bool UEquipmentSlot::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEv
 	UItemSlotDroppedDragDrop* DragOp = Cast<UItemSlotDroppedDragDrop>(InOperation);
 	if (!DragOp) return false;
 	
-	if (DragOp->ItemEntry->ItemTag.MatchesTag(EquipmentTag))
+	EquipItemSlot(*DragOp->ItemEntry,DragOp->IconTexture);
+	
+	return false;
+}
+
+void UEquipmentSlot::EquipItemSlot(const FRPGInventoryEntry& ItemEntry,UTexture2D* Texture)
+{
+	if (ItemEntry.ItemTag.MatchesTag(EquipmentTag))
 	{
 		if (!bIsEmpty)
 		{
@@ -25,15 +32,12 @@ bool UEquipmentSlot::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEv
 		
 		GEngine->AddOnScreenDebugMessage(-1,5.f,FColor::Emerald,FString::Printf(TEXT("Equipment dropped in Slot")));
 
-		if (!IsValid(EquipmentSlotImage)) return false;
-		EquipmentSlotImage->SetBrushFromTexture(DragOp->IconTexture);
+		if (!IsValid(EquipmentSlotImage)) return;
+		EquipmentSlotImage->SetBrushFromTexture(Texture);
 		
-		OnEquipItem.ExecuteIfBound(*DragOp->ItemEntry);
+		OnEquipItem.ExecuteIfBound(ItemEntry);
 		
 		EquipmentSlotImage->SetBrushTintColor(FLinearColor(1.f,1.f,1.f,1.f));
-		
-		return true;
 	}
-	
-	return false;
 }
+

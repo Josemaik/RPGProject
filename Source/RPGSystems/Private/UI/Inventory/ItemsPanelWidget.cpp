@@ -11,6 +11,8 @@
 #include "UI/Inventory/ItemSlotWidget.h"
 #include "UI/Inventory/SortPanelWidget.h"
 #include "AbilitySystem/NativeTags/RPGInventoryTags.h"
+#include "Blueprint/SlateBlueprintLibrary.h"
+#include "UI/Inventory/ItemToolTip.h"
 
 struct FStreamableManager;
 
@@ -164,6 +166,10 @@ void UItemsPanelWidget::AddItemSlot(const FRPGInventoryEntry& Entry,const FMaste
 	{
 		ResetCategory(CurrentCategoryTag);
 	}
+	if (CurrentSelectedIndex == INDEX_NONE)
+	{
+		CurrentSelectedIndex = FreeIndex;
+	}
 }
 
 void UItemsPanelWidget::ClearPanel()
@@ -171,6 +177,57 @@ void UItemsPanelWidget::ClearPanel()
 	if (!IsValid(ItemsPanel)) return;
 	
 	ItemsPanel->ClearChildren();	
+}
+
+void UItemsPanelWidget::SelectSlotAtIndex(int32 Index)
+{
+	TArray<FItemSlotData>& ItemsArray = *CategoryItemsMap.Find(CurrentCategoryTag);
+	if (!ItemsArray.IsValidIndex(Index)) return;
+
+	// Deselect old last selected
+	DeselectCurrentSlot();
+
+	CurrentSelectedIndex = Index;
+	
+	UItemSlotWidget* SlotWidget = GetItemSlotbyIndex(Index);
+	if (IsValid(Slot)) SlotWidget->StartSelectedAnimation();
+
+	const FItemSlotData& SlotData = ItemsArray[Index];
+	if (SlotData.Size == SuperiorSlotVertical)
+	{
+		UItemSlotWidget* LowerWidget = GetItemSlotbyIndex(Index + MaxColumns);
+		if (IsValid(LowerWidget)) LowerWidget->StartSelectedAnimation();
+	}
+	else if (SlotData.Size == LowerSlotVertical)
+	{
+		UItemSlotWidget* SuperiorWidget = GetItemSlotbyIndex(Index - MaxColumns);
+		if (IsValid(SuperiorWidget)) SuperiorWidget->StartSelectedAnimation();
+	}
+}
+
+void UItemsPanelWidget::DeselectCurrentSlot()
+{
+	if (CurrentSelectedIndex == INDEX_NONE) return;
+
+	TArray<FItemSlotData>& ItemsArray = *CategoryItemsMap.Find(CurrentCategoryTag);
+	if (!ItemsArray.IsValidIndex(CurrentSelectedIndex)) return;
+
+	UItemSlotWidget* SlotWidget = GetItemSlotbyIndex(CurrentSelectedIndex);
+	if (IsValid(SlotWidget)) SlotWidget->StopSelectedAnimation();
+
+	const FItemSlotData& SlotData = ItemsArray[CurrentSelectedIndex];
+	if (SlotData.Size == SuperiorSlotVertical)
+	{
+		UItemSlotWidget* LowerWidget = GetItemSlotbyIndex(CurrentSelectedIndex + MaxColumns);
+		if (IsValid(LowerWidget)) LowerWidget->StopSelectedAnimation();
+	}
+	else if (SlotData.Size == LowerSlotVertical)
+	{
+		UItemSlotWidget* SuperiorWidget = GetItemSlotbyIndex(CurrentSelectedIndex - MaxColumns);
+		if (IsValid(SuperiorWidget)) SuperiorWidget->StopSelectedAnimation();
+	}
+
+	CurrentSelectedIndex = INDEX_NONE;
 }
 
 void UItemsPanelWidget::AddEmptySlots(FGameplayTag InCurrentCategoryTag)
@@ -191,7 +248,17 @@ void UItemsPanelWidget::AddEmptySlots(FGameplayTag InCurrentCategoryTag)
 	}
 }
 
-void UItemsPanelWidget::ProcessSlotWidget(const FItemSlotData& SlotData, UItemSlotWidget* NewWidget, FSlateBrush Brush)
+void UItemsPanelWidget::ResetSlotData(FItemSlotData& ItemSlotData)
+{
+	ItemSlotData.Entry = FRPGInventoryEntry();
+	ItemSlotData.Icon = nullptr;
+	ItemSlotData.Size = UniqueSlot;
+	ItemSlotData.bIsEmpty = true;
+	ItemSlotData.ItemDefinition = FMasterItemDefinition();
+	ItemSlotData.IconBrush = FSlateBrush();
+}
+
+void UItemsPanelWidget::InitializeSlotWidget(const FItemSlotData& SlotData, UItemSlotWidget* NewWidget, FSlateBrush Brush)
 {
 	switch (SlotData.Size)
 	{
@@ -216,68 +283,75 @@ void UItemsPanelWidget::ProcessSlotWidget(const FItemSlotData& SlotData, UItemSl
 	}
 }
 
+void UItemsPanelWidget::BindItemSlotDelegates(UItemSlotWidget* NewWidget)
+{
+	if (!IsValid(NewWidget)) return;
+	NewWidget->OnItemDroppedPanelDelegate.BindUObject(this,&UItemsPanelWidget::HandleItemDropped);
+	NewWidget->OnDragEnteredDelegate.BindUObject(this,&UItemsPanelWidget::HandleDraggedItemEntered);
+	NewWidget->OnDragLeavedDelegate.BindUObject(this,&UItemsPanelWidget::HandleDraggedItemLeaved);
+	NewWidget->OnDragCancelledDelegate.BindUObject(this,&UItemsPanelWidget::HandleDragCancelled);
+	NewWidget->OnItemRowClickedDelegate.BindUObject(this, &UItemsPanelWidget::HandleSlotClicked);
+	NewWidget->OnItemSlotMouseEnteredDelegate.BindUObject(this,&UItemsPanelWidget::HandleSlotHovered);
+	NewWidget->OnItemSlotMouseLeavedDelegate.BindUObject(this,&UItemsPanelWidget::HandleSlotLeaved);
+}
+
 void UItemsPanelWidget::CreateSlotWidget(int32 Index,const FItemSlotData& SlotData)
 {
 	UItemSlotWidget* NewWidget = CreateWidget<UItemSlotWidget>(GetOwningPlayer(), ItemSlotWidgetClass);
 	if (!IsValid(NewWidget)) return;
 
-	if (!SlotData.bIsEmpty)
-	{	//Item Slot
-		FSlateBrush Brush;
-		if (SlotData.Icon.IsNull())
-		{
-			return;
-		}
+	if (SlotData.bIsEmpty)
+	{
+		NewWidget->EmptySlot();
+		BindItemSlotDelegates(NewWidget);
+		AddItemToGrid(NewWidget, Index);
+		return;
+	}
 
-		if (SlotData.Icon.IsValid())
-		{
-			Brush.SetResourceObject(SlotData.Icon.Get());
-			ProcessSlotWidget(SlotData, NewWidget, Brush);
-		}
-		else
-		{
-			GEngine->AddOnScreenDebugMessage(-1,5.f,FColor::Emerald,FString::Printf(TEXT("Icon texture Not Loaded")));
-			FStreamableManager& Streamable = UAssetManager::GetStreamableManager();
+	if (SlotData.Icon.IsNull()) return;
 
-			Streamable.RequestAsyncLoad(SlotData.Icon.ToSoftObjectPath(),
-		FStreamableDelegate::CreateLambda([this, SlotData,NewWidget,Index]()
-				{
-					if (UTexture2D* LoadedTexture = SlotData.Icon.Get())
-					{
-						FSlateBrush Brush;
-						Brush.SetResourceObject(LoadedTexture);
-						
-						ProcessSlotWidget(SlotData, NewWidget, Brush);
+	FSlateBrush Brush;
+	if (SlotData.Icon.IsValid())
+	{
+		Brush.SetResourceObject(SlotData.Icon.Get());
+		InitializeSlotWidget(SlotData, NewWidget, Brush);
+		BindItemSlotDelegates(NewWidget);
+		AddItemToGrid(NewWidget, Index);
 
-						//Bind Callbacks and Add to Grid Panel
-						NewWidget->OnItemDroppedPanelDelegate.BindUObject(this,&UItemsPanelWidget::HandleItemDropped);
-						NewWidget->OnDragEnteredDelegate.BindUObject(this,&UItemsPanelWidget::HandleDraggedItemEntered);
-						NewWidget->OnDragLeavedDelegate.BindUObject(this,&UItemsPanelWidget::HandleDraggedItemLeaved);
-						NewWidget->OnDragCancelledDelegate.BindUObject(this,&UItemsPanelWidget::HandleDragCancelled);
-						AddItemToGrid(NewWidget, Index);
-					}
-				})
-			);
-			return;
+		if (CurrentSelectedIndex == INDEX_NONE)
+		{
+			CurrentSelectedIndex = Index;
 		}
 	}
 	else
-	{	//Empty Slot
-		NewWidget->EmptySlot();
+	{
+		GEngine->AddOnScreenDebugMessage(-1,5.f,FColor::Emerald,FString::Printf(TEXT("Icon texture Not Loaded")));
+		FStreamableManager& Streamable = UAssetManager::GetStreamableManager();
+
+		Streamable.RequestAsyncLoad(SlotData.Icon.ToSoftObjectPath(),
+	FStreamableDelegate::CreateLambda([this, SlotData,NewWidget,Index]()
+			{
+				if (UTexture2D* LoadedTexture = SlotData.Icon.Get())
+				{
+					FSlateBrush AsyncBrush;
+					AsyncBrush.SetResourceObject(LoadedTexture);
+					
+					InitializeSlotWidget(SlotData, NewWidget, AsyncBrush);
+					BindItemSlotDelegates(NewWidget);
+					AddItemToGrid(NewWidget, Index);
+					if (CurrentSelectedIndex == INDEX_NONE)
+					{
+						CurrentSelectedIndex = Index;
+					}
+				}
+			})
+		);
 	}
-	
-	//Bind Callbacks and Add to Grid Panel
-	NewWidget->OnItemDroppedPanelDelegate.BindUObject(this,&UItemsPanelWidget::HandleItemDropped);
-	NewWidget->OnDragEnteredDelegate.BindUObject(this,&UItemsPanelWidget::HandleDraggedItemEntered);
-	NewWidget->OnDragLeavedDelegate.BindUObject(this,&UItemsPanelWidget::HandleDraggedItemLeaved);
-	NewWidget->OnDragCancelledDelegate.BindUObject(this,&UItemsPanelWidget::HandleDragCancelled);
-	AddItemToGrid(NewWidget, Index);
 }
 
 void UItemsPanelWidget::ResetCategory(FGameplayTag InCurrentCategoryTag)
 {
 	CurrentCategoryTag = InCurrentCategoryTag;
-
 	
 	if (!IsValid(ItemsPanel)) return;
 	//clear panel
@@ -291,6 +365,10 @@ void UItemsPanelWidget::ResetCategory(FGameplayTag InCurrentCategoryTag)
 		const FItemSlotData& SlotData = ItemsArray[i];
 
 		CreateSlotWidget(i,SlotData);
+	}
+	if (CurrentSelectedIndex != INDEX_NONE)
+	{
+		SelectSlotAtIndex(CurrentSelectedIndex);
 	}
 }
 
@@ -424,6 +502,17 @@ void UItemsPanelWidget::SortItemsBy(EItemSortType SortType)
 	ResetCategory(CurrentCategoryTag);
 }
 
+const FRPGInventoryEntry& UItemsPanelWidget::GetSelectedItem()
+{
+	TArray<FItemSlotData>& ItemsArray = *CategoryItemsMap.Find(CurrentCategoryTag);
+	
+	const FItemSlotData& Selected = ItemsArray[CurrentSelectedIndex];
+
+	return Selected.Entry; 
+}
+
+
+
 // -------------------------------------
 //  Drag & Drop – Panel-side logic
 // -------------------------------------
@@ -440,8 +529,17 @@ UItemSlotWidget* UItemsPanelWidget::GetItemSlotbyIndex(int32 Index) const
 	return nullptr;
 }
 
+void UItemsPanelWidget::NativeConstruct()
+{
+	Super::NativeConstruct();
+
+	ItemToolTipReference = CreateWidget<UItemToolTip>(GetOwningPlayer(), TooltipWidgetClass);
+	ItemToolTipReference->AddToViewport(999); 
+	ItemToolTipReference->SetVisibility(ESlateVisibility::Collapsed);
+}
+
 void UItemsPanelWidget::ResolvePair(const TArray<FItemSlotData>& ItemsArray, int32 TargetIndex,
-	ESlotSizeCategories DraggedSize, int32 MaxColumns, int32& OutSuperior, int32& OutLower)
+                                    ESlotSizeCategories DraggedSize, int32 MaxColumns, int32& OutSuperior, int32& OutLower)
 {
 	//  Given TargetIndex and DraggedSize,
 	//  Determines the pair (SuperiorIndex, LowerIndex) that should fill.
@@ -457,7 +555,7 @@ void UItemsPanelWidget::ResolvePair(const TArray<FItemSlotData>& ItemsArray, int
 		OutSuperior = TargetIndex - MaxColumns;
 		OutLower    = TargetIndex;
 	}
-	else // empty or UniqueSlot busy
+	else // empty
 	{
 		if (DraggedSize == SuperiorSlotVertical)
 		{
@@ -477,6 +575,12 @@ void UItemsPanelWidget::HandleItemDropped(int32 DroppedIndex,int32 NewIndex)
 	if (TryDropInNewSlot(DroppedIndex,NewIndex))
 	{
 		ResetCategory(CurrentCategoryTag);
+		
+		TArray<FItemSlotData>& ItemsArray = *CategoryItemsMap.Find(CurrentCategoryTag);
+		if (ItemsArray.IsValidIndex(NewIndex) && !ItemsArray[NewIndex].bIsEmpty)
+		{
+			SelectSlotAtIndex(NewIndex);
+		}
 	}
 }
 
@@ -512,8 +616,8 @@ void UItemsPanelWidget::HandleDraggedItemEntered(int32 DraggedIndex, int32 Targe
 		UItemSlotWidget* BottomWidget = GetItemSlotbyIndex(DraggedLowerIndex);
 		if (IsValid(TopWidget))
 		{
-			TopWidget->EnableDragOverPreview(EDragOverResult::Drop);
-			TopWidget->EnableDragOverResultIcon(EDragOverResult::Drop, DraggedSlot.Size);
+			TopWidget->EnableDragOverPreview(EDragOverResult::Swap);
+			TopWidget->EnableDragOverResultIcon(EDragOverResult::Swap, DraggedSlot.Size);
 		}
 		if (IsValid(BottomWidget)) BottomWidget->EnableDragOverPreview(EDragOverResult::Drop);
 		return;
@@ -796,14 +900,54 @@ void UItemsPanelWidget::HandleDragCancelled(int LastEnterIndex) const
 	if (IsValid(BottomWidget))   BottomWidget->DisableDragOverPreview();
 }
 
-
-void UItemsPanelWidget::ResetSlotData(FItemSlotData& ItemSlotData)
+void UItemsPanelWidget::HandleSlotHovered(UItemSlotWidget* SlotWidget)
 {
-	ItemSlotData.Entry = FRPGInventoryEntry();
-	ItemSlotData.Icon = nullptr;
-	ItemSlotData.Size = UniqueSlot;
-	ItemSlotData.bIsEmpty = true;
-	ItemSlotData.ItemDefinition = FMasterItemDefinition();
-	ItemSlotData.IconBrush = FSlateBrush();
+	if (!IsValid(SlotWidget) || !IsValid(ItemToolTipReference)) return;
+
+	int32 GridIndex = SlotWidget->GetGridIndex();
+	
+	TArray<FItemSlotData>& ItemsArray = *CategoryItemsMap.Find(CurrentCategoryTag);
+	if (!ItemsArray.IsValidIndex(GridIndex)) return;
+
+	const FItemSlotData& ItemSlot = ItemsArray[GridIndex];
+	
+	ItemToolTipReference->SetData(ItemSlot.ItemDefinition);
+	
+	FGeometry SlotGeometry = SlotWidget->GetCachedGeometry();
+	if (SlotWidget->GetCurrentSlotSize() == SuperiorSlotVertical)
+	{
+		UItemSlotWidget* LowerSlot = GetItemSlotbyIndex(GridIndex + MaxColumns);
+		if (IsValid(LowerSlot)) SlotGeometry = LowerSlot->GetCachedGeometry();
+	}
+	
+	FVector2D AbsPos = SlotGeometry.GetAbsolutePosition();
+	FVector2D AbsSize = SlotGeometry.GetAbsoluteSize();
+
+	FVector2D PixelPosition;
+	FVector2D ViewportPosition;
+	USlateBlueprintLibrary::AbsoluteToViewport(
+		GetWorld(),
+		FVector2D(AbsPos.X + AbsSize.X, AbsPos.Y + AbsSize.Y),
+		PixelPosition,
+		ViewportPosition
+	);
+
+	ItemToolTipReference->SetPositionInViewport(ViewportPosition, false);
+	ItemToolTipReference->SetVisibility(ESlateVisibility::Visible);
+}
+
+void UItemsPanelWidget::HandleSlotLeaved()
+{
+	ItemToolTipReference->SetVisibility(ESlateVisibility::Collapsed);
+}
+
+
+void UItemsPanelWidget::HandleSlotClicked(int32 ClickedIndex)
+{
+	TArray<FItemSlotData>& ItemsArray = *CategoryItemsMap.Find(CurrentCategoryTag);
+	if (!ItemsArray.IsValidIndex(ClickedIndex)) return;
+	if (ItemsArray[ClickedIndex].bIsEmpty) return;
+
+	SelectSlotAtIndex(ClickedIndex);
 }
 

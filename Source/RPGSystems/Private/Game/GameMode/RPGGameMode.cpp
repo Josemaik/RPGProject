@@ -13,3 +13,8 @@ UProjectileInfo* ARPGGameMode::GetProjectileInfo() const
 	return ProjectileInfo;
 }
 
+URarityDataAsset* ARPGGameMode::GetRPGUIStatics()
+{
+	return RarityColorInfo;
+}
+

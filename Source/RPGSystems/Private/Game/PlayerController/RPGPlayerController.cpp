@@ -123,6 +123,14 @@ void ARPGPlayerController::OnInventoryInput(FGameplayTag InputTag)
 	{
 		GetInventoryWidgetController()->RequestSortItems(false);
 	}
+	if (InputTag.MatchesTagExact(RPGInputTags::Inventory::DropItem))
+	{
+		GetInventoryWidgetController()->OnDropKeyPressed.Broadcast();
+	}
+	if (InputTag.MatchesTagExact(RPGInputTags::Inventory::EquipItem))
+	{
+		GetInventoryWidgetController()->OnEquipKeyPressed.Broadcast();
+	}
 }
 
 void ARPGPlayerController::OnGameplayInput(FGameplayTag InputTag)

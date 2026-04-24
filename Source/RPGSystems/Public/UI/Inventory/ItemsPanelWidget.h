@@ -9,6 +9,7 @@
 #include "InventorySection/InventoryComponent.h"
 #include "ItemsPanelWidget.generated.h"
 
+class UItemToolTip;
 enum class EItemSortType : uint8;
 class USortPanelWidget;
 enum ESlotSizeCategories : uint8;
@@ -61,7 +62,8 @@ public:
 	int32 FindItemIndex(const int64 ItemID,FGameplayTag ItemTa);
 	
 	void UpdateItemSlot(const FRPGInventoryEntry& Entry);
-	void ProcessSlotWidget(const FItemSlotData& SlotData, UItemSlotWidget* NewWidget, FSlateBrush Brush);
+	void InitializeSlotWidget(const FItemSlotData& SlotData, UItemSlotWidget* NewWidget, FSlateBrush Brush);
+	void BindItemSlotDelegates(UItemSlotWidget* NewWidget);
 	void AddItemSlot(const FRPGInventoryEntry& Entry,const FMasterItemDefinition& ItemDefinition,bool bResetPanel = true);
 	void AddEmptySlots(FGameplayTag InCurrentCategoryTag);
 	void CreateSlotWidget(int32 Index,const FItemSlotData& SlotData);
@@ -72,15 +74,18 @@ public:
 	void SortItemsQuicly();
 	void SortItemsBy(EItemSortType SortType);
 
+	const FRPGInventoryEntry& GetSelectedItem();
+
 	FGameplayTag GetItemCategory(FGameplayTag ItemTag);
 	int32 GetMaxColums() const { return MaxColumns; }
 	
 	UItemSlotWidget* GetItemSlotbyIndex(int32 Index) const;
-	void SetSlotOutline(int32 NewIndex,bool enable,ESlotSizeCategories Size = ESlotSizeCategories::UniqueSlot) const;
-	
+
 	FGameplayTag CurrentCategoryTag;
 
 private:
+	virtual void NativeConstruct() override;
+	
 	static void ResolvePair(const TArray<FItemSlotData>& ItemsArray,int32 TargetIndex,ESlotSizeCategories DraggedSize,
 	                        int32 MaxColumns,int32& OutSuperior,int32& OutLower);
 	void HandleItemDropped(int32 DroppedIndex,int32 NewIndex);
@@ -88,14 +93,29 @@ private:
 	void HandleDraggedItemEntered(int32 EnteredIndex,int32 NewIndex);
 	void HandleDraggedItemLeaved(int32 DraggedIndex,int32 NewIndex);
 	void HandleDragCancelled(int LastEnterIndex) const;
+
+	void HandleSlotHovered(UItemSlotWidget* SlotWidget);
+	void HandleSlotLeaved();
+	
+	void HandleSlotClicked(int32 ClickedIndex);
+	void SelectSlotAtIndex(int32 Index);
+	void DeselectCurrentSlot();
 	
 	void ResetSlotData(FItemSlotData& ItemSlotData);
+	
+	int32 CurrentSelectedIndex = INDEX_NONE;
 	
 	UPROPERTY(VisibleAnywhere, meta = (BindWidget), Category = "UI")
 	UUniformGridPanel* ItemsPanel;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Data")
 	TSubclassOf<UItemSlotWidget> ItemSlotWidgetClass;
+
+	UPROPERTY()
+	UItemToolTip* ItemToolTipReference;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<UItemToolTip> TooltipWidgetClass;
 	
 	TMap<FGameplayTag, TArray<FItemSlotData>> CategoryItemsMap;
 	

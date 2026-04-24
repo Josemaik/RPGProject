@@ -12,11 +12,11 @@ class UGameplayEffect;
 UENUM(BlueprintType)
 enum class EItemRarity : uint8
 {
-	Common  = 0,
-	Master  = 1,
-	Magic   = 2,
-	Relic   = 3,
-	Witcher = 4
+	Common  = 0 UMETA(DisplayName="Common"),
+	Master  = 1 UMETA(DisplayName="Master"),
+	Magic   = 2 UMETA(DisplayName="Magic"),
+	Relic   = 3 UMETA(DisplayName="Relic"),
+	Witcher = 4 UMETA(DisplayName="Witcher")
 };
 
 UENUM(BlueprintType)

@@ -5,6 +5,7 @@
 
 #include "GameplayTagContainer.h"
 #include "AbilitySystem/NativeTags/RPGInventoryTags.h"
+#include "Animation/WidgetAnimation.h"
 #include "Blueprint/WidgetBlueprintLibrary.h"
 #include "Components/Image.h"
 #include "Components/TextBlock.h"
@@ -83,7 +84,7 @@ void UItemSlotWidget::Init(const FRPGInventoryEntry& Entry,const TSoftObjectPtr<
 	CurrentIconBrush = Brush;
 	SoftIconTexture = Icon;
 	SetIcon(Brush);
-	SetIconPadding(false);
+	//SetIconPadding(false);
 }
 
 void UItemSlotWidget::EmptySlot()
@@ -95,30 +96,17 @@ void UItemSlotWidget::EmptySlot()
 	CurrentIconBrush = FSlateBrush();
 	bIsEmpty = true;
 	CurrentSlotSize = ESlotSizeCategories::UniqueSlot;
- 
-	if (UOverlaySlot* IconBoxSlot = Cast<UOverlaySlot>(IconBox->Slot))
-	{
-		IconBoxSlot->SetPadding(FMargin(5.f, 5.f, 5.f, 5.f));
-	}
 }
 
-void UItemSlotWidget::OutlineSlot(ESlotSizeCategories SlotSize)
+void UItemSlotWidget::OutlineSlot() const
 {
-	CurrentSlotSize = SlotSize;
 	SetIconPadding(false);
-	Border->SetColorAndOpacity(FColor::Orange);
+	Border->SetColorAndOpacity(FLinearColor(FColor::FromHex("FFFFFFFF")));
 }
 
-void UItemSlotWidget::RemoveOutLineSlot(bool OnDrop)
+void UItemSlotWidget::RemoveOutLineSlot()
 {
-	if (OnDrop) //Drop
-	{
-		Border->SetColorAndOpacity(FLinearColor(FColor::FromHex(TEXT("121212FF"))));
-		return;
-	}
-
 	//Leave
-	CurrentSlotSize = ESlotSizeCategories::UniqueSlot;
 	SetIconPadding(true);
 	Border->SetColorAndOpacity(FLinearColor(FColor::FromHex(TEXT("121212FF"))));
 }
@@ -170,28 +158,48 @@ void UItemSlotWidget::DisableDragOverResultIcon()
 	DragOverResultIcon->SetVisibility(ESlateVisibility::Collapsed);
 }
 
+void UItemSlotWidget::StartSelectedAnimation()
+{
+	UE_LOG(LogTemp, Warning, TEXT("SlotSize: %d"), (int)CurrentSlotSize);
+	OutlineSlot();
+	if (!IsValid(SelectedSlotAnimation)) return;
+	PlayAnimation(SelectedSlotAnimation,0.f,0,EUMGSequencePlayMode::Forward);
+}
+
+void UItemSlotWidget::StopSelectedAnimation()
+{
+	RemoveOutLineSlot();
+	StopAnimation(SelectedSlotAnimation);
+}
+
 void UItemSlotWidget::SetIconPadding(bool reset) const
 {
-	if (!IsValid(IconBox)) return;
-	
-	UOverlaySlot* IconBoxSlot = Cast<UOverlaySlot>(IconBox->Slot);
-	if (!IsValid(IconBoxSlot)) return;
-
+	// UOverlaySlot* BorderSlot = Cast<UOverlaySlot>(Border->Slot);
+	// UOverlaySlot* IconSlot = Cast<UOverlaySlot>(IconBox->Slot);
+	// if (!IsValid(IconSlot)) return;
+	// IconSlot->SetPadding(0.f);
+	UOverlaySlot* BorderSlot = Cast<UOverlaySlot>(BackgroundRarity->Slot);
+	if (!IsValid(BorderSlot)) return;
+    
 	if (reset)
 	{
-		IconBoxSlot->SetPadding(FMargin(5.f, 5.f, 5.f, 5.f));
+		BorderSlot->SetPadding(FMargin(0.f));
 		return;
 	}
-	
-	if (CurrentSlotSize == ESlotSizeCategories::UniqueSlot) return;
-	
+    
+	if (CurrentSlotSize == ESlotSizeCategories::UniqueSlot)
+	{
+		BorderSlot->SetPadding(FMargin(5.f)); // Unique ocupa todo el slot
+		return;
+	}
+    
 	if (CurrentSlotSize == ESlotSizeCategories::SuperiorSlotVertical)
 	{
-		IconBoxSlot->SetPadding(FMargin(5.f, 5.f, 5.f, 0.f));
+		BorderSlot->SetPadding(FMargin(5.f, 5.f, 5.f, 0.f)); // Sin gap abajo
 	}
-	else
+	else // LowerSlot
 	{
-		IconBoxSlot->SetPadding(FMargin(5.f, 0.f, 5.f, 5.f));
+		BorderSlot->SetPadding(FMargin(5.f, 0.f, 5.f, 5.f)); // Sin gap arriba
 	}
 }
 
@@ -199,7 +207,8 @@ FReply UItemSlotWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, con
 {
 	if (InMouseEvent.IsMouseButtonDown(EKeys::LeftMouseButton))
 	{
-		//OnItemRowClickedDelegate.ExecuteIfBound();
+		GEngine->AddOnScreenDebugMessage(-1,5.f,FColor::Magenta,FString::Printf(TEXT("Item Selected")));
+		OnItemRowClickedDelegate.Execute(CurrentGridIndex);
 		//DragAndDrop
 		return FReply::Handled().DetectDrag(TakeWidget(), EKeys::LeftMouseButton);
 	}
@@ -279,15 +288,15 @@ void UItemSlotWidget::NativeOnDragEnter(const FGeometry& InGeometry, const FDrag
 		else if (CurrentSlotSize == ESlotSizeCategories::UniqueSlot)
 		{
 			// Unique → Unique: swap
-			if (CurrentGridIndex == DroppedItem->GetGridIndex())
-			{
-				EnableDragOverResultIcon(EDragOverResult::Drop,DroppedItem->GetCurrentSlotSize());
-			}
-			else
-			{
+			// if (CurrentGridIndex == DroppedItem->GetGridIndex())
+			// {
+			// 	EnableDragOverResultIcon(EDragOverResult::Swap,DroppedItem->GetCurrentSlotSize());
+			// }
+			// else
+			// {
 				EnableDragOverResultIcon(EDragOverResult::Swap,DroppedItem->GetCurrentSlotSize());
-			}
-			EnableDragOverPreview(EDragOverResult::Drop);
+			//}
+			EnableDragOverPreview(EDragOverResult::Swap);
 		}
 		else
 		{
@@ -371,4 +380,24 @@ bool UItemSlotWidget::NativeOnDrop(const FGeometry& InGeometry, const FDragDropE
 
 	OnItemDroppedPanelDelegate.ExecuteIfBound(DroppedItem->GetGridIndex(),CurrentGridIndex);
 	return true;
+}
+
+void UItemSlotWidget::NativeOnMouseEnter(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
+{
+	Super::NativeOnMouseEnter(InGeometry, InMouseEvent);
+
+	if (bIsEmpty) return;
+	//Add shadow
+	FTimerHandle TimerHandle;
+	GetWorld()->GetTimerManager().SetTimer(TimerHandle,[this]
+	{
+		OnItemSlotMouseEnteredDelegate.ExecuteIfBound(this);
+	},0.5f,false);
+}
+
+void UItemSlotWidget::NativeOnMouseLeave(const FPointerEvent& InMouseEvent)
+{
+	Super::NativeOnMouseLeave(InMouseEvent);
+	//Remove shadow
+	OnItemSlotMouseLeavedDelegate.ExecuteIfBound();
 }

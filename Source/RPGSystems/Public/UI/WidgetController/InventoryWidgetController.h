@@ -15,6 +15,8 @@ DECLARE_MULTICAST_DELEGATE_OneParam(FInventoryEntrySignature, const FRPGInventor
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnInventoryItemRemoeved, const FRPGInventoryEntry&);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnInventoryWeightChanged, float);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnSortItemsRequested,bool);
+DECLARE_MULTICAST_DELEGATE(FOnDropKeyPressed);
+DECLARE_MULTICAST_DELEGATE(FOnEquipKeyPressed);
 
 /**
  * 
@@ -28,6 +30,8 @@ public:
 	FOnInventoryItemRemoeved OnInventoryItemRemoved;
 	FOnInventoryWeightChanged OnInventoryWeightChanged;
 	FOnSortItemsRequested OnSortItemsRequested;
+	FOnDropKeyPressed OnDropKeyPressed;
+	FOnEquipKeyPressed OnEquipKeyPressed;
 	
 	void SetOwningActor(AActor* InOwner);
 	FORCEINLINE AActor* GetOwningActor() { return OwningActor; };

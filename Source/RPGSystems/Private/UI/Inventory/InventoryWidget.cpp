@@ -9,7 +9,6 @@
 #include "Components/HorizontalBox.h"
 #include "Components/Spacer.h"
 #include "Components/TextBlock.h"
-#include "Components/UniformGridPanel.h"
 #include "InventorySection/InventoryComponent.h"
 #include "UI/Inventory/ItemCategoryButton.h"
 #include "UI/Inventory/ItemsDropToWorldWidget.h"
@@ -90,6 +89,8 @@ void UInventoryWidget::BindInventoryItemDelegates()
 	InventoryWidgetController->InventoryEntryDelegate.AddUObject(this,&UInventoryWidget::HandleInventoryItemReceived);
 	InventoryWidgetController->OnInventoryItemRemoved.AddUObject(this,&UInventoryWidget::HandleInventoryItemRemoved);
 	InventoryWidgetController->OnSortItemsRequested.AddUObject(this, &UInventoryWidget::SortItems);
+	InventoryWidgetController->OnEquipKeyPressed.AddUObject(this,&UInventoryWidget::OnEquipKeyPressed);
+	InventoryWidgetController->OnDropKeyPressed.AddUObject(this,&UInventoryWidget::OnDropKeyPressed);
 }
 
 void UInventoryWidget::HandleCategorySelected(FGameplayTag CategorySelected)
@@ -121,25 +122,7 @@ UItemSlotWidget* UInventoryWidget::NewActiveItem(const FRPGInventoryEntry& Entry
 
 	CurrentItemSlotWidget->Init(Entry, ItemDefinition.Icon);
 
-	CurrentItemSlotWidget->OnItemRowClickedDelegate.BindLambda(
-		[this](const FRPGInventoryEntry& Entry)
-		{
-			HandleItemRowClicked(Entry);
-		});
-
 	return CurrentItemSlotWidget;
-}
-
-void UInventoryWidget::BindItemSlotDelegates(UItemSlotWidget* CurrentItemSlotWidget)
-{
-	if (IsValid(CurrentItemSlotWidget))
-	{
-		CurrentItemSlotWidget->OnItemRowClickedDelegate.BindLambda(
-			[this](const FRPGInventoryEntry& Entry)
-			{
-				HandleItemRowClicked(Entry);
-			});
-	}
 }
 
 void UInventoryWidget::AddItemToGrid(const FRPGInventoryEntry& Entry, const FMasterItemDefinition& ItemDefinition)
@@ -200,12 +183,6 @@ void UInventoryWidget::HandleInventoryItemReceived(const FRPGInventoryEntry& Ent
 	AddItemToGrid(Entry, ItemDefinition);
 }
 
-
-void UInventoryWidget::HandleItemRowClicked(const FRPGInventoryEntry& Entry)
-{
-	//Pending to implement
-}
-
 void UInventoryWidget::HandleItemDropped(const FRPGInventoryEntry& Entry) const
 {
 
@@ -256,6 +233,24 @@ void UInventoryWidget::OnEquipItem(const FRPGInventoryEntry& Entry)
 	if (!IsValid(InventoryWidgetController)) return;
 	
 	InventoryWidgetController->EquipItem(Entry);
+}
+
+void UInventoryWidget::OnEquipKeyPressed()
+{
+	const FRPGInventoryEntry& SelectedItem = ItemsContainer->GetSelectedItem();
+	if (SelectedItem.ItemID == INDEX_NONE) return;
+	
+	InventoryWidgetController->EquipItem(SelectedItem);
+	const FMasterItemDefinition& ItemDefinition = InventoryWidgetController->GetInventoryItemDefinition(SelectedItem.ItemTag);
+	SilverSword->EquipItemSlot(SelectedItem,ItemDefinition.Icon.Get());
+}
+
+void UInventoryWidget::OnDropKeyPressed()
+{
+	const FRPGInventoryEntry& SelectedItem = ItemsContainer->GetSelectedItem();
+	if (SelectedItem.ItemID == INDEX_NONE) return;
+	
+	InventoryWidgetController->DropItemToWorld(SelectedItem);
 }
 
 void UInventoryWidget::SetSortPanelVisibility()

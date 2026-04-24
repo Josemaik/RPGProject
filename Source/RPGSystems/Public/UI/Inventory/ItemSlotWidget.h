@@ -9,6 +9,7 @@
 #include "InventorySection/InventoryComponent.h"
 #include "ItemSlotWidget.generated.h"
 
+class UItemToolTip;
 class UImage;
 class UUniformGridSlot;
 class UInventoryWidgetController;
@@ -28,11 +29,13 @@ enum class EDragOverResult : uint8
 	Invalid UMETA(DisplayName = "Invalid")
 };
 
-DECLARE_DELEGATE_OneParam(FOnItemRowClicked, const FRPGInventoryEntry&);
+DECLARE_DELEGATE_OneParam(FOnItemRowClicked, int32 ClickedItemIndex);
 DECLARE_DELEGATE_TwoParams(FOnItemDroppedPanel, int32 DroppedItemIndex, int32 DropItemIndex);
 DECLARE_DELEGATE_TwoParams(FOnDragEntered,int32 DraggedItemIndex, int32 EnterItemIndex);
 DECLARE_DELEGATE_TwoParams(FOnDragLeaved, int32 DraggedItemIndex,int32 LeaveItemIndex);
 DECLARE_DELEGATE_OneParam(FOnDragCancelled,int32 LastEnterItemIndex);
+DECLARE_DELEGATE_OneParam(FOnItemSlotMouseEntered,UItemSlotWidget* EnteredItemSlot);
+DECLARE_DELEGATE(FOnItemSlotMouseLeaved);
 /**
  * 
  */
@@ -46,6 +49,8 @@ public:
 	FOnDragEntered OnDragEnteredDelegate;
 	FOnDragLeaved OnDragLeavedDelegate;
 	FOnDragCancelled OnDragCancelledDelegate;
+	FOnItemSlotMouseEntered OnItemSlotMouseEnteredDelegate;
+	FOnItemSlotMouseLeaved OnItemSlotMouseLeavedDelegate;
 	
 	void SetItemNameText(FText Text);
 	void SetQuantityText(int32 Quantity);
@@ -55,15 +60,18 @@ public:
 	
 	void Init(const FRPGInventoryEntry& Entry,const TSoftObjectPtr<UTexture2D>& Icon,const FSlateBrush& Brush = FSlateBrush(), ESlotSizeCategories SlotSize = ESlotSizeCategories::UniqueSlot);
 	void EmptySlot();
-	void OutlineSlot(ESlotSizeCategories SlotSize);
-	void RemoveOutLineSlot(bool OnDrop);
+	void OutlineSlot() const;
+	void RemoveOutLineSlot();
+	void SetIconPadding(bool reset) const;
 	
 	void EnableDragOverPreview(EDragOverResult Result);
 	void DisableDragOverPreview();
 	void EnableDragOverResultIcon(EDragOverResult Result,ESlotSizeCategories DraggedSize);
 	void DisableDragOverResultIcon();
+
+	void StartSelectedAnimation();
+	void StopSelectedAnimation();
 	
-	void SetIconPadding(bool reset) const;
 	bool IsEmpty() const { return bIsEmpty; }
 	TSoftObjectPtr<UTexture2D> GetIconTexture() const { return  SoftIconTexture; }
 	int32 GetGridIndex() const { return CurrentGridIndex; }
@@ -84,6 +92,9 @@ protected:
 	virtual void NativeOnDragLeave(const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
 	virtual bool NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
 private:
+	virtual void NativeOnMouseEnter(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
+	virtual void NativeOnMouseLeave(const FPointerEvent& InMouseEvent) override;
+	
 	UPROPERTY(EditDefaultsOnly, Category="Style")
 	FLinearColor DragOverPreviewColor;
 
@@ -112,6 +123,9 @@ private:
 	
 	UPROPERTY(EditDefaultsOnly, meta=(AllowPrivateAccess=true))
 	TSubclassOf<UItemSlotIcon> IconWidgetClass;
+
+	UPROPERTY()
+	UItemToolTip* TooltipWidgetReference;
 	
 	//Hierarchy
 	
@@ -132,6 +146,10 @@ private:
 
 	UPROPERTY(VisibleAnywhere,BlueprintReadWrite, meta = (BindWidget,AllowPrivateAccess="true"), Category = "UI")
 	UImage* Border;
+
+	//Animations
+	UPROPERTY(Transient, meta=(BindWidgetAnim))
+	UWidgetAnimation* SelectedSlotAnimation;
 };
 
 

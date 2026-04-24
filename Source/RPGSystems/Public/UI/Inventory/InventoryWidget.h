@@ -82,15 +82,11 @@ private:
 	void HandleCategorySelected(FGameplayTag CategorySelected);
 
 	UItemSlotWidget* NewActiveItem(const FRPGInventoryEntry& Entry);
-	void BindItemSlotDelegates(UItemSlotWidget* CurrentItemSlotWidget);
 	void AddItemToGrid(const FRPGInventoryEntry& Entry, const FMasterItemDefinition& ItemDefinition);
 	
 	//callbacks
 	UFUNCTION()
 	void HandleInventoryItemReceived(const FRPGInventoryEntry& Entry);
-
-	UFUNCTION()
-	void HandleItemRowClicked(const FRPGInventoryEntry& Entry);
 
 	UFUNCTION()
 	void HandleItemDropped(const FRPGInventoryEntry& Entry) const;
@@ -103,6 +99,9 @@ private:
 
 	UFUNCTION()
 	void OnEquipItem(const FRPGInventoryEntry& Entry);
+
+	void OnEquipKeyPressed();
+	void OnDropKeyPressed();
 	
 	void SetSortPanelVisibility();
 	void HideSortPanel();
