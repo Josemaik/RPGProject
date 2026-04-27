@@ -6,6 +6,7 @@
 #include "GameplayTagContainer.h"
 #include "ItemSlotDroppedDragDrop.h"
 #include "SlotSizeCategories.h"
+#include "Base/BaseInventorySlot.h"
 #include "Blueprint/UserWidget.h"
 #include "InventorySection/InventoryComponent.h"
 #include "ItemSlotWidget.generated.h"
@@ -35,13 +36,14 @@ DECLARE_DELEGATE_TwoParams(FOnItemDroppedPanel, int32 DroppedItemIndex, int32 Dr
 DECLARE_DELEGATE_TwoParams(FOnDragEntered,int32 DraggedItemIndex, int32 EnterItemIndex);
 DECLARE_DELEGATE_TwoParams(FOnDragLeaved, int32 DraggedItemIndex,int32 LeaveItemIndex);
 DECLARE_DELEGATE_OneParam(FOnDragCancelled,int32 LastEnterItemIndex);
-DECLARE_DELEGATE_OneParam(FOnItemSlotMouseEntered,UItemSlotWidget* EnteredItemSlot);
-DECLARE_DELEGATE_OneParam(FOnItemSlotMouseLeaved,UItemSlotWidget* LeavedItemSlot);
+DECLARE_DELEGATE_OneParam(FOnEquipmentEntered,UItemSlotDroppedDragDrop* DragDropOp);
+// DECLARE_DELEGATE_OneParam(FOnItemSlotMouseEntered,UItemSlotWidget* EnteredItemSlot);
+// DECLARE_DELEGATE_OneParam(FOnItemSlotMouseLeaved,UItemSlotWidget* LeavedItemSlot);
 /**
  * 
  */
 UCLASS()
-class RPGSYSTEMS_API UItemSlotWidget : public UUserWidget
+class RPGSYSTEMS_API UItemSlotWidget : public UBaseInventorySlot
 {
 	GENERATED_BODY()
 public:
@@ -50,8 +52,9 @@ public:
 	FOnDragEntered OnDragEnteredDelegate;
 	FOnDragLeaved OnDragLeavedDelegate;
 	FOnDragCancelled OnDragCancelledDelegate;
-	FOnItemSlotMouseEntered OnItemSlotMouseEnteredDelegate;
-	FOnItemSlotMouseLeaved OnItemSlotMouseLeavedDelegate;
+	FOnEquipmentEntered OnEquipmentEnteredDelegate;
+	//FOnItemSlotMouseEntered OnItemSlotMouseEnteredDelegate;
+	//FOnItemSlotMouseLeaved OnItemSlotMouseLeavedDelegate;
 
 	void SetItemNameText(FText Text);
 	void SetQuantityText(int32 Quantity);
@@ -59,8 +62,8 @@ public:
 	void SetGridSlot(UUniformGridSlot* GridSlot);
 	UUniformGridSlot* GetGridSlot();
 	
-	void Init(const FRPGInventoryEntry& Entry,const TSoftObjectPtr<UTexture2D>& Icon,EItemRarity Rarity = EItemRarity::Common,const FSlateBrush& Brush = FSlateBrush(), ESlotSizeCategories SlotSize = ESlotSizeCategories::UniqueSlot);
-	void EmptySlot();
+	void Init(const FRPGInventoryEntry& Entry,const FMasterItemDefinition& Definition,FSlateBrush Brush = FSlateBrush(), ESlotSizeCategories SlotSize = ESlotSizeCategories::UniqueSlot);
+	void EmptySlot() override;
 	void OutlineSlot() const;
 	void RemoveOutLineSlot();
 	void SetIconPadding(bool reset) const;
@@ -73,39 +76,41 @@ public:
 	void StartSelectedAnimation();
 	void StopSelectedAnimation();
 	
-	void SetLinkedSlot(UItemSlotWidget* InSlot) { LinkedSlot = InSlot; }
+	//void SetLinkedSlot(UItemSlotWidget* InSlot) { LinkedSlot = InSlot; }
 	
-	bool IsEmpty() const { return bIsEmpty; }
-	TSoftObjectPtr<UTexture2D> GetIconTexture() const { return  SoftIconTexture; }
+	//bool IsEmpty() const { return bIsEmpty; }
+	//TSoftObjectPtr<UTexture2D> GetIconTexture() const { return  SoftIconTexture; }
 	int32 GetGridIndex() const { return CurrentGridIndex; }
 	void SetGridIndex(const int32 NewIndex) { CurrentGridIndex = NewIndex; }
-	ESlotSizeCategories GetCurrentSlotSize() const { return CurrentSlotSize; }
-	const FSlateBrush& GetIconBrush() const { return CurrentIconBrush; }
+	//ESlotSizeCategories GetCurrentSlotSize() const { return CurrentSlotSize; }
+	//const FSlateBrush& GetIconBrush() const { return CurrentIconBrush; }
 	
-	UPROPERTY(BlueprintReadOnly)
-	FRPGInventoryEntry ItemEntry;
+	// UPROPERTY(BlueprintReadOnly)
+	// FRPGInventoryEntry ItemEntry;
 	
 protected:
 	virtual void NativeConstruct() override;
 	virtual void NativeDestruct() override;
 	virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
-	virtual void NativeOnDragDetected(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent, UDragDropOperation*& OutOperation) override;
+	virtual void BuildDragOperation(UDragDropOperation*& OutOperation) override; 
+	//virtual void NativeOnDragDetected(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent, UDragDropOperation*& OutOperation) override;
 	virtual void NativeOnDragCancelled(const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
 	virtual void NativeOnDragEnter(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
 	virtual void NativeOnDragLeave(const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
 	virtual bool NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
 private:
-	virtual void NativeOnMouseEnter(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
-	virtual void NativeOnMouseLeave(const FPointerEvent& InMouseEvent) override;
-	void CancelLeaveTimer();
+	// virtual void NativeOnMouseEnter(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
+	// virtual void NativeOnMouseLeave(const FPointerEvent& InMouseEvent) override;
+	//void CancelLeaveTimer();
 
-	UPROPERTY()
-	TObjectPtr<UItemSlotWidget> LinkedSlot;
+	// UPROPERTY()
+	// TObjectPtr<UItemSlotWidget> LinkedSlot;
 
-	
+	UPROPERTY(VisibleAnywhere,BlueprintReadWrite, meta = (BindWidget,AllowPrivateAccess="true"), Category = "UI")
+	UImage* DragOverResultIcon;
 
-	FTimerHandle ItemTooltipTimerHandle;
-	FTimerHandle ItemTooltipLeaveTimerHandle;
+	//FTimerHandle ItemTooltipTimerHandle;
+	//FTimerHandle ItemTooltipLeaveTimerHandle;
 	
 	UPROPERTY(EditDefaultsOnly, Category="Style")
 	FLinearColor DragOverPreviewColor;
@@ -119,24 +124,24 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category="Style")
 	TObjectPtr<UTexture2D> DragOverResultInvalidTexture;
 	
-	ESlotSizeCategories CurrentSlotSize = ESlotSizeCategories::UniqueSlot;
-	bool bIsEmpty = true;
+	//ESlotSizeCategories CurrentSlotSize = ESlotSizeCategories::UniqueSlot;
+	//bool bIsEmpty = true;
 	int32 CurrentGridIndex = 0;
-	FSlateBrush CurrentIconBrush;
-	EItemRarity CurrentRarity;
+	//FSlateBrush CurrentIconBrush;
+	//EItemRarity CurrentRarity;
 	int32 MaxColumns = 5;
 
-	UPROPERTY()
-	TSoftObjectPtr<UTexture2D> SoftIconTexture;
+	// UPROPERTY()
+	// TSoftObjectPtr<UTexture2D> SoftIconTexture;
 	
 	UPROPERTY()
 	TObjectPtr<UUniformGridSlot> GridSlot = nullptr;
 	
-	UPROPERTY()
-	UItemSlotIcon* IconWidgetReference;
+	// UPROPERTY()
+	// UItemSlotIcon* IconWidgetReference;
 	
-	UPROPERTY(EditDefaultsOnly, meta=(AllowPrivateAccess=true))
-	TSubclassOf<UItemSlotIcon> IconWidgetClass;
+	// UPROPERTY(EditDefaultsOnly, meta=(AllowPrivateAccess=true))
+	// TSubclassOf<UItemSlotIcon> IconWidgetClass;
 
 	UPROPERTY()
 	UItemToolTip* TooltipWidgetReference;
@@ -146,24 +151,24 @@ private:
 	UPROPERTY(VisibleAnywhere,BlueprintReadWrite, meta = (BindWidgetOptional,AllowPrivateAccess="true"), Category = "UI")
 	UTextBlock* ItemQuantity;
 	
-	UPROPERTY(VisibleAnywhere,BlueprintReadWrite, meta = (BindWidget,AllowPrivateAccess="true"), Category = "UI")
-	UImage* IconBox;
+	// UPROPERTY(VisibleAnywhere,BlueprintReadWrite, meta = (BindWidget,AllowPrivateAccess="true"), Category = "UI")
+	// UImage* IconBox;
 
 	UPROPERTY(VisibleAnywhere,BlueprintReadWrite, meta = (BindWidget,AllowPrivateAccess="true"), Category = "UI")
 	UImage* DragOverPreview;
 
-	UPROPERTY(VisibleAnywhere,BlueprintReadWrite, meta = (BindWidget,AllowPrivateAccess="true"), Category = "UI")
-	UImage* BackgroundRarity;
+	// UPROPERTY(VisibleAnywhere,BlueprintReadWrite, meta = (BindWidget,AllowPrivateAccess="true"), Category = "UI")
+	// UImage* BackgroundRarity;
 
-	UPROPERTY(VisibleAnywhere,BlueprintReadWrite, meta = (BindWidget,AllowPrivateAccess="true"), Category = "UI")
-	UImage* DragOverResultIcon;
+	// UPROPERTY(VisibleAnywhere,BlueprintReadWrite, meta = (BindWidget,AllowPrivateAccess="true"), Category = "UI")
+	// UImage* DragOverResultIcon;
 
 	UPROPERTY(VisibleAnywhere,BlueprintReadWrite, meta = (BindWidget,AllowPrivateAccess="true"), Category = "UI")
 	UImage* Border;
 
 	//Animations
-	UPROPERTY(Transient, meta=(BindWidgetAnim))
-	UWidgetAnimation* SelectedSlotAnimation;
+	// UPROPERTY(Transient, meta=(BindWidgetAnim))
+	// UWidgetAnimation* SelectedSlotAnimation;
 };
 
 

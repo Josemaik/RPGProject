@@ -5,40 +5,59 @@
 #include "CoreMinimal.h"
 #include "GameplayTagContainer.h"
 #include "Blueprint/UserWidget.h"
+#include "UI/Inventory/Base/BaseInventorySlot.h"
 #include "EquipmentSlot.generated.h"
 
 enum class EItemRarity : uint8;
 class USizeBox;
 struct FRPGInventoryEntry;
-DECLARE_DELEGATE_OneParam(FOnEquipItem, const FRPGInventoryEntry&)
-
 class UImage;
+
+DECLARE_DELEGATE_OneParam(FOnEquipItem, const FRPGInventoryEntry&)
+DECLARE_DELEGATE_OneParam(FOnUnequipItem, const FRPGInventoryEntry&)
 /**
  * 
  */
 UCLASS()
-class RPGSYSTEMS_API UEquipmentSlot : public UUserWidget
+class RPGSYSTEMS_API UEquipmentSlot : public UBaseInventorySlot
 {
 	GENERATED_BODY()
 public:
-	virtual bool NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
+	void EquipItemSlot(const FRPGInventoryEntry& Entry,const FMasterItemDefinition& ItemDefinition);
+	void SetTooltipReference(UItemToolTip* InTooltip) { ItemToolTipReference = InTooltip; }
+	virtual void EmptySlot() override;
 	
 	FOnEquipItem OnEquipItem;
-	
-	void EquipItemSlot(const FRPGInventoryEntry& Entry,UTexture2D* Texture,EItemRarity Rarity);
+	FOnUnequipItem OnUnequipItem;
+protected:
+	virtual void DragVisualEnable() override;
+	virtual void NativeConstruct() override;
+	//virtual void NativeOnDragDetected(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent, UDragDropOperation*& OutOperation) override;
+	virtual void NativeOnDragEnter(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
+	virtual void NativeOnDragLeave(const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
+	virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
+	virtual void BuildDragOperation(UDragDropOperation*& OutOperation) override;
+	virtual bool NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
 private:
+	void HandleMouseEntered(UBaseInventorySlot* BaseSlot);
+	void HandleMouseLeaved(UBaseInventorySlot* BaseSlot);
 	
-	UPROPERTY(EditDefaultsOnly,BlueprintReadOnly,meta=(BindWidget,AllowPrivateAccess=true))
-	UImage* EquipmentSlotImage;
-	
-	UPROPERTY(EditDefaultsOnly,BlueprintReadOnly,meta=(BindWidget,AllowPrivateAccess=true))
-	UImage* RarityBackground;
-
 	UPROPERTY(EditAnywhere,BlueprintReadOnly, Category= "Config",meta=(AllowPrivateAccess=true))
 	FGameplayTag EquipmentTag;
+	
+	UPROPERTY(EditAnywhere,BlueprintReadOnly,meta=(AllowPrivateAccess=true))
+	UTexture2D* PlaceholderTexture;
 
-	UPROPERTY(EditAnywhere,BlueprintReadOnly, Category= "Config",meta=(BindWidget,ExposeOnSpawn,AllowPrivateAccess=true))
-	USizeBox* SizeBox;
+	UPROPERTY(EditAnywhere,BlueprintReadOnly,meta=(BindWidget,AllowPrivateAccess=true))
+	UImage* DragOverPreview;
 
-	bool bIsEmpty = true;
+	UPROPERTY()
+	UItemToolTip* ItemToolTipReference;
+
+	UPROPERTY()
+	TObjectPtr<UItemSlotIcon> SlotIcon;
+	
+	int32 ClickCount = 0;
+	FTimerHandle DoubleClickTimerHandle;
+	static constexpr float DoubleClickThreshold = 0.3f;
 };

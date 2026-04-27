@@ -38,7 +38,7 @@ void UItemSlotWidget::SetIcon(const FSlateBrush& Brush)
 	IconWidgetReference = Cast<UItemSlotIcon>(CreateWidget(this,IconWidgetClass));
 	if (IsValid(IconWidgetReference))
 	{
-		IconWidgetReference->SetIcon(SoftIconTexture.Get(),CurrentSlotSize);
+		IconWidgetReference->SetIcon(CurrentItemDefinition.Icon.Get(),CurrentSlotSize);
 	}
 	
 	if (!IsValid(IconBox)) return;
@@ -74,31 +74,27 @@ void UItemSlotWidget::NativeDestruct()
 	Super::NativeDestruct();
 }
 
-void UItemSlotWidget::Init(const FRPGInventoryEntry& Entry,const TSoftObjectPtr<UTexture2D>& Icon,EItemRarity Rarity,const FSlateBrush& Brush,ESlotSizeCategories SlotSize)
+void UItemSlotWidget::Init(const FRPGInventoryEntry& Entry,const FMasterItemDefinition& Definition,FSlateBrush Brush, ESlotSizeCategories SlotSize)
 {
 	ItemEntry = Entry;
+	CurrentItemDefinition = Definition;
 	SetQuantityText(ItemEntry.Quantity);
 	
 	bIsEmpty = false;
 	CurrentSlotSize = SlotSize;
 
 	CurrentIconBrush = Brush;
-	SoftIconTexture = Icon;
+	//SoftIconTexture = Definition.Icon;
 	SetIcon(Brush);
 
-	CurrentRarity = Rarity;
-	BackgroundRarity->SetBrushTintColor(FSlateColor(URPGUIStatics::GetColorForRarity(GetWorld(),Rarity)));
+	//CurrentRarity = Definition.Rarity;
+	BackgroundRarity->SetBrushTintColor(FSlateColor(URPGUIStatics::GetColorForRarity(GetWorld(),Definition.Rarity)));
 }
 
 void UItemSlotWidget::EmptySlot()
 {
-	ItemEntry = FRPGInventoryEntry();
+	Super::EmptySlot();
 	ItemQuantity = 0;
-	IconBox->SetColorAndOpacity(FLinearColor(FColor::FromHex(TEXT("121212FF"))));
-	IconBox->SetBrushFromTexture(nullptr);
-	CurrentIconBrush = FSlateBrush();
-	bIsEmpty = true;
-	CurrentSlotSize = ESlotSizeCategories::UniqueSlot;
 }
 
 void UItemSlotWidget::OutlineSlot() const
@@ -206,35 +202,42 @@ FReply UItemSlotWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, con
 {
 	if (InMouseEvent.IsMouseButtonDown(EKeys::LeftMouseButton))
 	{
-		GetWorld()->GetTimerManager().ClearTimer(ItemTooltipTimerHandle);
+		//GetWorld()->GetTimerManager().ClearTimer(ItemTooltipTimerHandle);
 		OnItemRowClickedDelegate.Execute(CurrentGridIndex);
 		//DragAndDrop
-		return FReply::Handled().DetectDrag(TakeWidget(), EKeys::LeftMouseButton);
+		//return FReply::Handled().DetectDrag(TakeWidget(), EKeys::LeftMouseButton);
+		return Super::NativeOnMouseButtonDown(InGeometry, InMouseEvent);
 	}
 	return FReply::Unhandled();
 }
 
-void UItemSlotWidget::NativeOnDragDetected(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent,
-	UDragDropOperation*& OutOperation)
+void UItemSlotWidget::BuildDragOperation(UDragDropOperation*& OutOperation)
 {
-	if (bIsEmpty) return;
+	Super::BuildDragOperation(OutOperation);
 	
-	Super::NativeOnDragDetected(InGeometry, InMouseEvent, OutOperation);
-	
-	UItemSlotDroppedDragDrop* DragDropOperation = Cast<UItemSlotDroppedDragDrop>(UWidgetBlueprintLibrary::CreateDragDropOperation(UItemSlotDroppedDragDrop::StaticClass()));
-	DragDropOperation->Pivot = EDragPivot::CenterCenter;
+	UItemSlotDroppedDragDrop* DragDropOperation = Cast<UItemSlotDroppedDragDrop>(
+		UWidgetBlueprintLibrary::CreateDragDropOperation(UItemSlotDroppedDragDrop::StaticClass()));
+	DragDropOperation->Pivot             = EDragPivot::CenterCenter;
 	DragDropOperation->DefaultDragVisual = IconWidgetReference;
-	DragDropOperation->Payload = this;
-	DragDropOperation->ItemSlot_Payload = this;
-	DragDropOperation->ItemEntry = &ItemEntry;
-	DragDropOperation->SlotSize = CurrentSlotSize;
-	DragDropOperation->IconTexture = SoftIconTexture.Get();
-	DragDropOperation->Rarity = CurrentRarity;
-	
+	DragDropOperation->Payload           = this;
+	DragDropOperation->ItemSlot_Payload  = this;
+	DragDropOperation->ItemEntry         = &ItemEntry;
+	DragDropOperation->SlotSize          = CurrentSlotSize;
+	//DragDropOperation->IconTexture       = SoftIconTexture.Get();
+	//DragDropOperation->Rarity            = CurrentRarity;
+	DragDropOperation->ItemDefinition    = CurrentItemDefinition;
 	OutOperation = DragDropOperation;
-
-	//Change colour to grey or something like that
 }
+
+// void UItemSlotWidget::NativeOnDragDetected(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent,
+//                                            UDragDropOperation*& OutOperation)
+// {
+// 	if (bIsEmpty) return;
+// 	
+// 	Super::NativeOnDragDetected(InGeometry, InMouseEvent, OutOperation);
+// 	
+// 	BuildDragOperation(OutOperation);
+// }
 
 void UItemSlotWidget::NativeOnDragCancelled(const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation)
 {
@@ -261,15 +264,23 @@ void UItemSlotWidget::NativeOnDragCancelled(const FDragDropEvent& InDragDropEven
 void UItemSlotWidget::NativeOnDragEnter(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent,
 	UDragDropOperation* InOperation)
 {
+	GEngine->AddOnScreenDebugMessage(-1,3.f,FColor::Red,FString::Printf(TEXT("Entra Drag")));
 	Super::NativeOnDragEnter(InGeometry, InDragDropEvent, InOperation);
 	
 	UItemSlotDroppedDragDrop* DragDropOp = Cast<UItemSlotDroppedDragDrop>(InOperation);
 	if (!IsValid(DragDropOp)) return;
-	
-	UItemSlotWidget* DroppedItem = DragDropOp->ItemSlot_Payload;
-	if (!IsValid(DroppedItem)) return;
 
+	const bool bFromEquipmentSlot = !IsValid(DragDropOp->ItemSlot_Payload);
+	const int32 FromIndex = bFromEquipmentSlot ? INDEX_NONE : DragDropOp->ItemSlot_Payload->GetGridIndex();
 	const ESlotSizeCategories DroppedSize = DragDropOp->SlotSize;
+
+	if (bFromEquipmentSlot)
+	{
+		OnEquipmentEnteredDelegate.ExecuteIfBound(DragDropOp);
+	}
+	
+	// UItemSlotWidget* DroppedItem = DragDropOp->ItemSlot_Payload;
+	// if (!IsValid(DroppedItem)) return;
 
 	DragDropOp->LastEnterSlotWidget = this;
 	
@@ -279,31 +290,23 @@ void UItemSlotWidget::NativeOnDragEnter(const FGeometry& InGeometry, const FDrag
 		{
 			// Empty target → can drop
 			EnableDragOverPreview(EDragOverResult::Drop);
-			EnableDragOverResultIcon(EDragOverResult::Drop,DroppedItem->GetCurrentSlotSize());
+			EnableDragOverResultIcon(EDragOverResult::Drop,DragDropOp->SlotSize);
 		}
 		else if (CurrentSlotSize == ESlotSizeCategories::UniqueSlot)
 		{
-			// Unique → Unique: swap
-			// if (CurrentGridIndex == DroppedItem->GetGridIndex())
-			// {
-			// 	EnableDragOverResultIcon(EDragOverResult::Swap,DroppedItem->GetCurrentSlotSize());
-			// }
-			// else
-			// {
-				EnableDragOverResultIcon(EDragOverResult::Swap,DroppedItem->GetCurrentSlotSize());
-			//}
+			EnableDragOverResultIcon(EDragOverResult::Swap,DragDropOp->SlotSize);
 			EnableDragOverPreview(EDragOverResult::Swap);
 		}
 		else
 		{
 			// Target is Superior or Lower → invalid
 			EnableDragOverPreview(EDragOverResult::Invalid);
-			EnableDragOverResultIcon(EDragOverResult::Invalid,DroppedItem->GetCurrentSlotSize());
+			EnableDragOverResultIcon(EDragOverResult::Invalid,DragDropOp->SlotSize);
 		}
 		return;
 	}
 	
-	OnDragEnteredDelegate.ExecuteIfBound(DroppedItem->GetGridIndex(),CurrentGridIndex);
+	OnDragEnteredDelegate.ExecuteIfBound(FromIndex,CurrentGridIndex);
 }
 
 void UItemSlotWidget::NativeOnDragLeave(const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation)
@@ -312,11 +315,12 @@ void UItemSlotWidget::NativeOnDragLeave(const FDragDropEvent& InDragDropEvent, U
 
 	UItemSlotDroppedDragDrop* DragDropOp = Cast<UItemSlotDroppedDragDrop>(InOperation);
 	if (!IsValid(DragDropOp)) return;
-	
-	UItemSlotWidget* DroppedItem = DragDropOp->ItemSlot_Payload;
-	if (!IsValid(DroppedItem)) return;
 
+	const bool bFromEquipmentSlot = !IsValid(DragDropOp->ItemSlot_Payload);
+	const int32 FromIndex = bFromEquipmentSlot ? INDEX_NONE : DragDropOp->ItemSlot_Payload->GetGridIndex();
 	const ESlotSizeCategories DroppedSize = DragDropOp->SlotSize;
+	// UItemSlotWidget* DroppedItem = DragDropOp->ItemSlot_Payload;
+	// if (!IsValid(DroppedItem)) return;
 	
 	if (DroppedSize == ESlotSizeCategories::UniqueSlot)
 	{
@@ -326,7 +330,7 @@ void UItemSlotWidget::NativeOnDragLeave(const FDragDropEvent& InDragDropEvent, U
 		return;
 	}
 	
-	OnDragLeavedDelegate.ExecuteIfBound(DroppedItem->GetGridIndex(),CurrentGridIndex);
+	OnDragLeavedDelegate.ExecuteIfBound(FromIndex,CurrentGridIndex);
 }
 
 bool UItemSlotWidget::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent,
@@ -334,9 +338,11 @@ bool UItemSlotWidget::NativeOnDrop(const FGeometry& InGeometry, const FDragDropE
 {
 	UItemSlotDroppedDragDrop* DragDropOp = Cast<UItemSlotDroppedDragDrop>(InOperation);
 	if (!IsValid(DragDropOp)) return false;
-
-	UItemSlotWidget* DroppedItem = DragDropOp->ItemSlot_Payload;
-	if (!IsValid(DroppedItem)) return false;
+	
+	// UItemSlotWidget* DroppedItem = DragDropOp->ItemSlot_Payload;
+	// if (!IsValid(DroppedItem)) return false;
+	const bool bFromEquipmentSlot = !IsValid(DragDropOp->ItemSlot_Payload);
+	const int32 FromIndex = bFromEquipmentSlot ? INDEX_NONE : DragDropOp->ItemSlot_Payload->GetGridIndex();
 	
 	const ESlotSizeCategories DroppedSize = DragDropOp->SlotSize;
 	
@@ -345,7 +351,7 @@ bool UItemSlotWidget::NativeOnDrop(const FGeometry& InGeometry, const FDragDropE
 		if (bIsEmpty)
 		{
 			// Move to empty slot
-			OnItemDroppedPanelDelegate.ExecuteIfBound(DroppedItem->GetGridIndex(), CurrentGridIndex);
+			OnItemDroppedPanelDelegate.ExecuteIfBound(FromIndex, CurrentGridIndex);
 			DisableDragOverPreview();
 			DisableDragOverResultIcon();
 			return true;
@@ -353,7 +359,7 @@ bool UItemSlotWidget::NativeOnDrop(const FGeometry& InGeometry, const FDragDropE
 		if (CurrentSlotSize == ESlotSizeCategories::UniqueSlot)
 		{
 			// Swap two unique slots
-			OnItemDroppedPanelDelegate.ExecuteIfBound(DroppedItem->GetGridIndex(), CurrentGridIndex);
+			OnItemDroppedPanelDelegate.ExecuteIfBound(FromIndex, CurrentGridIndex);
 			DisableDragOverPreview();
 			DisableDragOverResultIcon();
 			return true;
@@ -371,44 +377,44 @@ bool UItemSlotWidget::NativeOnDrop(const FGeometry& InGeometry, const FDragDropE
     {
         UE_LOG(LogTemp, Warning, TEXT("Delegate NOT bound"));
     }
-
-	OnItemDroppedPanelDelegate.ExecuteIfBound(DroppedItem->GetGridIndex(),CurrentGridIndex);
+	
+	OnItemDroppedPanelDelegate.ExecuteIfBound(FromIndex,CurrentGridIndex);
 	return true;
 }
 
-void UItemSlotWidget::NativeOnMouseEnter(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
-{
-	Super::NativeOnMouseEnter(InGeometry, InMouseEvent);
-
-	// Cancelar mi propio leave pendiente
-	GetWorld()->GetTimerManager().ClearTimer(ItemTooltipLeaveTimerHandle);
-
-	// Cancelar el leave del compañero si existe
-	if (IsValid(LinkedSlot))
-	{
-		LinkedSlot->CancelLeaveTimer();
-	}
-
-	float InRate = bIsEmpty ? 0.f : 0.5f;
-	GetWorld()->GetTimerManager().SetTimer(ItemTooltipTimerHandle, [this]
-	{
-		OnItemSlotMouseEnteredDelegate.ExecuteIfBound(this);
-	}, InRate, false);
-}
-
-void UItemSlotWidget::NativeOnMouseLeave(const FPointerEvent& InMouseEvent)
-{
-	Super::NativeOnMouseLeave(InMouseEvent);
-
-	GetWorld()->GetTimerManager().ClearTimer(ItemTooltipTimerHandle);
-
-	GetWorld()->GetTimerManager().SetTimer(ItemTooltipLeaveTimerHandle, [this]
-	{
-		OnItemSlotMouseLeavedDelegate.ExecuteIfBound(this);
-	}, 0.05f, false);
-}
-
-void UItemSlotWidget::CancelLeaveTimer()
-{
-	GetWorld()->GetTimerManager().ClearTimer(ItemTooltipLeaveTimerHandle);
-}
+// void UItemSlotWidget::NativeOnMouseEnter(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
+// {
+// 	Super::NativeOnMouseEnter(InGeometry, InMouseEvent);
+//
+// 	// Cancelar mi propio leave pendiente
+// 	GetWorld()->GetTimerManager().ClearTimer(ItemTooltipLeaveTimerHandle);
+//
+// 	// Cancelar el leave del compañero si existe
+// 	if (IsValid(LinkedSlot))
+// 	{
+// 		LinkedSlot->CancelLeaveTimer();
+// 	}
+//
+// 	float InRate = bIsEmpty ? 0.f : 0.5f;
+// 	GetWorld()->GetTimerManager().SetTimer(ItemTooltipTimerHandle, [this]
+// 	{
+// 		OnItemSlotMouseEnteredDelegate.ExecuteIfBound(this);
+// 	}, InRate, false);
+// }
+//
+// void UItemSlotWidget::NativeOnMouseLeave(const FPointerEvent& InMouseEvent)
+// {
+// 	Super::NativeOnMouseLeave(InMouseEvent);
+//
+// 	GetWorld()->GetTimerManager().ClearTimer(ItemTooltipTimerHandle);
+//
+// 	GetWorld()->GetTimerManager().SetTimer(ItemTooltipLeaveTimerHandle, [this]
+// 	{
+// 		OnItemSlotMouseLeavedDelegate.ExecuteIfBound(this);
+// 	}, 0.05f, false);
+// }
+//
+// void UItemSlotWidget::CancelLeaveTimer()
+// {
+// 	GetWorld()->GetTimerManager().ClearTimer(ItemTooltipLeaveTimerHandle);
+// }

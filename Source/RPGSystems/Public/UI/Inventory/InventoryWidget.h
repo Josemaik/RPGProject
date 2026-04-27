@@ -8,6 +8,7 @@
 #include "InventorySection/InventoryComponent.h"
 #include "InventoryWidget.generated.h"
 
+class UItemToolTip;
 class USortPanelWidget;
 class UButton;
 class UKeyHintWidget;
@@ -76,7 +77,12 @@ protected:
 	
 	void NativeConstruct() override;
 private:
+	
+	void HandleUnequipItem(const FRPGInventoryEntry& FrpgInventoryEntry);
+	
+	void InitEquipmentWidget(UEquipmentSlot* InEquipmentSlot);
 	virtual void FinishDestroy() override;
+	void OnEquipmentDropped(FGameplayTag ItemTag);
 	//functions
 	void BindInventoryItemDelegates();
 	void HandleCategorySelected(FGameplayTag CategorySelected);
@@ -158,6 +164,12 @@ private:
 	UPROPERTY(VisibleAnywhere, meta = (BindWidget), Category = "UI")
 	UItemsDropToWorldWidget* ItemsDropToWorldWidget;
 
+	UPROPERTY()
+	UItemToolTip* ItemToolTipReference;
+
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<UItemToolTip> TooltipWidgetClass;
+	
 	//Equipments Panel
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget,AllowPrivateAccess="true"), Category = "UI")
 	UEquipmentSlot* SilverSword;

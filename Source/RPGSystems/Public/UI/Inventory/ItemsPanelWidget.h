@@ -9,6 +9,8 @@
 #include "InventorySection/InventoryComponent.h"
 #include "ItemsPanelWidget.generated.h"
 
+class UItemSlotDroppedDragDrop;
+class UBaseInventorySlot;
 class UItemToolTip;
 enum class EItemSortType : uint8;
 class USortPanelWidget;
@@ -17,6 +19,8 @@ struct FMasterItemDefinition;
 struct FRPGInventoryEntry;
 class UItemSlotWidget;
 class UUniformGridPanel;
+
+DECLARE_DELEGATE_OneParam(FOnEquipentDropped,FGameplayTag ItemTag)
 
 USTRUCT()
 struct FItemSlotData
@@ -57,6 +61,8 @@ class RPGSYSTEMS_API UItemsPanelWidget : public UUserWidget
 	GENERATED_BODY()
 
 public:
+	FOnEquipentDropped OnEquipmentDropped;
+	
 	void AddItemToGrid(UItemSlotWidget* Item,const int32 Index);
 	void RemoveItem(const int64 ItemID);
 	int32 FindItemIndex(const int64 ItemID,FGameplayTag ItemTa);
@@ -82,6 +88,10 @@ public:
 	UItemSlotWidget* GetItemSlotbyIndex(int32 Index) const;
 
 	FGameplayTag CurrentCategoryTag;
+	
+	UPROPERTY()
+	UItemSlotDroppedDragDrop* CurrentDragOperation;
+	
 
 private:
 	virtual void NativeConstruct() override;
@@ -94,12 +104,14 @@ private:
 	void HandleDraggedItemLeaved(int32 DraggedIndex,int32 NewIndex);
 	void HandleDragCancelled(int LastEnterIndex) const;
 
-	void HandleSlotHovered(UItemSlotWidget* SlotWidget);
-	void HandleSlotLeaved(UItemSlotWidget* SlotWidget);
+	void HandleSlotHovered(UBaseInventorySlot* BaseSlot);
+	void HandleSlotLeaved(UBaseInventorySlot* SlotWidget);
 	
 	void HandleSlotClicked(int32 ClickedIndex);
 	void SelectSlotAtIndex(int32 Index);
 	void DeselectCurrentSlot();
+
+	void HandleEquipmentEntered(UItemSlotDroppedDragDrop* InCurrentDragOperation);
 	
 	void ResetSlotData(FItemSlotData& ItemSlotData);
 

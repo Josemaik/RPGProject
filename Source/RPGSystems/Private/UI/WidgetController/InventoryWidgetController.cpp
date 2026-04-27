@@ -58,6 +58,13 @@ void UInventoryWidgetController::EquipItem(const FRPGInventoryEntry& Entry) cons
 	OwningInventory->UseItem(Entry,1);
 }
 
+void UInventoryWidgetController::AddEquipItem(FGameplayTag ItemTag) const
+{
+	if (!IsValid(OwningInventory)) return;
+	
+	OwningInventory->AddItem(ItemTag);
+}
+
 void UInventoryWidgetController::DropItemToWorld(const FRPGInventoryEntry& Entry) const
 {
 	if (!IsValid(OwningInventory)) return;

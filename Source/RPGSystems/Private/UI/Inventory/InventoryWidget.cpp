@@ -14,6 +14,7 @@
 #include "UI/Inventory/ItemsDropToWorldWidget.h"
 #include "UI/Inventory/ItemSlotWidget.h"
 #include "UI/Inventory/ItemsPanelWidget.h"
+#include "UI/Inventory/ItemToolTip.h"
 #include "UI/Inventory/SortPanelWidget.h"
 #include "UI/Inventory/Equipment/EquipmentSlot.h"
 #include "UI/WidgetController/InventoryWidgetController.h"
@@ -59,11 +60,19 @@ void UInventoryWidget::NativeConstruct()
 	SearchBar->OnTextChanged.AddDynamic(this, &ThisClass::OnSearchBarTextChanged);
 	
 	//funcion bind inventoryequipmentdelegates
+	ItemToolTipReference = CreateWidget<UItemToolTip>(GetOwningPlayer(), TooltipWidgetClass);
+	ItemToolTipReference->AddToViewport(999); 
+	ItemToolTipReference->SetVisibility(ESlateVisibility::Collapsed);
+	
 	SilverSword->OnEquipItem.BindUObject(this, &ThisClass::OnEquipItem);
 	SteelWeapon->OnEquipItem.BindUObject(this, &ThisClass::OnEquipItem);
 	Bolls->OnEquipItem.BindUObject(this, &ThisClass::OnEquipItem);
 	RangedWeapon->OnEquipItem.BindUObject(this, &ThisClass::OnEquipItem);
-
+	InitEquipmentWidget(SilverSword);
+	InitEquipmentWidget(Bolls);
+	InitEquipmentWidget(SteelWeapon);
+	InitEquipmentWidget(RangedWeapon);
+	
 	ItemsDropToWorldWidget->OnItemDroppedPanelDelegate.BindUObject(this, &ThisClass::HandleItemDropped);
 
 	QuickSortButton->OnClicked.AddDynamic(this, &ThisClass::OnQuickSortButtonClicked);
@@ -71,6 +80,17 @@ void UInventoryWidget::NativeConstruct()
 
 	SortPanelWidget->OnCloseButtonClicked.BindUObject(this, &ThisClass::OnSortPanelCloseButtonClicked);
 	SortPanelWidget->OnOptionChanged.BindUObject(this, &ThisClass::OnSortPanelOptionChanged);
+}
+
+void UInventoryWidget::HandleUnequipItem(const FRPGInventoryEntry& Entry)
+{
+	// Make function in InventoryWidgetController ->  UEquipmentManagerComponent::UnEquipItem()
+}
+
+void UInventoryWidget::InitEquipmentWidget(UEquipmentSlot* EquipmentSlot)
+{
+	EquipmentSlot->SetTooltipReference(ItemToolTipReference); // el mismo del panel
+	EquipmentSlot->OnUnequipItem.BindUObject(this, &UInventoryWidget::HandleUnequipItem);
 }
 
 void UInventoryWidget::FinishDestroy()
@@ -84,6 +104,11 @@ void UInventoryWidget::FinishDestroy()
 	InventoryWidgetController->InventoryEntryDelegate.RemoveAll(this);
 }
 
+void UInventoryWidget::OnEquipmentDropped(FGameplayTag ItemTag)
+{
+	InventoryWidgetController->AddEquipItem(ItemTag);
+}
+
 void UInventoryWidget::BindInventoryItemDelegates()
 {
 	InventoryWidgetController->InventoryEntryDelegate.AddUObject(this,&UInventoryWidget::HandleInventoryItemReceived);
@@ -91,6 +116,7 @@ void UInventoryWidget::BindInventoryItemDelegates()
 	InventoryWidgetController->OnSortItemsRequested.AddUObject(this, &UInventoryWidget::SortItems);
 	InventoryWidgetController->OnEquipKeyPressed.AddUObject(this,&UInventoryWidget::OnEquipKeyPressed);
 	InventoryWidgetController->OnDropKeyPressed.AddUObject(this,&UInventoryWidget::OnDropKeyPressed);
+	ItemsContainer->OnEquipmentDropped.BindUObject(this,&UInventoryWidget::OnEquipmentDropped);
 }
 
 void UInventoryWidget::HandleCategorySelected(FGameplayTag CategorySelected)
@@ -120,7 +146,7 @@ UItemSlotWidget* UInventoryWidget::NewActiveItem(const FRPGInventoryEntry& Entry
 		return nullptr;
 	}
 
-	CurrentItemSlotWidget->Init(Entry, ItemDefinition.Icon, ItemDefinition.Rarity);
+	CurrentItemSlotWidget->Init(Entry, ItemDefinition);
 
 	return CurrentItemSlotWidget;
 }
@@ -242,7 +268,7 @@ void UInventoryWidget::OnEquipKeyPressed()
 	
 	InventoryWidgetController->EquipItem(SelectedItem);
 	const FMasterItemDefinition& ItemDefinition = InventoryWidgetController->GetInventoryItemDefinition(SelectedItem.ItemTag);
-	SilverSword->EquipItemSlot(SelectedItem,ItemDefinition.Icon.Get(),ItemDefinition.Rarity);
+	SilverSword->EquipItemSlot(SelectedItem,ItemDefinition);
 }
 
 void UInventoryWidget::OnDropKeyPressed()
