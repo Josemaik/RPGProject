@@ -5,6 +5,7 @@
 
 #include "Components/Image.h"
 #include "InventorySection/InventoryComponent.h"
+#include "Libraries/RPGUIStatics.h"
 #include "UI/Inventory/ItemSlotDroppedDragDrop.h"
 
 bool UEquipmentSlot::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent,
@@ -13,12 +14,12 @@ bool UEquipmentSlot::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEv
 	UItemSlotDroppedDragDrop* DragOp = Cast<UItemSlotDroppedDragDrop>(InOperation);
 	if (!DragOp) return false;
 	
-	EquipItemSlot(*DragOp->ItemEntry,DragOp->IconTexture);
+	EquipItemSlot(*DragOp->ItemEntry,DragOp->IconTexture,DragOp->Rarity);
 	
 	return false;
 }
 
-void UEquipmentSlot::EquipItemSlot(const FRPGInventoryEntry& ItemEntry,UTexture2D* Texture)
+void UEquipmentSlot::EquipItemSlot(const FRPGInventoryEntry& ItemEntry,UTexture2D* Texture,EItemRarity Rarity)
 {
 	if (ItemEntry.ItemTag.MatchesTag(EquipmentTag))
 	{
@@ -38,6 +39,7 @@ void UEquipmentSlot::EquipItemSlot(const FRPGInventoryEntry& ItemEntry,UTexture2
 		OnEquipItem.ExecuteIfBound(ItemEntry);
 		
 		EquipmentSlotImage->SetBrushTintColor(FLinearColor(1.f,1.f,1.f,1.f));
+		RarityBackground->SetBrushTintColor(URPGUIStatics::GetColorForRarity(GetWorld(),Rarity));
 	}
 }
 

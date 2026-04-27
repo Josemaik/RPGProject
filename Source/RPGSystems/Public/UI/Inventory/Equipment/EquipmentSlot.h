@@ -7,6 +7,7 @@
 #include "Blueprint/UserWidget.h"
 #include "EquipmentSlot.generated.h"
 
+enum class EItemRarity : uint8;
 class USizeBox;
 struct FRPGInventoryEntry;
 DECLARE_DELEGATE_OneParam(FOnEquipItem, const FRPGInventoryEntry&)
@@ -24,11 +25,14 @@ public:
 	
 	FOnEquipItem OnEquipItem;
 	
-	void EquipItemSlot(const FRPGInventoryEntry& Entry,UTexture2D* Texture);
+	void EquipItemSlot(const FRPGInventoryEntry& Entry,UTexture2D* Texture,EItemRarity Rarity);
 private:
 	
 	UPROPERTY(EditDefaultsOnly,BlueprintReadOnly,meta=(BindWidget,AllowPrivateAccess=true))
 	UImage* EquipmentSlotImage;
+	
+	UPROPERTY(EditDefaultsOnly,BlueprintReadOnly,meta=(BindWidget,AllowPrivateAccess=true))
+	UImage* RarityBackground;
 
 	UPROPERTY(EditAnywhere,BlueprintReadOnly, Category= "Config",meta=(AllowPrivateAccess=true))
 	FGameplayTag EquipmentTag;

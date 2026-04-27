@@ -11,11 +11,16 @@
 void UItemToolTip::SetData(const FMasterItemDefinition& ItemDefinition)
 {
 	ItemNameText->SetText(ItemDefinition.ItemName);
+	if (ItemDefinition.Rarity == EItemRarity::Common)
+	{
+		ItemTypeText->SetText(FText::FromString("OTHER"));
+	}
 	ItemDescriptionText->SetText(ItemDefinition.ItemDescription);
 	FLinearColor RarityColor = URPGUIStatics::GetColorForRarity(GetWorld(),ItemDefinition.Rarity);
-	RarityBorder->SetBrushColor(RarityColor);
+	RarityBorder->SetBrushColor(FLinearColor(RarityColor.R, RarityColor.G, RarityColor.B, 0.6));
 
 	//Add prefixes,sufixes,Implicits
+	//for (ItemDefinition.ConsumableProps.)
 	
 	RarityText->SetText(URPGUIStatics::GetTextForRarity(GetWorld(),ItemDefinition.Rarity));
 	LevelText->SetText(FText::FromString("1")); //to-do

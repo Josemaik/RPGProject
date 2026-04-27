@@ -267,7 +267,7 @@ void UItemsPanelWidget::InitializeSlotWidget(const FItemSlotData& SlotData, UIte
 			FBox2d UVRegionLower(FVector2d(0.0, 0.5), FVector2d(1.0, 1.0));
 			Brush.SetUVRegion(UVRegionLower);
 
-			NewWidget->Init(SlotData.Entry, SlotData.Icon, Brush, LowerSlotVertical);
+			NewWidget->Init(SlotData.Entry, SlotData.Icon,SlotData.ItemDefinition.Rarity, Brush, LowerSlotVertical);
 			break;
 		}
 	case SuperiorSlotVertical:
@@ -275,10 +275,10 @@ void UItemsPanelWidget::InitializeSlotWidget(const FItemSlotData& SlotData, UIte
 			FBox2d UVRegionSuperior(FVector2d(0.0, 0.0), FVector2d(1.0, 0.5));
 			Brush.SetUVRegion(UVRegionSuperior);
 							
-			NewWidget->Init(SlotData.Entry, SlotData.Icon, Brush, SuperiorSlotVertical);
+			NewWidget->Init(SlotData.Entry, SlotData.Icon,SlotData.ItemDefinition.Rarity, Brush, SuperiorSlotVertical);
 			break;
 		}
-	case UniqueSlot: { NewWidget->Init(SlotData.Entry, SlotData.Icon, Brush, UniqueSlot); break; }
+	case UniqueSlot: { NewWidget->Init(SlotData.Entry, SlotData.Icon,SlotData.ItemDefinition.Rarity, Brush, UniqueSlot); break; }
 	default: break;
 	}
 }
@@ -303,6 +303,7 @@ void UItemsPanelWidget::CreateSlotWidget(int32 Index,const FItemSlotData& SlotDa
 	if (SlotData.bIsEmpty)
 	{
 		NewWidget->EmptySlot();
+		NewWidget->SetLinkedSlot(nullptr);
 		BindItemSlotDelegates(NewWidget);
 		AddItemToGrid(NewWidget, Index);
 		return;
@@ -325,7 +326,6 @@ void UItemsPanelWidget::CreateSlotWidget(int32 Index,const FItemSlotData& SlotDa
 	}
 	else
 	{
-		GEngine->AddOnScreenDebugMessage(-1,5.f,FColor::Emerald,FString::Printf(TEXT("Icon texture Not Loaded")));
 		FStreamableManager& Streamable = UAssetManager::GetStreamableManager();
 
 		Streamable.RequestAsyncLoad(SlotData.Icon.ToSoftObjectPath(),
@@ -365,6 +365,23 @@ void UItemsPanelWidget::ResetCategory(FGameplayTag InCurrentCategoryTag)
 		const FItemSlotData& SlotData = ItemsArray[i];
 
 		CreateSlotWidget(i,SlotData);
+	}
+	for (int32 i = 0; i < ItemsArray.Num(); i++)
+	{
+		if (ItemsArray[i].Size == SuperiorSlotVertical)
+		{
+			const int32 LowerIndex = i + MaxColumns;
+			if (ItemsArray.IsValidIndex(LowerIndex))
+			{
+				UItemSlotWidget* SuperiorWidget = GetItemSlotbyIndex(i);
+				UItemSlotWidget* LowerWidget    = GetItemSlotbyIndex(LowerIndex);
+				if (IsValid(SuperiorWidget) && IsValid(LowerWidget))
+				{
+					SuperiorWidget->SetLinkedSlot(LowerWidget);
+					LowerWidget->SetLinkedSlot(SuperiorWidget);
+				}
+			}
+		}
 	}
 	if (CurrentSelectedIndex != INDEX_NONE)
 	{
@@ -536,6 +553,8 @@ void UItemsPanelWidget::NativeConstruct()
 	ItemToolTipReference = CreateWidget<UItemToolTip>(GetOwningPlayer(), TooltipWidgetClass);
 	ItemToolTipReference->AddToViewport(999); 
 	ItemToolTipReference->SetVisibility(ESlateVisibility::Collapsed);
+
+	LastHoveredIndex = INDEX_NONE;
 }
 
 void UItemsPanelWidget::ResolvePair(const TArray<FItemSlotData>& ItemsArray, int32 TargetIndex,
@@ -581,6 +600,10 @@ void UItemsPanelWidget::HandleItemDropped(int32 DroppedIndex,int32 NewIndex)
 		{
 			SelectSlotAtIndex(NewIndex);
 		}
+	}
+	else
+	{
+		HandleDragCancelled(NewIndex);
 	}
 }
 
@@ -902,42 +925,90 @@ void UItemsPanelWidget::HandleDragCancelled(int LastEnterIndex) const
 
 void UItemsPanelWidget::HandleSlotHovered(UItemSlotWidget* SlotWidget)
 {
-	if (!IsValid(SlotWidget) || !IsValid(ItemToolTipReference)) return;
+    if (!IsValid(SlotWidget) || !IsValid(ItemToolTipReference)) return;
 
-	int32 GridIndex = SlotWidget->GetGridIndex();
-	
-	TArray<FItemSlotData>& ItemsArray = *CategoryItemsMap.Find(CurrentCategoryTag);
-	if (!ItemsArray.IsValidIndex(GridIndex)) return;
+    ESlotSizeCategories Size = SlotWidget->GetCurrentSlotSize();
+    int32 SlotGridIndex = SlotWidget->GetGridIndex();
 
-	const FItemSlotData& ItemSlot = ItemsArray[GridIndex];
-	
-	ItemToolTipReference->SetData(ItemSlot.ItemDefinition);
-	
-	FGeometry SlotGeometry = SlotWidget->GetCachedGeometry();
-	if (SlotWidget->GetCurrentSlotSize() == SuperiorSlotVertical)
-	{
-		UItemSlotWidget* LowerSlot = GetItemSlotbyIndex(GridIndex + MaxColumns);
-		if (IsValid(LowerSlot)) SlotGeometry = LowerSlot->GetCachedGeometry();
-	}
-	
-	FVector2D AbsPos = SlotGeometry.GetAbsolutePosition();
-	FVector2D AbsSize = SlotGeometry.GetAbsoluteSize();
+    GEngine->AddOnScreenDebugMessage(-1,3.f,FColor::Red,FString::Printf(TEXT("Hovered Current: %i"), SlotGridIndex));
+    GEngine->AddOnScreenDebugMessage(-1,3.f,FColor::Red,FString::Printf(TEXT("Hovered Last: %i"), LastHoveredIndex)); // fix
 
-	FVector2D PixelPosition;
-	FVector2D ViewportPosition;
-	USlateBlueprintLibrary::AbsoluteToViewport(
-		GetWorld(),
-		FVector2D(AbsPos.X + AbsSize.X, AbsPos.Y + AbsSize.Y),
-		PixelPosition,
-		ViewportPosition
-	);
+    // Ignorar si ya estamos sobre este slot o su compañero
+    if (LastHoveredIndex == SlotGridIndex) return;
+    if (Size == SuperiorSlotVertical && LastHoveredIndex == SlotGridIndex + MaxColumns) return;
+    if (Size == LowerSlotVertical    && LastHoveredIndex == SlotGridIndex - MaxColumns) return;
 
-	ItemToolTipReference->SetPositionInViewport(ViewportPosition, false);
-	ItemToolTipReference->SetVisibility(ESlateVisibility::Visible);
+    // Actualizar LastHoveredIndex SOLO si vamos a procesar este slot
+    LastHoveredIndex = SlotGridIndex;
+
+    TArray<FItemSlotData>& ItemsArray = *CategoryItemsMap.Find(CurrentCategoryTag);
+    if (!ItemsArray.IsValidIndex(LastHoveredIndex)) return;
+
+    // Slot vacío: ocultar tooltip pero SÍ actualizar LastHoveredIndex (ya lo hicimos arriba)
+    if (SlotWidget->IsEmpty())
+    {
+        ItemToolTipReference->SetVisibility(ESlateVisibility::Collapsed);
+        return;
+    }
+
+    const FItemSlotData& ItemSlot = ItemsArray[LastHoveredIndex];
+    ItemToolTipReference->SetData(ItemSlot.ItemDefinition);
+
+    FGeometry SlotGeometry = SlotWidget->GetCachedGeometry();
+    if (Size == SuperiorSlotVertical)
+    {
+        UItemSlotWidget* LowerSlot = GetItemSlotbyIndex(LastHoveredIndex + MaxColumns);
+        if (IsValid(LowerSlot)) SlotGeometry = LowerSlot->GetCachedGeometry();
+    }
+
+    FVector2D AbsPos  = SlotGeometry.GetAbsolutePosition();
+    FVector2D AbsSize = SlotGeometry.GetAbsoluteSize();
+
+    FVector2D PixelPosition;
+    FVector2D ViewportPosition;
+    USlateBlueprintLibrary::AbsoluteToViewport(
+        GetWorld(),
+        FVector2D(AbsPos.X + AbsSize.X, AbsPos.Y + AbsSize.Y),
+        PixelPosition,
+        ViewportPosition
+    );
+
+    ItemToolTipReference->SetPositionInViewport(ViewportPosition, false);
+    ItemToolTipReference->SetVisibility(ESlateVisibility::Visible);
 }
 
-void UItemsPanelWidget::HandleSlotLeaved()
+void UItemsPanelWidget::HandleSlotLeaved(UItemSlotWidget* SlotWidget)
 {
+	ESlotSizeCategories Size = SlotWidget->GetCurrentSlotSize();
+	int32 SlotGridIndex = SlotWidget->GetGridIndex();
+
+	// Calcular el índice superior del par que está dejando
+	int32 LeavingPairSuperior = INDEX_NONE;
+	if      (Size == SuperiorSlotVertical) LeavingPairSuperior = SlotGridIndex;
+	else if (Size == LowerSlotVertical)    LeavingPairSuperior = SlotGridIndex - MaxColumns;
+	else                                   LeavingPairSuperior = SlotGridIndex; // UniqueSlot
+
+	// Calcular el índice superior del par que está activo (LastHoveredIndex)
+	int32 ActivePairSuperior = INDEX_NONE;
+	if (LastHoveredIndex != INDEX_NONE)
+	{
+		const TArray<FItemSlotData>& ItemsArray = *CategoryItemsMap.Find(CurrentCategoryTag);
+		if (ItemsArray.IsValidIndex(LastHoveredIndex))
+		{
+			ESlotSizeCategories ActiveSize = ItemsArray[LastHoveredIndex].Size;
+			if      (ActiveSize == SuperiorSlotVertical) ActivePairSuperior = LastHoveredIndex;
+			else if (ActiveSize == LowerSlotVertical)    ActivePairSuperior = LastHoveredIndex - MaxColumns;
+			else                                         ActivePairSuperior = LastHoveredIndex;
+		}
+	}
+
+	// Solo ocultar si el par que abandona ES el par activo
+	// Si ya estamos en otro par distinto, este leave es obsoleto
+	if (LeavingPairSuperior != ActivePairSuperior) return;
+
+	// Verificar que el compañero no está siendo entrado ahora mismo
+	// (el CancelLeaveTimer en NativeOnMouseEnter ya maneja esto, pero por si acaso)
+	LastHoveredIndex = INDEX_NONE;
 	ItemToolTipReference->SetVisibility(ESlateVisibility::Collapsed);
 }
 

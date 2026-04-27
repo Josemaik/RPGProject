@@ -120,7 +120,7 @@ UItemSlotWidget* UInventoryWidget::NewActiveItem(const FRPGInventoryEntry& Entry
 		return nullptr;
 	}
 
-	CurrentItemSlotWidget->Init(Entry, ItemDefinition.Icon);
+	CurrentItemSlotWidget->Init(Entry, ItemDefinition.Icon, ItemDefinition.Rarity);
 
 	return CurrentItemSlotWidget;
 }
@@ -242,7 +242,7 @@ void UInventoryWidget::OnEquipKeyPressed()
 	
 	InventoryWidgetController->EquipItem(SelectedItem);
 	const FMasterItemDefinition& ItemDefinition = InventoryWidgetController->GetInventoryItemDefinition(SelectedItem.ItemTag);
-	SilverSword->EquipItemSlot(SelectedItem,ItemDefinition.Icon.Get());
+	SilverSword->EquipItemSlot(SelectedItem,ItemDefinition.Icon.Get(),ItemDefinition.Rarity);
 }
 
 void UInventoryWidget::OnDropKeyPressed()

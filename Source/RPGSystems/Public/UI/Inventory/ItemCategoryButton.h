@@ -29,13 +29,20 @@ private:
 	virtual void NativeConstruct() override;
 	
 	UFUNCTION()
+	void OnActionButtonHovered();
+	UFUNCTION()
+	void OnActionButtonUnhovered();
+	UFUNCTION()
 	void OnActionButtonClicked();
+
+	UPROPERTY(EditDefaultsOnly, Category = "Style")
+	FLinearColor HoverColor;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Style")
+	FLinearColor UnhoverColor;
 
 	UPROPERTY(EditInstanceOnly, meta=(AllowPrivateAccess=true),Category= "TagInfo")
 	FGameplayTag CategoryTag;
-	
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (BindWidget, AllowPrivateAccess="true"), Category = "UI")
-	UTextBlock* ItemCategoryName;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (BindWidget, AllowPrivateAccess="true"), Category = "UI")
 	UButton* ActionButton;

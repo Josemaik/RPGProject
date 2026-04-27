@@ -13,6 +13,7 @@
 #include "UI/Inventory/ItemSlotDroppedDragDrop.h"
 #include "UI/Inventory/ItemSlotIcon.h"
 #include "Components/OverlaySlot.h"
+#include "Libraries/RPGUIStatics.h"
 
 
 void UItemSlotWidget::SetItemNameText(FText Text)
@@ -73,7 +74,7 @@ void UItemSlotWidget::NativeDestruct()
 	Super::NativeDestruct();
 }
 
-void UItemSlotWidget::Init(const FRPGInventoryEntry& Entry,const TSoftObjectPtr<UTexture2D>& Icon,const FSlateBrush& Brush,ESlotSizeCategories SlotSize)
+void UItemSlotWidget::Init(const FRPGInventoryEntry& Entry,const TSoftObjectPtr<UTexture2D>& Icon,EItemRarity Rarity,const FSlateBrush& Brush,ESlotSizeCategories SlotSize)
 {
 	ItemEntry = Entry;
 	SetQuantityText(ItemEntry.Quantity);
@@ -84,7 +85,9 @@ void UItemSlotWidget::Init(const FRPGInventoryEntry& Entry,const TSoftObjectPtr<
 	CurrentIconBrush = Brush;
 	SoftIconTexture = Icon;
 	SetIcon(Brush);
-	//SetIconPadding(false);
+
+	CurrentRarity = Rarity;
+	BackgroundRarity->SetBrushTintColor(FSlateColor(URPGUIStatics::GetColorForRarity(GetWorld(),Rarity)));
 }
 
 void UItemSlotWidget::EmptySlot()
@@ -134,8 +137,10 @@ void UItemSlotWidget::DisableDragOverPreview()
 
 void UItemSlotWidget::EnableDragOverResultIcon(EDragOverResult Result,ESlotSizeCategories DraggedSize)
 {
-	GEngine->AddOnScreenDebugMessage(-1,5.f,FColor::Green,FString::Printf(TEXT("EnableDragOverResultIcon")));
-	FVector2D Translation = DraggedSize == UniqueSlot ? FVector2D(31.0, -25.0) : FVector2D(31.0,35.0);
+	const bool bIsLastColumn = (CurrentGridIndex % MaxColumns) == (MaxColumns - 1);
+	float TranslationX = bIsLastColumn ? -76.f : 31.f;
+	float TranslationY = DraggedSize == UniqueSlot ? -25.f : 35.f;
+	FVector2D Translation = FVector2D(TranslationX, TranslationY);
 	DragOverResultIcon->SetRenderTranslation(Translation);
 	DragOverResultIcon->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
 	switch (Result)
@@ -154,13 +159,11 @@ void UItemSlotWidget::EnableDragOverResultIcon(EDragOverResult Result,ESlotSizeC
 
 void UItemSlotWidget::DisableDragOverResultIcon()
 {
-	GEngine->AddOnScreenDebugMessage(-1,5.f,FColor::Red,FString::Printf(TEXT("DisableDragOverResultIcon")));
 	DragOverResultIcon->SetVisibility(ESlateVisibility::Collapsed);
 }
 
 void UItemSlotWidget::StartSelectedAnimation()
 {
-	UE_LOG(LogTemp, Warning, TEXT("SlotSize: %d"), (int)CurrentSlotSize);
 	OutlineSlot();
 	if (!IsValid(SelectedSlotAnimation)) return;
 	PlayAnimation(SelectedSlotAnimation,0.f,0,EUMGSequencePlayMode::Forward);
@@ -174,10 +177,6 @@ void UItemSlotWidget::StopSelectedAnimation()
 
 void UItemSlotWidget::SetIconPadding(bool reset) const
 {
-	// UOverlaySlot* BorderSlot = Cast<UOverlaySlot>(Border->Slot);
-	// UOverlaySlot* IconSlot = Cast<UOverlaySlot>(IconBox->Slot);
-	// if (!IsValid(IconSlot)) return;
-	// IconSlot->SetPadding(0.f);
 	UOverlaySlot* BorderSlot = Cast<UOverlaySlot>(BackgroundRarity->Slot);
 	if (!IsValid(BorderSlot)) return;
     
@@ -207,7 +206,7 @@ FReply UItemSlotWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, con
 {
 	if (InMouseEvent.IsMouseButtonDown(EKeys::LeftMouseButton))
 	{
-		GEngine->AddOnScreenDebugMessage(-1,5.f,FColor::Magenta,FString::Printf(TEXT("Item Selected")));
+		GetWorld()->GetTimerManager().ClearTimer(ItemTooltipTimerHandle);
 		OnItemRowClickedDelegate.Execute(CurrentGridIndex);
 		//DragAndDrop
 		return FReply::Handled().DetectDrag(TakeWidget(), EKeys::LeftMouseButton);
@@ -230,6 +229,7 @@ void UItemSlotWidget::NativeOnDragDetected(const FGeometry& InGeometry, const FP
 	DragDropOperation->ItemEntry = &ItemEntry;
 	DragDropOperation->SlotSize = CurrentSlotSize;
 	DragDropOperation->IconTexture = SoftIconTexture.Get();
+	DragDropOperation->Rarity = CurrentRarity;
 	
 	OutOperation = DragDropOperation;
 
@@ -238,7 +238,6 @@ void UItemSlotWidget::NativeOnDragDetected(const FGeometry& InGeometry, const FP
 
 void UItemSlotWidget::NativeOnDragCancelled(const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation)
 {
-	GEngine->AddOnScreenDebugMessage(-1,5.f,FColor::Emerald,FString::Printf(TEXT("Drag Cancelled")));
 	Super::NativeOnDragCancelled(InDragDropEvent, InOperation);
 	//No ha dropeado en ningún lado -> mundo
 	if (!IsValid(InOperation)) return;
@@ -262,9 +261,6 @@ void UItemSlotWidget::NativeOnDragCancelled(const FDragDropEvent& InDragDropEven
 void UItemSlotWidget::NativeOnDragEnter(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent,
 	UDragDropOperation* InOperation)
 {
-	Super::NativeOnDragEnter(InGeometry, InDragDropEvent, InOperation);
-	
-	GEngine->AddOnScreenDebugMessage(-1,5.f,FColor::Emerald,FString::Printf(TEXT("Drag Enter")));
 	Super::NativeOnDragEnter(InGeometry, InDragDropEvent, InOperation);
 	
 	UItemSlotDroppedDragDrop* DragDropOp = Cast<UItemSlotDroppedDragDrop>(InOperation);
@@ -312,7 +308,6 @@ void UItemSlotWidget::NativeOnDragEnter(const FGeometry& InGeometry, const FDrag
 
 void UItemSlotWidget::NativeOnDragLeave(const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation)
 {
-	GEngine->AddOnScreenDebugMessage(-1,5.f,FColor::Emerald,FString::Printf(TEXT("Drag Leave")));
 	Super::NativeOnDragLeave(InDragDropEvent, InOperation);
 
 	UItemSlotDroppedDragDrop* DragDropOp = Cast<UItemSlotDroppedDragDrop>(InOperation);
@@ -337,7 +332,6 @@ void UItemSlotWidget::NativeOnDragLeave(const FDragDropEvent& InDragDropEvent, U
 bool UItemSlotWidget::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent,
 	UDragDropOperation* InOperation)
 {
-	GEngine->AddOnScreenDebugMessage(-1,5.f,FColor::Emerald,FString::Printf(TEXT("Dro Item Slot")));
 	UItemSlotDroppedDragDrop* DragDropOp = Cast<UItemSlotDroppedDragDrop>(InOperation);
 	if (!IsValid(DragDropOp)) return false;
 
@@ -386,18 +380,35 @@ void UItemSlotWidget::NativeOnMouseEnter(const FGeometry& InGeometry, const FPoi
 {
 	Super::NativeOnMouseEnter(InGeometry, InMouseEvent);
 
-	if (bIsEmpty) return;
-	//Add shadow
-	FTimerHandle TimerHandle;
-	GetWorld()->GetTimerManager().SetTimer(TimerHandle,[this]
+	// Cancelar mi propio leave pendiente
+	GetWorld()->GetTimerManager().ClearTimer(ItemTooltipLeaveTimerHandle);
+
+	// Cancelar el leave del compañero si existe
+	if (IsValid(LinkedSlot))
+	{
+		LinkedSlot->CancelLeaveTimer();
+	}
+
+	float InRate = bIsEmpty ? 0.f : 0.5f;
+	GetWorld()->GetTimerManager().SetTimer(ItemTooltipTimerHandle, [this]
 	{
 		OnItemSlotMouseEnteredDelegate.ExecuteIfBound(this);
-	},0.5f,false);
+	}, InRate, false);
 }
 
 void UItemSlotWidget::NativeOnMouseLeave(const FPointerEvent& InMouseEvent)
 {
 	Super::NativeOnMouseLeave(InMouseEvent);
-	//Remove shadow
-	OnItemSlotMouseLeavedDelegate.ExecuteIfBound();
+
+	GetWorld()->GetTimerManager().ClearTimer(ItemTooltipTimerHandle);
+
+	GetWorld()->GetTimerManager().SetTimer(ItemTooltipLeaveTimerHandle, [this]
+	{
+		OnItemSlotMouseLeavedDelegate.ExecuteIfBound(this);
+	}, 0.05f, false);
+}
+
+void UItemSlotWidget::CancelLeaveTimer()
+{
+	GetWorld()->GetTimerManager().ClearTimer(ItemTooltipLeaveTimerHandle);
 }

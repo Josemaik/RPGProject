@@ -3,11 +3,11 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameplayTagContainer.h"
 #include "Blueprint/DragDropOperation.h"
 #include "ItemSlotDroppedDragDrop.generated.h"
 
 enum ESlotSizeCategories : uint8;
+enum class EItemRarity : uint8;
 class UItemSlotWidget;
 struct FRPGInventoryEntry;
 /**
@@ -31,4 +31,6 @@ public:
 	UTexture2D* IconTexture;
 	
 	ESlotSizeCategories SlotSize;
+
+	EItemRarity Rarity;
 };

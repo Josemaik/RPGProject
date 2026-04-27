@@ -95,14 +95,15 @@ private:
 	void HandleDragCancelled(int LastEnterIndex) const;
 
 	void HandleSlotHovered(UItemSlotWidget* SlotWidget);
-	void HandleSlotLeaved();
+	void HandleSlotLeaved(UItemSlotWidget* SlotWidget);
 	
 	void HandleSlotClicked(int32 ClickedIndex);
 	void SelectSlotAtIndex(int32 Index);
 	void DeselectCurrentSlot();
 	
 	void ResetSlotData(FItemSlotData& ItemSlotData);
-	
+
+	int32 LastHoveredIndex = INDEX_NONE;
 	int32 CurrentSelectedIndex = INDEX_NONE;
 	
 	UPROPERTY(VisibleAnywhere, meta = (BindWidget), Category = "UI")

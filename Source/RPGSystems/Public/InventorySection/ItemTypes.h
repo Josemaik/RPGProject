@@ -4,20 +4,12 @@
 
 #include "CoreMinimal.h"
 #include "GameplayTags.h"
+#include "Data/RarityDataAsset.h"
 #include "ItemTypes.generated.h"
 
 class UEquipmentDefinition;
 class UGameplayEffect;
 
-UENUM(BlueprintType)
-enum class EItemRarity : uint8
-{
-	Common  = 0 UMETA(DisplayName="Common"),
-	Master  = 1 UMETA(DisplayName="Master"),
-	Magic   = 2 UMETA(DisplayName="Magic"),
-	Relic   = 3 UMETA(DisplayName="Relic"),
-	Witcher = 4 UMETA(DisplayName="Witcher")
-};
 
 UENUM(BlueprintType)
 enum class EEquipmentType : uint8

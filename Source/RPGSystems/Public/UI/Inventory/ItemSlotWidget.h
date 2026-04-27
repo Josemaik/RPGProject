@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameplayTagContainer.h"
+#include "ItemSlotDroppedDragDrop.h"
 #include "SlotSizeCategories.h"
 #include "Blueprint/UserWidget.h"
 #include "InventorySection/InventoryComponent.h"
@@ -35,7 +36,7 @@ DECLARE_DELEGATE_TwoParams(FOnDragEntered,int32 DraggedItemIndex, int32 EnterIte
 DECLARE_DELEGATE_TwoParams(FOnDragLeaved, int32 DraggedItemIndex,int32 LeaveItemIndex);
 DECLARE_DELEGATE_OneParam(FOnDragCancelled,int32 LastEnterItemIndex);
 DECLARE_DELEGATE_OneParam(FOnItemSlotMouseEntered,UItemSlotWidget* EnteredItemSlot);
-DECLARE_DELEGATE(FOnItemSlotMouseLeaved);
+DECLARE_DELEGATE_OneParam(FOnItemSlotMouseLeaved,UItemSlotWidget* LeavedItemSlot);
 /**
  * 
  */
@@ -51,14 +52,14 @@ public:
 	FOnDragCancelled OnDragCancelledDelegate;
 	FOnItemSlotMouseEntered OnItemSlotMouseEnteredDelegate;
 	FOnItemSlotMouseLeaved OnItemSlotMouseLeavedDelegate;
-	
+
 	void SetItemNameText(FText Text);
 	void SetQuantityText(int32 Quantity);
 	void SetIcon(const FSlateBrush& Brush);
 	void SetGridSlot(UUniformGridSlot* GridSlot);
 	UUniformGridSlot* GetGridSlot();
 	
-	void Init(const FRPGInventoryEntry& Entry,const TSoftObjectPtr<UTexture2D>& Icon,const FSlateBrush& Brush = FSlateBrush(), ESlotSizeCategories SlotSize = ESlotSizeCategories::UniqueSlot);
+	void Init(const FRPGInventoryEntry& Entry,const TSoftObjectPtr<UTexture2D>& Icon,EItemRarity Rarity = EItemRarity::Common,const FSlateBrush& Brush = FSlateBrush(), ESlotSizeCategories SlotSize = ESlotSizeCategories::UniqueSlot);
 	void EmptySlot();
 	void OutlineSlot() const;
 	void RemoveOutLineSlot();
@@ -71,6 +72,8 @@ public:
 
 	void StartSelectedAnimation();
 	void StopSelectedAnimation();
+	
+	void SetLinkedSlot(UItemSlotWidget* InSlot) { LinkedSlot = InSlot; }
 	
 	bool IsEmpty() const { return bIsEmpty; }
 	TSoftObjectPtr<UTexture2D> GetIconTexture() const { return  SoftIconTexture; }
@@ -94,6 +97,15 @@ protected:
 private:
 	virtual void NativeOnMouseEnter(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 	virtual void NativeOnMouseLeave(const FPointerEvent& InMouseEvent) override;
+	void CancelLeaveTimer();
+
+	UPROPERTY()
+	TObjectPtr<UItemSlotWidget> LinkedSlot;
+
+	
+
+	FTimerHandle ItemTooltipTimerHandle;
+	FTimerHandle ItemTooltipLeaveTimerHandle;
 	
 	UPROPERTY(EditDefaultsOnly, Category="Style")
 	FLinearColor DragOverPreviewColor;
@@ -111,6 +123,8 @@ private:
 	bool bIsEmpty = true;
 	int32 CurrentGridIndex = 0;
 	FSlateBrush CurrentIconBrush;
+	EItemRarity CurrentRarity;
+	int32 MaxColumns = 5;
 
 	UPROPERTY()
 	TSoftObjectPtr<UTexture2D> SoftIconTexture;

@@ -23,6 +23,9 @@ private:
 	UPROPERTY(EditAnywhere, meta=(BindWidget), Category = "Layout")
 	UTextBlock* ItemNameText;
 
+	UPROPERTY(EditAnywhere, meta=(BindWidget), Category = "Layout")
+	UTextBlock* ItemTypeText;
+
 	UPROPERTY(EditAnywhere,meta=(BindWidget), Category = "Layout")
 	UTextBlock* ItemDescriptionText;
 
