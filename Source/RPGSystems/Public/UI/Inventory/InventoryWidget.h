@@ -82,7 +82,7 @@ private:
 	
 	void InitEquipmentWidget(UEquipmentSlot* InEquipmentSlot);
 	virtual void FinishDestroy() override;
-	void OnEquipmentDropped(FGameplayTag ItemTag);
+	void OnEquipmentDropped(FGameplayTag ItemTag,uint64 ExistingID);
 	//functions
 	void BindInventoryItemDelegates();
 	void HandleCategorySelected(FGameplayTag CategorySelected);

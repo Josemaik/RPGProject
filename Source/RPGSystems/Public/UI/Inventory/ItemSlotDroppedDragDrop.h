@@ -30,7 +30,7 @@ public:
 
 	UPROPERTY()
 	UItemSlotWidget* LastEnterSlotWidget;
-
+	
 	FRPGInventoryEntry* ItemEntry;
 
 	FMasterItemDefinition ItemDefinition;

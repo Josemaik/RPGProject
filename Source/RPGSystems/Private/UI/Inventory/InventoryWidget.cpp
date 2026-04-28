@@ -91,6 +91,7 @@ void UInventoryWidget::InitEquipmentWidget(UEquipmentSlot* EquipmentSlot)
 {
 	EquipmentSlot->SetTooltipReference(ItemToolTipReference); // el mismo del panel
 	EquipmentSlot->OnUnequipItem.BindUObject(this, &UInventoryWidget::HandleUnequipItem);
+	EquipmentSlot->OnEquipmentDropped.BindUObject(this,&UInventoryWidget::OnEquipmentDropped);
 }
 
 void UInventoryWidget::FinishDestroy()
@@ -104,9 +105,9 @@ void UInventoryWidget::FinishDestroy()
 	InventoryWidgetController->InventoryEntryDelegate.RemoveAll(this);
 }
 
-void UInventoryWidget::OnEquipmentDropped(FGameplayTag ItemTag)
+void UInventoryWidget::OnEquipmentDropped(FGameplayTag ItemTag,uint64 ExistingID)
 {
-	InventoryWidgetController->AddEquipItem(ItemTag);
+	InventoryWidgetController->AddEquipItem(ItemTag,ExistingID);
 }
 
 void UInventoryWidget::BindInventoryItemDelegates()
@@ -220,9 +221,6 @@ void UInventoryWidget::HandleItemDropped(const FRPGInventoryEntry& Entry) const
 void UInventoryWidget::HandleInventoryItemRemoved(const FRPGInventoryEntry& Entry) const
 {
 	ItemsContainer->RemoveItem(Entry.ItemID);
-
-	//Unbind delegates
-	
 }
 
 void UInventoryWidget::OnSearchBarTextChanged(const FText& InText)
@@ -259,6 +257,7 @@ void UInventoryWidget::OnEquipItem(const FRPGInventoryEntry& Entry)
 	if (!IsValid(InventoryWidgetController)) return;
 	
 	InventoryWidgetController->EquipItem(Entry);
+	//ItemsContainer->RemoveItem(Entry.ItemID);
 }
 
 void UInventoryWidget::OnEquipKeyPressed()
@@ -266,9 +265,10 @@ void UInventoryWidget::OnEquipKeyPressed()
 	const FRPGInventoryEntry& SelectedItem = ItemsContainer->GetSelectedItem();
 	if (SelectedItem.ItemID == INDEX_NONE) return;
 	
-	InventoryWidgetController->EquipItem(SelectedItem);
 	const FMasterItemDefinition& ItemDefinition = InventoryWidgetController->GetInventoryItemDefinition(SelectedItem.ItemTag);
 	SilverSword->EquipItemSlot(SelectedItem,ItemDefinition);
+	
+	InventoryWidgetController->EquipItem(SelectedItem);
 }
 
 void UInventoryWidget::OnDropKeyPressed()

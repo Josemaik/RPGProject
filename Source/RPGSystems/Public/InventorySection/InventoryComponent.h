@@ -65,7 +65,7 @@ struct FRPGInventoryList : public FFastArraySerializer
 	OwnerComponent(InOwnerComponent)
 	{}
 
-	FRPGInventoryEntry* AddItem(const FGameplayTag& ItemTag, int32 NumItems = 1);
+	FRPGInventoryEntry* AddItem(const FGameplayTag& ItemTag,uint64 ExistingID = 0, int32 NumItems = 1);
 	void RemoveItem(const FRPGInventoryEntry& Entry, int32 NumItems = 1);
 	bool HasEnough(const FGameplayTag& ItemTag, int32 NumItems = 1);
 	uint64 GenerateID();
@@ -135,7 +135,7 @@ public:
 	virtual void BeginPlay() override;
 	
 	UFUNCTION(BlueprintCallable)
-	void AddItem(const FGameplayTag& ItemTag, int32 NumItems = 1);
+	void AddItem(const FGameplayTag& ItemTag,int64 ExistingID = 0, int32 NumItems = 1);
 
 	UFUNCTION(BlueprintCallable)
 	void UseItem(const FRPGInventoryEntry& Entry, int32 NumItems);

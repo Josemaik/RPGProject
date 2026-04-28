@@ -40,7 +40,7 @@ public:
 	void BroadCastInitialValues() const;
 
 	void EquipItem(const FRPGInventoryEntry& Entry) const;
-	void AddEquipItem(FGameplayTag ItemTag) const;
+	void AddEquipItem(FGameplayTag ItemTag,uint64 ExistingID) const;
 	void DropItemToWorld(const FRPGInventoryEntry& Entry) const;
 	void RequestSortItems(bool Quick) const;
 

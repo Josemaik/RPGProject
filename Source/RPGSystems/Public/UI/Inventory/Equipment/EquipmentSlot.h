@@ -15,6 +15,7 @@ class UImage;
 
 DECLARE_DELEGATE_OneParam(FOnEquipItem, const FRPGInventoryEntry&)
 DECLARE_DELEGATE_OneParam(FOnUnequipItem, const FRPGInventoryEntry&)
+DECLARE_DELEGATE_TwoParams(FOnEquipentDropped,FGameplayTag ItemTag,uint64 ExistingID)
 /**
  * 
  */
@@ -29,13 +30,15 @@ public:
 	
 	FOnEquipItem OnEquipItem;
 	FOnUnequipItem OnUnequipItem;
+	FOnEquipentDropped OnEquipmentDropped;
 protected:
-	virtual void DragVisualEnable() override;
+	virtual void DragVisualEnable(bool bEnable) override;
 	virtual void NativeConstruct() override;
 	//virtual void NativeOnDragDetected(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent, UDragDropOperation*& OutOperation) override;
 	virtual void NativeOnDragEnter(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
 	virtual void NativeOnDragLeave(const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
-	virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
+	//virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
+	virtual FReply NativeOnMouseButtonDoubleClick(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 	virtual void BuildDragOperation(UDragDropOperation*& OutOperation) override;
 	virtual bool NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
 private:
@@ -59,5 +62,5 @@ private:
 	
 	int32 ClickCount = 0;
 	FTimerHandle DoubleClickTimerHandle;
-	static constexpr float DoubleClickThreshold = 0.3f;
+	static constexpr float DoubleClickThreshold = 1.f;
 };

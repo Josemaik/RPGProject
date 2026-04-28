@@ -47,6 +47,8 @@ void UItemsPanelWidget::AddItemToGrid(UItemSlotWidget* Item,const int32 Index)
 
 void UItemsPanelWidget::RemoveItem(const int64 ItemID)
 {
+	ItemToolTipReference->SetVisibility(ESlateVisibility::Collapsed);
+	
 	TArray<FItemSlotData>* ItemsArrayPtr = CategoryItemsMap.Find(CurrentCategoryTag);
 	if (!ItemsArrayPtr) return;
 	TArray<FItemSlotData>& ItemsArray = *ItemsArrayPtr;
@@ -55,15 +57,15 @@ void UItemsPanelWidget::RemoveItem(const int64 ItemID)
 		FItemSlotData& ItemSlotData = ItemsArray[i];
 		if (!ItemSlotData.bIsEmpty && ItemSlotData.Entry.ItemID == ItemID)
 		{
-			ItemSlotData.bIsEmpty = true;
 			if (ItemSlotData.Size == SuperiorSlotVertical)
 			{
-				ItemsArray[i + MaxColumns].bIsEmpty = true;
+				ResetSlotData(ItemsArray[i + MaxColumns]);
 			}
 			if (ItemSlotData.Size == LowerSlotVertical)
 			{
-				ItemsArray[i - MaxColumns].bIsEmpty = true;
+				ResetSlotData(ItemsArray[i - MaxColumns]);
 			}
+			ResetSlotData(ItemSlotData);
 			break;
 		}
 	}
@@ -834,10 +836,10 @@ bool UItemsPanelWidget::TryDropInNewSlot(int32 FromIndex, int32 ToIndex)
 			// BottomSlot = BuildSlotDataFromDrag(CurrentDragOperation, false);
 
 			// quitar del equipment
+			OnEquipmentDropped.ExecuteIfBound(CurrentDragOperation->ItemEntry->ItemTag,CurrentDragOperation->ItemEntry->ItemID);
+			
 			CurrentDragOperation->SourceEquipmentSlot->EmptySlot();
 			CurrentDragOperation->SourceEquipmentSlot->OnUnequipItem.ExecuteIfBound(*CurrentDragOperation->ItemEntry);
-
-			OnEquipmentDropped.ExecuteIfBound(CurrentDragOperation->ItemEntry->ItemTag);
 			
 			return true;
 		}

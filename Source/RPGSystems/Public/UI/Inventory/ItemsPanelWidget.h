@@ -20,7 +20,7 @@ struct FRPGInventoryEntry;
 class UItemSlotWidget;
 class UUniformGridPanel;
 
-DECLARE_DELEGATE_OneParam(FOnEquipentDropped,FGameplayTag ItemTag)
+DECLARE_DELEGATE_TwoParams(FOnEquipentDropped,FGameplayTag ItemTag,uint64 ExistingID)
 
 USTRUCT()
 struct FItemSlotData

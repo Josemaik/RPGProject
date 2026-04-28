@@ -36,7 +36,10 @@ void UBaseInventorySlot::EquipVisual(UTexture2D* Texture, EItemRarity Rarity)
     IconBox->SetBrushFromTexture(Texture);
     IconBox->SetColorAndOpacity(FLinearColor::White);
     if (IsValid(BackgroundRarity))
+    {
+        BackgroundRarity->SetOpacity(1.f);
         BackgroundRarity->SetBrushTintColor(URPGUIStatics::GetColorForRarity(GetWorld(), Rarity));
+    }
     bIsEmpty = false;
 }
 

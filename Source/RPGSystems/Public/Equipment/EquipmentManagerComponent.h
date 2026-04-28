@@ -148,6 +148,8 @@ protected:
 	virtual void BeginPlay() override;
 
 private:
+	bool bIsSwappingEquipment = false;
+	
 	UPROPERTY()
 	TObjectPtr<UInventoryComponent> InvComponentRef;
 

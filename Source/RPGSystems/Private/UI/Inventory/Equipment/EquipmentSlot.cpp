@@ -19,7 +19,7 @@ void UEquipmentSlot::NativeConstruct()
 	OnSlotMouseEnteredDelegate.BindUObject(this, &UEquipmentSlot::HandleMouseEntered);
 	OnSlotMouseLeavedDelegate.BindUObject(this,  &UEquipmentSlot::HandleMouseLeaved);
 
-	DragVisualEnable();
+	//DragVisualEnable();
 
 	//EmptySlot();
 }
@@ -29,6 +29,7 @@ void UEquipmentSlot::EquipItemSlot(const FRPGInventoryEntry& Entry,const FMaster
 	ItemEntry = Entry;
 	EquipVisual(ItemDefinition.Icon.Get(), ItemDefinition.Rarity);
 	DragOverPreview->SetColorAndOpacity(FLinearColor(1.f, 1.f, 1.f, 0.f));
+	
 	OnEquipItem.ExecuteIfBound(Entry);
 
 	CurrentItemDefinition = ItemDefinition;
@@ -42,19 +43,26 @@ void UEquipmentSlot::EquipItemSlot(const FRPGInventoryEntry& Entry,const FMaster
 	}
 }
 
-void UEquipmentSlot::DragVisualEnable()
+void UEquipmentSlot::DragVisualEnable(bool bEnable)
 {
 	if (IsValid(IconBox) && IsValid(PlaceholderTexture))
 	{
-		IconBox->SetBrushFromTexture(PlaceholderTexture);
-		IconBox->SetColorAndOpacity(FLinearColor(1.f, 1.f, 1.f, 1.f));
+		//IconBox->SetBrushFromTexture(PlaceholderTexture);
+		//FLinearColor Color = bEnable ? FLinearColor(1.f, 1.f, 1.f, 1.f) : FLinearColor(0.f, 0.f, 0.f, 1.f);
+		//IconBox->SetColorAndOpacity(FLinearColor(1.f, 1.f, 1.f, 1.f));
+	}
+	if (IsValid(BackgroundRarity))
+	{
+		BackgroundRarity->SetColorAndOpacity(FLinearColor(1.f, 1.f, 1.f, 0.f));
 	}
 }
 
 void UEquipmentSlot::EmptySlot()
 {
 	Super::EmptySlot();
-	DragVisualEnable();
+	IconBox->SetBrushFromTexture(PlaceholderTexture);
+	IconBox->SetColorAndOpacity(FLinearColor(1.f, 1.f, 1.f, 1.f));
+	//DragVisualEnable();
 }
 
 void UEquipmentSlot::HandleMouseEntered(UBaseInventorySlot* BaseSlot)
@@ -95,31 +103,50 @@ void UEquipmentSlot::HandleMouseLeaved(UBaseInventorySlot* BaseSlot)
 // 	BuildDragOperation(OutOperation);
 // }
 
-FReply UEquipmentSlot::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
+// FReply UEquipmentSlot::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
+// {
+// 	if (!InMouseEvent.IsMouseButtonDown(EKeys::LeftMouseButton)) return FReply::Unhandled();
+// 	if (bIsEmpty) return FReply::Unhandled();
+//
+// 	ClickCount++;
+//
+// 	if (ClickCount >= 2)
+// 	{
+// 		ClickCount = 0;
+// 		GetWorld()->GetTimerManager().ClearTimer(DoubleClickTimerHandle);
+//
+// 		FRPGInventoryEntry EntryCopy = ItemEntry;
+// 		EmptySlot();
+// 		OnUnequipItem.ExecuteIfBound(EntryCopy);
+// 		OnEquipmentDropped.ExecuteIfBound(EntryCopy.ItemTag,EntryCopy.ItemID);
+//
+// 		BackgroundRarity->SetBrushTintColor(FLinearColor(0.f,0.f,0.f,0.f));
+// 		ItemToolTipReference->SetVisibility(ESlateVisibility::Collapsed);
+// 		return FReply::Handled();
+// 	}
+// 	
+// 	GetWorld()->GetTimerManager().SetTimer(DoubleClickTimerHandle, [this]
+// 	{
+// 		ClickCount = 0;
+// 	}, DoubleClickThreshold, false);
+// 	
+// 	return Super::NativeOnMouseButtonDown(InGeometry, InMouseEvent);
+// }
+
+FReply UEquipmentSlot::NativeOnMouseButtonDoubleClick(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
 {
-	if (!InMouseEvent.IsMouseButtonDown(EKeys::LeftMouseButton)) return FReply::Unhandled();
 	if (bIsEmpty) return FReply::Unhandled();
-
-	ClickCount++;
-
-	if (ClickCount >= 2)
-	{
-		ClickCount = 0;
-		GetWorld()->GetTimerManager().ClearTimer(DoubleClickTimerHandle);
-
-		FRPGInventoryEntry EntryCopy = ItemEntry;
-		EmptySlot();
-		OnUnequipItem.ExecuteIfBound(EntryCopy);
-		return FReply::Handled();
-	}
 	
-	GetWorld()->GetTimerManager().SetTimer(DoubleClickTimerHandle, [this]
-	{
-		ClickCount = 0;
-	}, DoubleClickThreshold, false);
-	
-	return Super::NativeOnMouseButtonDown(InGeometry, InMouseEvent);
+	FRPGInventoryEntry EntryCopy = ItemEntry;
+	EmptySlot();
+	OnUnequipItem.ExecuteIfBound(EntryCopy);
+	OnEquipmentDropped.ExecuteIfBound(EntryCopy.ItemTag,EntryCopy.ItemID);
+
+	BackgroundRarity->SetBrushTintColor(FLinearColor(0.f,0.f,0.f,0.f));
+	ItemToolTipReference->SetVisibility(ESlateVisibility::Collapsed);
+	return FReply::Handled();
 }
+
 
 void UEquipmentSlot::BuildDragOperation(UDragDropOperation*& OutOperation)
 {
@@ -136,7 +163,10 @@ void UEquipmentSlot::BuildDragOperation(UDragDropOperation*& OutOperation)
 	OutOperation = DragOp;
 	
 	FRPGInventoryEntry EntryCopy = ItemEntry;
-	EmptySlot(); //-si cancelo prque no llego a dropear hay que restore
+
+	IconBox->SetBrushFromTexture(PlaceholderTexture);
+	BackgroundRarity->SetOpacity(0.f);
+	//EmptySlot(); //-si cancelo prque no llego a dropear hay que restore
 	//OnUnequipItem.ExecuteIfBound(EntryCopy);
 }
 
@@ -146,7 +176,7 @@ bool UEquipmentSlot::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEv
 	UItemSlotDroppedDragDrop* DragOp = Cast<UItemSlotDroppedDragDrop>(InOperation);
 	if (!DragOp || !DragOp->ItemEntry) return false;
 
-	if (!DragOp->ItemEntry->ItemTag.MatchesTag(EquipmentTag)) return false;
+	if (!DragOp->ItemDefinition.ItemTag.MatchesTag(EquipmentTag)) return false;
 
 	if (!bIsEmpty)
 	{
@@ -168,9 +198,9 @@ void UEquipmentSlot::NativeOnDragEnter(const FGeometry& InGeometry, const FDragD
 	UItemSlotDroppedDragDrop* DragOp = Cast<UItemSlotDroppedDragDrop>(InOperation);
 	if (!IsValid(DragOp) || !DragOp->ItemEntry) return;
 
-	if (DragOp->SourceEquipmentSlot == this) return;
+	//if (DragOp->SourceEquipmentSlot == this) return;
 	
-	const bool bCompatible = DragOp->ItemEntry->ItemTag.MatchesTag(EquipmentTag);
+	const bool bCompatible = DragOp->ItemDefinition.ItemTag.MatchesTag(EquipmentTag);
 	if (IsValid(DragOverPreview))
 	{
 		DragOverPreview->SetColorAndOpacity(bCompatible
@@ -187,6 +217,7 @@ void UEquipmentSlot::NativeOnDragLeave(const FDragDropEvent& InDragDropEvent, UD
 		BackgroundRarity->SetBrushTintColor(FLinearColor(0.f,0.f,0.f,0.f));
 	}
 }
+
 
 
 

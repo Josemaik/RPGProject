@@ -61,7 +61,7 @@ protected:
     virtual void NativeOnDragDetected(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent,
                                       UDragDropOperation*& OutOperation) override;
 
-    virtual void DragVisualEnable() {};
+    virtual void DragVisualEnable(bool bEnable) {};
     
     // Data
     UPROPERTY(BlueprintReadOnly)

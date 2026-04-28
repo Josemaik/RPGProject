@@ -263,10 +263,12 @@ void UEquipmentManagerComponent::EquipItem(const TSubclassOf<UEquipmentDefinitio
 		return;
 	}
 
+	bIsSwappingEquipment = true;
 	if (UEquipmentInstance* Result = EquipmentList.AddEntry(EquipmentDefinition,EffectPackage))
 	{
 		Result->OnUnEquipped();
 	}
+	bIsSwappingEquipment = false;
 }
 
 void UEquipmentManagerComponent::UnEquipItem(UEquipmentInstance* InEquipmentInstance)
@@ -289,6 +291,7 @@ void UEquipmentManagerComponent::HandleEquipmentRequested(const TSubclassOf<UEqu
 
 void UEquipmentManagerComponent::HandleUnEquippedItem(const FRPGEquipmentEntry& UnEquippedEntry) const
 {
+	if (bIsSwappingEquipment) return;
 	if (IsValid(InvComponentRef))
 	{
 		InvComponentRef->AddUnEquippedItemEntry(UnEquippedEntry.EntryTag, UnEquippedEntry.EffectPackage);

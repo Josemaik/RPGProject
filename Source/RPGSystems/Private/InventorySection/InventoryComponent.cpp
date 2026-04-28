@@ -24,7 +24,7 @@
 //* UInventoryList Methods
 ///////////////////////////////
 
-FRPGInventoryEntry* FRPGInventoryList::AddItem(const FGameplayTag& ItemTag, int32 NumItems)
+FRPGInventoryEntry* FRPGInventoryList::AddItem(const FGameplayTag& ItemTag,uint64 ExistingID, int32 NumItems)
 {
 	if (ItemTag.MatchesTag(RPGInventoryTags::ItemsCategory::Equipment))
 	{
@@ -43,7 +43,7 @@ FRPGInventoryEntry* FRPGInventoryList::AddItem(const FGameplayTag& ItemTag, int3
 	FRPGInventoryEntry& NewEntry = Entries.AddDefaulted_GetRef();
 	NewEntry.ItemTag = ItemTag;
 	NewEntry.Quantity = NumItems;
-	NewEntry.ItemID = GenerateID();
+	NewEntry.ItemID = (ExistingID != 0) ? ExistingID : GenerateID();
 
 	if (NewEntry.ItemTag.MatchesTag(RPGInventoryTags::ItemsCategory::Equipment) && IsValid(WeakStats.Get()))
 	{
@@ -237,7 +237,7 @@ void UInventoryComponent::GetLifetimeReplicatedProps(TArray<class FLifetimePrope
 	DOREPLIFETIME(UInventoryComponent, InventoryList);
 }
 
-void UInventoryComponent::AddItem(const FGameplayTag& ItemTag, int32 NumItems)
+void UInventoryComponent::AddItem(const FGameplayTag& ItemTag,int64 ExistingID, int32 NumItems)
 {
 	AActor* Owner = GetOwner();
 	if (!IsValid(Owner))
@@ -250,7 +250,7 @@ void UInventoryComponent::AddItem(const FGameplayTag& ItemTag, int32 NumItems)
 		ServerAddItem(ItemTag,NumItems);
 	}
 
-	InventoryList.AddItem(ItemTag, NumItems);
+	InventoryList.AddItem(ItemTag,ExistingID, NumItems);
 	
 	GetOwner()->ForceNetUpdate();
 }
