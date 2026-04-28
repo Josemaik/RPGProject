@@ -9,7 +9,7 @@
 #include "InventorySection/InventoryComponent.h"
 #include "ItemsPanelWidget.generated.h"
 
-class UItemSlotDroppedDragDrop;
+class UItemSlotDragDrogOperation;
 class UBaseInventorySlot;
 class UItemToolTip;
 enum class EItemSortType : uint8;
@@ -65,7 +65,7 @@ public:
 	
 	void AddItemToGrid(UItemSlotWidget* Item,const int32 Index);
 	void RemoveItem(const int64 ItemID);
-	int32 FindItemIndex(const int64 ItemID,FGameplayTag ItemTa);
+	int32 FindGridIndexByItemID(const int64 ItemID,FGameplayTag ItemTag);
 	
 	void UpdateItemSlot(const FRPGInventoryEntry& Entry);
 	void InitializeSlotWidget(const FItemSlotData& SlotData, UItemSlotWidget* NewWidget, FSlateBrush Brush);
@@ -90,7 +90,7 @@ public:
 	FGameplayTag CurrentCategoryTag;
 	
 	UPROPERTY()
-	UItemSlotDroppedDragDrop* CurrentDragOperation;
+	UItemSlotDragDrogOperation* CurrentDragOperation;
 	
 
 private:
@@ -102,7 +102,7 @@ private:
 	bool TryDropInNewSlot(int32 DroppedIndex,int32 NewIndex);
 	void HandleDraggedItemEntered(int32 EnteredIndex,int32 NewIndex);
 	void HandleDraggedItemLeaved(int32 DraggedIndex,int32 NewIndex);
-	void HandleDragCancelled(int LastEnterIndex) const;
+	void HandleDragCancelled(const FRPGInventoryEntry& Entry);
 
 	void HandleSlotHovered(UBaseInventorySlot* BaseSlot);
 	void HandleSlotLeaved(UBaseInventorySlot* SlotWidget);
@@ -111,7 +111,7 @@ private:
 	void SelectSlotAtIndex(int32 Index);
 	void DeselectCurrentSlot();
 
-	void HandleEquipmentEntered(UItemSlotDroppedDragDrop* InCurrentDragOperation);
+	void HandleEquipmentEntered(UItemSlotDragDrogOperation* InCurrentDragOperation);
 	
 	void ResetSlotData(FItemSlotData& ItemSlotData);
 

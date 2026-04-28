@@ -92,7 +92,7 @@ void FRPGEquipmentList::RemoveEntry(UEquipmentInstance* InEquipmentInstance)
 
 		if (Entry.Instance == InEquipmentInstance)
 		{
-			Entry.Instance->DestroySpawnedActors();
+			Entry.Instance->DestroySpawnedActors(Entry.SlotTag);
 			RemoveEquipmentStats(&Entry);
 			RemoveEquipmentAbility(&Entry);
 			EntryIt.RemoveCurrent();
@@ -146,6 +146,16 @@ void FRPGEquipmentList::CheckAbilityLevels(UAbilitySystemComponent* ASC, FRPGEqu
 			}
 		}
 	}
+}
+
+UEquipmentInstance* FRPGEquipmentList::FindInstanceByTag(FGameplayTag ItemTag)
+{
+	for (auto EntryIt = Entries.CreateIterator(); EntryIt; ++EntryIt)
+	{
+		FRPGEquipmentEntry& Entry = *EntryIt;
+		if (Entry.EntryTag.MatchesTag(ItemTag)) return Entry.Instance;
+	}
+	return nullptr;
 }
 
 bool FRPGEquipmentList::CheckAbilitySingleEffect(FGameplayAbilitySpec& Spec, const FEquipmentStatEffectGroup& StatEffect)
@@ -251,6 +261,7 @@ void UEquipmentManagerComponent::BindInventoryDelegates(UInventoryComponent* Inv
 {
 	if (!IsValid(InvComponent)) return;
 	InvComponent->EquipmentItemDelegate.AddUObject(this, &UEquipmentManagerComponent::HandleEquipmentRequested);
+	InvComponent->OnEquipmentItemDroppedDelegate.AddUObject(this, &UEquipmentManagerComponent::UnEquipItemByTag);
 	InvComponentRef = InvComponent;
 }
 
@@ -263,12 +274,14 @@ void UEquipmentManagerComponent::EquipItem(const TSubclassOf<UEquipmentDefinitio
 		return;
 	}
 
-	bIsSwappingEquipment = true;
+	CurrentUnequipReason = EUnequipReason::Swap;
+	
 	if (UEquipmentInstance* Result = EquipmentList.AddEntry(EquipmentDefinition,EffectPackage))
 	{
 		Result->OnUnEquipped();
 	}
-	bIsSwappingEquipment = false;
+	
+	CurrentUnequipReason = EUnequipReason::Manual;
 }
 
 void UEquipmentManagerComponent::UnEquipItem(UEquipmentInstance* InEquipmentInstance)
@@ -283,6 +296,24 @@ void UEquipmentManagerComponent::UnEquipItem(UEquipmentInstance* InEquipmentInst
 	EquipmentList.RemoveEntry(InEquipmentInstance);
 }
 
+void UEquipmentManagerComponent::UnEquipItemByTag(FGameplayTag ItemTag,EUnequipReason Reason)
+{
+	CurrentUnequipReason = Reason;
+	
+	if (!GetOwner()->HasAuthority())
+	{
+		ServerUnEquipItemByTag(ItemTag,Reason);
+		return;
+	}
+
+	if (UEquipmentInstance* Instance = EquipmentList.FindInstanceByTag(ItemTag))
+	{
+		UnEquipItem(Instance);
+	}
+	
+	CurrentUnequipReason = EUnequipReason::Manual;
+}
+
 void UEquipmentManagerComponent::HandleEquipmentRequested(const TSubclassOf<UEquipmentDefinition>& EquipmentDefinition,
 	const FEquipmentEffectPackage& EffectPackage)
 {
@@ -291,7 +322,7 @@ void UEquipmentManagerComponent::HandleEquipmentRequested(const TSubclassOf<UEqu
 
 void UEquipmentManagerComponent::HandleUnEquippedItem(const FRPGEquipmentEntry& UnEquippedEntry) const
 {
-	if (bIsSwappingEquipment) return;
+	if (CurrentUnequipReason != EUnequipReason::Manual) return;
 	if (IsValid(InvComponentRef))
 	{
 		InvComponentRef->AddUnEquippedItemEntry(UnEquippedEntry.EntryTag, UnEquippedEntry.EffectPackage);
@@ -307,6 +338,11 @@ void UEquipmentManagerComponent::ServerEquipItem_Implementation(TSubclassOf<UEqu
 void UEquipmentManagerComponent::ServerUnEquipItem_Implementation(UEquipmentInstance* InEquipmentInstance)
 {
 	UnEquipItem(InEquipmentInstance);
+}
+
+void UEquipmentManagerComponent::ServerUnEquipItemByTag_Implementation(FGameplayTag ItemTag,EUnequipReason Reason)
+{
+	UnEquipItemByTag(ItemTag,Reason);
 }
 
 

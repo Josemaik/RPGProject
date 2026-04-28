@@ -10,10 +10,10 @@
 #include "Components/Image.h"
 #include "Components/TextBlock.h"
 #include "InventorySection/InventoryComponent.h"
-#include "UI/Inventory/ItemSlotDroppedDragDrop.h"
-#include "UI/Inventory/ItemSlotIcon.h"
+#include "UI/Inventory/ItemSlotDragDrogOperation.h"
 #include "Components/OverlaySlot.h"
 #include "Libraries/RPGUIStatics.h"
+#include "UI/Inventory/ItemDragVisualWidget.h"
 
 
 void UItemSlotWidget::SetItemNameText(FText Text)
@@ -35,11 +35,11 @@ void UItemSlotWidget::SetQuantityText(int32 Quantity)
 
 void UItemSlotWidget::SetIcon(const FSlateBrush& Brush)
 {
-	IconWidgetReference = Cast<UItemSlotIcon>(CreateWidget(this,IconWidgetClass));
-	if (IsValid(IconWidgetReference))
-	{
-		IconWidgetReference->SetIcon(CurrentItemDefinition.Icon.Get(),CurrentSlotSize);
-	}
+	// IconWidgetReference = Cast<UItemDragVisualWidget>(CreateWidget(this,IconWidgetClass));
+	// if (IsValid(IconWidgetReference))
+	// {
+	// 	IconWidgetReference->SetIcon(CurrentItemDefinition.Icon.Get(),CurrentSlotSize);
+	// }
 	
 	if (!IsValid(IconBox)) return;
 	
@@ -131,32 +131,32 @@ void UItemSlotWidget::DisableDragOverPreview()
 	DragOverPreview->SetColorAndOpacity(FLinearColor(1.f, 1.f, 1.f, 0.f));
 }
 
-void UItemSlotWidget::EnableDragOverResultIcon(EDragOverResult Result,ESlotSizeCategories DraggedSize)
-{
-	const bool bIsLastColumn = (CurrentGridIndex % MaxColumns) == (MaxColumns - 1);
-	float TranslationX = bIsLastColumn ? -76.f : 31.f;
-	float TranslationY = DraggedSize == UniqueSlot ? -25.f : 35.f;
-	FVector2D Translation = FVector2D(TranslationX, TranslationY);
-	DragOverResultIcon->SetRenderTranslation(Translation);
-	DragOverResultIcon->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
-	switch (Result)
-	{
-	case EDragOverResult::Drop:
-		DragOverResultIcon->SetBrushFromTexture(DragOverResultDropTexture.Get());
-		break;
-	case EDragOverResult::Swap:
-		DragOverResultIcon->SetBrushFromTexture(DragOverResultSwapTexture.Get());
-		break;
-	case EDragOverResult::Invalid:
-		DragOverResultIcon->SetBrushFromTexture(DragOverResultInvalidTexture.Get());
-		break;
-	}
-}
+// void UItemSlotWidget::EnableDragOverResultIcon(EDragOverResult Result,ESlotSizeCategories DraggedSize)
+// {
+// 	const bool bIsLastColumn = (CurrentGridIndex % MaxColumns) == (MaxColumns - 1);
+// 	float TranslationX = bIsLastColumn ? -76.f : 31.f;
+// 	float TranslationY = DraggedSize == UniqueSlot ? -25.f : 35.f;
+// 	FVector2D Translation = FVector2D(TranslationX, TranslationY);
+// 	DragOverResultIcon->SetRenderTranslation(Translation);
+// 	DragOverResultIcon->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+// 	switch (Result)
+// 	{
+// 	case EDragOverResult::Drop:
+// 		DragOverResultIcon->SetBrushFromTexture(DragOverResultDropTexture.Get());
+// 		break;
+// 	case EDragOverResult::Swap:
+// 		DragOverResultIcon->SetBrushFromTexture(DragOverResultSwapTexture.Get());
+// 		break;
+// 	case EDragOverResult::Invalid:
+// 		DragOverResultIcon->SetBrushFromTexture(DragOverResultInvalidTexture.Get());
+// 		break;
+// 	}
+// }
 
-void UItemSlotWidget::DisableDragOverResultIcon()
-{
-	DragOverResultIcon->SetVisibility(ESlateVisibility::Collapsed);
-}
+// void UItemSlotWidget::DisableDragOverResultIcon()
+// {
+// 	DragOverResultIcon->SetVisibility(ESlateVisibility::Collapsed);
+// }
 
 void UItemSlotWidget::StartSelectedAnimation()
 {
@@ -215,18 +215,29 @@ void UItemSlotWidget::BuildDragOperation(UDragDropOperation*& OutOperation)
 {
 	Super::BuildDragOperation(OutOperation);
 	
-	UItemSlotDroppedDragDrop* DragDropOperation = Cast<UItemSlotDroppedDragDrop>(
-		UWidgetBlueprintLibrary::CreateDragDropOperation(UItemSlotDroppedDragDrop::StaticClass()));
+	UItemSlotDragDrogOperation* DragDropOperation = Cast<UItemSlotDragDrogOperation>(
+		UWidgetBlueprintLibrary::CreateDragDropOperation(UItemSlotDragDrogOperation::StaticClass()));
+	
+	UItemDragVisualWidget* DragVisual = CreateWidget<UItemDragVisualWidget>(GetWorld(),IconWidgetClass);
+	if (!IsValid(DragVisual)) return;
+	
+	DragVisual->SetIcon(CurrentItemDefinition.Icon.Get(),CurrentSlotSize);
+	
 	DragDropOperation->Pivot             = EDragPivot::CenterCenter;
-	DragDropOperation->DefaultDragVisual = IconWidgetReference;
+	
+	DragDropOperation->ItemDraggedIconWidget = DragVisual;
+	DragDropOperation->DefaultDragVisual = DragVisual;
+	
 	DragDropOperation->Payload           = this;
 	DragDropOperation->ItemSlot_Payload  = this;
+	
 	DragDropOperation->ItemEntry         = &ItemEntry;
 	DragDropOperation->SlotSize          = CurrentSlotSize;
-	//DragDropOperation->IconTexture       = SoftIconTexture.Get();
-	//DragDropOperation->Rarity            = CurrentRarity;
 	DragDropOperation->ItemDefinition    = CurrentItemDefinition;
+	
 	OutOperation = DragDropOperation;
+	
+	OnNewDragOperation.ExecuteIfBound(DragDropOperation);
 }
 
 // void UItemSlotWidget::NativeOnDragDetected(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent,
@@ -245,43 +256,45 @@ void UItemSlotWidget::NativeOnDragCancelled(const FDragDropEvent& InDragDropEven
 	//No ha dropeado en ningún lado -> mundo
 	if (!IsValid(InOperation)) return;
 		
-	UItemSlotDroppedDragDrop* DragDropOp = Cast<UItemSlotDroppedDragDrop>(InOperation);
+	UItemSlotDragDrogOperation* DragDropOp = Cast<UItemSlotDragDrogOperation>(InOperation);
 	if (!IsValid(DragDropOp)) return;
 	
 	UItemSlotWidget* DroppedItem = DragDropOp->ItemSlot_Payload;
 	if (!IsValid(DroppedItem)) return;
 	
 	if (!IsValid(DragDropOp->LastEnterSlotWidget)) return;
-	if (DroppedItem->GetCurrentSlotSize() == UniqueSlot)
-	{
-		DragDropOp->LastEnterSlotWidget->DisableDragOverPreview();
-		return;
-	}
+	// if (DroppedItem->GetCurrentSlotSize() == UniqueSlot)
+	// {
+	DragDropOp->LastEnterSlotWidget->DisableDragOverPreview();
+		//return;
+	//}
 
-	OnDragCancelledDelegate.ExecuteIfBound(DragDropOp->LastEnterSlotWidget->GetGridIndex());
+	OnDragCancelledDelegate.ExecuteIfBound(DragDropOp->LastEnterSlotWidget->GetItemEntry());
 }
 
 void UItemSlotWidget::NativeOnDragEnter(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent,
 	UDragDropOperation* InOperation)
 {
-	GEngine->AddOnScreenDebugMessage(-1,3.f,FColor::Red,FString::Printf(TEXT("Entra Drag")));
 	Super::NativeOnDragEnter(InGeometry, InDragDropEvent, InOperation);
 	
-	UItemSlotDroppedDragDrop* DragDropOp = Cast<UItemSlotDroppedDragDrop>(InOperation);
+	UItemSlotDragDrogOperation* DragDropOp = Cast<UItemSlotDragDrogOperation>(InOperation);
 	if (!IsValid(DragDropOp)) return;
 
 	const bool bFromEquipmentSlot = !IsValid(DragDropOp->ItemSlot_Payload);
 	const int32 FromIndex = bFromEquipmentSlot ? INDEX_NONE : DragDropOp->ItemSlot_Payload->GetGridIndex();
 	const ESlotSizeCategories DroppedSize = DragDropOp->SlotSize;
 
+
 	if (bFromEquipmentSlot)
 	{
-		OnEquipmentEnteredDelegate.ExecuteIfBound(DragDropOp);
+		OnNewDragOperation.ExecuteIfBound(DragDropOp);
 	}
+	
 	
 	// UItemSlotWidget* DroppedItem = DragDropOp->ItemSlot_Payload;
 	// if (!IsValid(DroppedItem)) return;
 
+	GEngine->AddOnScreenDebugMessage(-1,3.f,FColor::Red,FString::Printf(TEXT("End Drag Item")));
 	DragDropOp->LastEnterSlotWidget = this;
 	
 	if (DroppedSize == ESlotSizeCategories::UniqueSlot)
@@ -290,18 +303,21 @@ void UItemSlotWidget::NativeOnDragEnter(const FGeometry& InGeometry, const FDrag
 		{
 			// Empty target → can drop
 			EnableDragOverPreview(EDragOverResult::Drop);
-			EnableDragOverResultIcon(EDragOverResult::Drop,DragDropOp->SlotSize);
+			//EnableDragOverResultIcon(EDragOverResult::Drop,DragDropOp->SlotSize);
+			DragDropOp->ItemDraggedIconWidget->EnableDragOverResultIcon(EDragOverResult::Drop);
 		}
 		else if (CurrentSlotSize == ESlotSizeCategories::UniqueSlot)
 		{
-			EnableDragOverResultIcon(EDragOverResult::Swap,DragDropOp->SlotSize);
+			//EnableDragOverResultIcon(EDragOverResult::Swap,DragDropOp->SlotSize);
+			DragDropOp->ItemDraggedIconWidget->EnableDragOverResultIcon(EDragOverResult::Swap);
 			EnableDragOverPreview(EDragOverResult::Swap);
 		}
 		else
 		{
 			// Target is Superior or Lower → invalid
 			EnableDragOverPreview(EDragOverResult::Invalid);
-			EnableDragOverResultIcon(EDragOverResult::Invalid,DragDropOp->SlotSize);
+			//EnableDragOverResultIcon(EDragOverResult::Invalid,DragDropOp->SlotSize);
+			DragDropOp->ItemDraggedIconWidget->EnableDragOverResultIcon(EDragOverResult::Invalid);
 		}
 		return;
 	}
@@ -313,7 +329,7 @@ void UItemSlotWidget::NativeOnDragLeave(const FDragDropEvent& InDragDropEvent, U
 {
 	Super::NativeOnDragLeave(InDragDropEvent, InOperation);
 
-	UItemSlotDroppedDragDrop* DragDropOp = Cast<UItemSlotDroppedDragDrop>(InOperation);
+	UItemSlotDragDrogOperation* DragDropOp = Cast<UItemSlotDragDrogOperation>(InOperation);
 	if (!IsValid(DragDropOp)) return;
 
 	const bool bFromEquipmentSlot = !IsValid(DragDropOp->ItemSlot_Payload);
@@ -326,7 +342,8 @@ void UItemSlotWidget::NativeOnDragLeave(const FDragDropEvent& InDragDropEvent, U
 	{
 		// Only this slot was highlighted
 		DisableDragOverPreview();
-		DisableDragOverResultIcon();
+		//DisableDragOverResultIcon();
+		DragDropOp->ItemDraggedIconWidget->DisableDragOverResultIcon();
 		return;
 	}
 	
@@ -336,7 +353,7 @@ void UItemSlotWidget::NativeOnDragLeave(const FDragDropEvent& InDragDropEvent, U
 bool UItemSlotWidget::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent,
 	UDragDropOperation* InOperation)
 {
-	UItemSlotDroppedDragDrop* DragDropOp = Cast<UItemSlotDroppedDragDrop>(InOperation);
+	UItemSlotDragDrogOperation* DragDropOp = Cast<UItemSlotDragDrogOperation>(InOperation);
 	if (!IsValid(DragDropOp)) return false;
 	
 	// UItemSlotWidget* DroppedItem = DragDropOp->ItemSlot_Payload;
@@ -353,7 +370,8 @@ bool UItemSlotWidget::NativeOnDrop(const FGeometry& InGeometry, const FDragDropE
 			// Move to empty slot
 			OnItemDroppedPanelDelegate.ExecuteIfBound(FromIndex, CurrentGridIndex);
 			DisableDragOverPreview();
-			DisableDragOverResultIcon();
+			//DisableDragOverResultIcon();
+			DragDropOp->ItemDraggedIconWidget->DisableDragOverResultIcon();
 			return true;
 		}
 		if (CurrentSlotSize == ESlotSizeCategories::UniqueSlot)
@@ -361,7 +379,8 @@ bool UItemSlotWidget::NativeOnDrop(const FGeometry& InGeometry, const FDragDropE
 			// Swap two unique slots
 			OnItemDroppedPanelDelegate.ExecuteIfBound(FromIndex, CurrentGridIndex);
 			DisableDragOverPreview();
-			DisableDragOverResultIcon();
+			//DisableDragOverResultIcon();
+			DragDropOp->ItemDraggedIconWidget->DisableDragOverResultIcon();
 			return true;
 		}
 		// Target is Superior or Lower → reject

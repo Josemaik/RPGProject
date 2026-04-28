@@ -12,6 +12,7 @@
 #include "Engine/StreamableManager.h"
 #include "Equipment/EquipmentDefinition.h"
 #include "Equipment/EquipmentGenerator.h"
+#include "Equipment/EquipmentManagerComponent.h"
 #include "Equipment/EquipmentTypes.h"
 #include "InventorySection/ItemActor.h"
 #include "InventorySection/ItemTypesToTables.h"
@@ -303,6 +304,11 @@ void UInventoryComponent::DropItem(const FRPGInventoryEntry& Entry, int32 NumIte
 	{
 		ServerDropItem(Entry, NumItems);
 		return;
+	}
+
+	if (Entry.ItemTag.MatchesTag(RPGInventoryTags::ItemsCategory::Equipment))
+	{
+		OnEquipmentItemDroppedDelegate.Broadcast(Entry.ItemTag,EUnequipReason::Drop);
 	}
 
 	//ItemDroppedDelegate.Broadcast(&Entry, NumItems);

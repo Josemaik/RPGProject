@@ -6,6 +6,7 @@
 #include "UI/WidgetController/WidgetController.h"
 #include "InventoryWidgetController.generated.h"
 
+class UEquipmentManagerComponent;
 struct FGameplayTag;
 struct FRPGInventoryEntry;
 struct FMasterItemDefinition;
@@ -19,7 +20,7 @@ DECLARE_MULTICAST_DELEGATE(FOnDropKeyPressed);
 DECLARE_MULTICAST_DELEGATE(FOnEquipKeyPressed);
 
 /**
- * 
+ * This class comunicates Component logic <-> UI
  */
 UCLASS(Blueprintable, BlueprintType)
 class RPGSYSTEMS_API UInventoryWidgetController : public UWidgetController
@@ -39,9 +40,17 @@ public:
 	void BindCallbacksToDependencies();
 	void BroadCastInitialValues() const;
 
+	//Inventory Component
 	void EquipItem(const FRPGInventoryEntry& Entry) const;
-	void AddEquipItem(FGameplayTag ItemTag,uint64 ExistingID) const;
+	void AddEquippedItem(FGameplayTag ItemTag,uint64 ExistingID) const;
+
+	//Equipment Component
+	void UnEquipItem(const FGameplayTag ItemTag) const;
+
+	//Drop Panel
 	void DropItemToWorld(const FRPGInventoryEntry& Entry) const;
+
+	//Input sorts
 	void RequestSortItems(bool Quick) const;
 
 	float GetMaxInventoryWeight() const;
@@ -53,7 +62,7 @@ private:
 	
 	UPROPERTY()
 	TObjectPtr<UInventoryComponent> OwningInventory;
-	
+
 	UPROPERTY()
-	TObjectPtr<UInventoryComponent> OwningEquipment;
+	TObjectPtr<UEquipmentManagerComponent> OwningEquipment;
 };

@@ -4,41 +4,33 @@
 
 #include "CoreMinimal.h"
 #include "GameplayTagContainer.h"
-#include "ItemSlotDroppedDragDrop.h"
+#include "ItemSlotDragDrogOperation.h"
 #include "SlotSizeCategories.h"
 #include "Base/BaseInventorySlot.h"
 #include "Blueprint/UserWidget.h"
+#include "Interfaces/URPGDragDropInterface.h"
 #include "InventorySection/InventoryComponent.h"
 #include "ItemSlotWidget.generated.h"
 
+enum class EDragOverResult : uint8;
 class UItemToolTip;
 class UImage;
 class UUniformGridSlot;
 class UInventoryWidgetController;
 class USizeBox;
-class UItemSlotIcon;
+class UItemDragVisualWidget;
 struct FRPGInventoryEntry;
 class UTextBlock;
 class UButton;
 
 class UItemSlotWidget;
 
-UENUM(BlueprintType)
-enum class EDragOverResult : uint8
-{
-	Drop    UMETA(DisplayName = "Drop"), 
-	Swap    UMETA(DisplayName = "Swap"),    
-	Invalid UMETA(DisplayName = "Invalid")
-};
-
 DECLARE_DELEGATE_OneParam(FOnItemRowClicked, int32 ClickedItemIndex);
 DECLARE_DELEGATE_TwoParams(FOnItemDroppedPanel, int32 DroppedItemIndex, int32 DropItemIndex);
 DECLARE_DELEGATE_TwoParams(FOnDragEntered,int32 DraggedItemIndex, int32 EnterItemIndex);
 DECLARE_DELEGATE_TwoParams(FOnDragLeaved, int32 DraggedItemIndex,int32 LeaveItemIndex);
-DECLARE_DELEGATE_OneParam(FOnDragCancelled,int32 LastEnterItemIndex);
-DECLARE_DELEGATE_OneParam(FOnEquipmentEntered,UItemSlotDroppedDragDrop* DragDropOp);
-// DECLARE_DELEGATE_OneParam(FOnItemSlotMouseEntered,UItemSlotWidget* EnteredItemSlot);
-// DECLARE_DELEGATE_OneParam(FOnItemSlotMouseLeaved,UItemSlotWidget* LeavedItemSlot);
+DECLARE_DELEGATE_OneParam(FOnDragCancelled,const FRPGInventoryEntry& Entry);
+DECLARE_DELEGATE_OneParam(FOnNewDragOperation,UItemSlotDragDrogOperation* DragDropOp);
 /**
  * 
  */
@@ -52,7 +44,7 @@ public:
 	FOnDragEntered OnDragEnteredDelegate;
 	FOnDragLeaved OnDragLeavedDelegate;
 	FOnDragCancelled OnDragCancelledDelegate;
-	FOnEquipmentEntered OnEquipmentEnteredDelegate;
+	FOnNewDragOperation OnNewDragOperation;
 	//FOnItemSlotMouseEntered OnItemSlotMouseEnteredDelegate;
 	//FOnItemSlotMouseLeaved OnItemSlotMouseLeavedDelegate;
 
@@ -69,9 +61,9 @@ public:
 	void SetIconPadding(bool reset) const;
 	
 	void EnableDragOverPreview(EDragOverResult Result);
-	void DisableDragOverPreview();
-	void EnableDragOverResultIcon(EDragOverResult Result,ESlotSizeCategories DraggedSize);
-	void DisableDragOverResultIcon();
+	virtual void DisableDragOverPreview() override;
+	//void EnableDragOverResultIcon(EDragOverResult Result,ESlotSizeCategories DraggedSize);
+	//void DisableDragOverResultIcon();
 
 	void StartSelectedAnimation();
 	void StopSelectedAnimation();
@@ -106,23 +98,14 @@ private:
 	// UPROPERTY()
 	// TObjectPtr<UItemSlotWidget> LinkedSlot;
 
-	UPROPERTY(VisibleAnywhere,BlueprintReadWrite, meta = (BindWidget,AllowPrivateAccess="true"), Category = "UI")
-	UImage* DragOverResultIcon;
+	// UPROPERTY(VisibleAnywhere,BlueprintReadWrite, meta = (BindWidget,AllowPrivateAccess="true"), Category = "UI")
+	// UImage* DragOverResultIcon;
 
 	//FTimerHandle ItemTooltipTimerHandle;
 	//FTimerHandle ItemTooltipLeaveTimerHandle;
 	
 	UPROPERTY(EditDefaultsOnly, Category="Style")
 	FLinearColor DragOverPreviewColor;
-
-	UPROPERTY(EditDefaultsOnly, Category="Style")
-	TObjectPtr<UTexture2D> DragOverResultDropTexture;
-
-	UPROPERTY(EditDefaultsOnly, Category="Style")
-	TObjectPtr<UTexture2D> DragOverResultSwapTexture;
-
-	UPROPERTY(EditDefaultsOnly, Category="Style")
-	TObjectPtr<UTexture2D> DragOverResultInvalidTexture;
 	
 	//ESlotSizeCategories CurrentSlotSize = ESlotSizeCategories::UniqueSlot;
 	//bool bIsEmpty = true;

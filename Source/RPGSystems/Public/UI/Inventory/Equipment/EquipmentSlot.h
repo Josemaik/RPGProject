@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameplayTagContainer.h"
 #include "Blueprint/UserWidget.h"
+#include "Interfaces/URPGDragDropInterface.h"
 #include "UI/Inventory/Base/BaseInventorySlot.h"
 #include "EquipmentSlot.generated.h"
 
@@ -32,7 +33,6 @@ public:
 	FOnUnequipItem OnUnequipItem;
 	FOnEquipentDropped OnEquipmentDropped;
 protected:
-	virtual void DragVisualEnable(bool bEnable) override;
 	virtual void NativeConstruct() override;
 	//virtual void NativeOnDragDetected(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent, UDragDropOperation*& OutOperation) override;
 	virtual void NativeOnDragEnter(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
@@ -41,6 +41,9 @@ protected:
 	virtual FReply NativeOnMouseButtonDoubleClick(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 	virtual void BuildDragOperation(UDragDropOperation*& OutOperation) override;
 	virtual bool NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
+
+	virtual void DragVisualEnable(bool bEnable) override;
+	virtual void DisableDragOverPreview() override;
 private:
 	void HandleMouseEntered(UBaseInventorySlot* BaseSlot);
 	void HandleMouseLeaved(UBaseInventorySlot* BaseSlot);
@@ -56,9 +59,6 @@ private:
 
 	UPROPERTY()
 	UItemToolTip* ItemToolTipReference;
-
-	UPROPERTY()
-	TObjectPtr<UItemSlotIcon> SlotIcon;
 	
 	int32 ClickCount = 0;
 	FTimerHandle DoubleClickTimerHandle;

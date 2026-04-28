@@ -3,6 +3,7 @@
 
 #include "UI/WidgetController/InventoryWidgetController.h"
 
+#include "Equipment/EquipmentManagerComponent.h"
 #include "Interfaces/InventoryInterface.h"
 #include "InventorySection/InventoryComponent.h"
 
@@ -14,6 +15,7 @@ void UInventoryWidgetController::SetOwningActor(AActor* InOwner)
 void UInventoryWidgetController::BindCallbacksToDependencies()
 {
 	OwningInventory = IInventoryInterface::Execute_GetInventoryComponent(OwningActor);
+	OwningEquipment = IInventoryInterface::Execute_GetEquipmentComponent(OwningActor);
 
 	if (IsValid(OwningInventory))
 	{
@@ -60,13 +62,19 @@ void UInventoryWidgetController::EquipItem(const FRPGInventoryEntry& Entry) cons
 	GEngine->AddOnScreenDebugMessage(-1,5.f,FColor::Red,FString::Printf(TEXT("numentries: %d"),OwningInventory->InventoryList.GetEntries().Num()));
 }
 
-void UInventoryWidgetController::AddEquipItem(FGameplayTag ItemTag,uint64 ExistingID) const
+void UInventoryWidgetController::AddEquippedItem(FGameplayTag ItemTag,uint64 ExistingID) const
 {
 	if (!IsValid(OwningInventory)) return;
 	
 	OwningInventory->AddItem(ItemTag,ExistingID);
 
 	GEngine->AddOnScreenDebugMessage(-1,5.f,FColor::Green,FString::Printf(TEXT("numentries: %d"),OwningInventory->InventoryList.GetEntries().Num()));
+}
+
+void UInventoryWidgetController::UnEquipItem(const FGameplayTag ItemTag) const
+{
+	if (!IsValid(OwningEquipment)) return;
+	OwningEquipment->UnEquipItemByTag(ItemTag,EUnequipReason::Drop);
 }
 
 void UInventoryWidgetController::DropItemToWorld(const FRPGInventoryEntry& Entry) const

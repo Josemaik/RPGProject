@@ -23,7 +23,8 @@ void UEquipmentInstance::OnUnEquipped()
 
 void UEquipmentInstance::SpawnEquipmentActors(const TArray<FEquipmentActorsToSpawn>& ActorsToSpawn,FGameplayTag SlotTag)
 {
-	if (ARPGSystemsCharacter* OwningCharacter = Cast<ARPGSystemsCharacter>(GetCharacter()))
+	OwnedCharacter = Cast<ARPGSystemsCharacter>(GetCharacter());
+	if (IsValid(OwnedCharacter))
 	{
 		FStreamableManager& Manager = UAssetManager::GetStreamableManager();
 		TWeakObjectPtr<UEquipmentInstance> WeakThis(this);
@@ -33,17 +34,17 @@ void UEquipmentInstance::SpawnEquipmentActors(const TArray<FEquipmentActorsToSpa
 			if (IsValid(ActorToSpawn.EquipmentClass.Get()))
 			{
 				AEquipmentActor* NewActor = GetWorld()->SpawnActorDeferred<AEquipmentActor>(ActorToSpawn.EquipmentClass.Get(),
-					FTransform::Identity, OwningCharacter);
+					FTransform::Identity, OwnedCharacter);
 				NewActor->FinishSpawning(FTransform::Identity);
-				NewActor->AttachToComponent(OwningCharacter->GetMesh(), FAttachmentTransformRules::KeepRelativeTransform, ActorToSpawn.AttachName);
+				NewActor->AttachToComponent(OwnedCharacter->GetMesh(), FAttachmentTransformRules::KeepRelativeTransform, ActorToSpawn.AttachName);
 
 				if (SlotTag.MatchesTagExact(RPGInventoryTags::ItemsCategory::EquipmentData::Slot::RightHand))
 				{
-					OwningCharacter->SetRightHandEquipment(NewActor);
+					OwnedCharacter->SetRightHandEquipment(NewActor);
 				}
 				else
 				{
-					OwningCharacter->SetLeftHandEquipment(NewActor);
+					OwnedCharacter->SetLeftHandEquipment(NewActor);
 				}
 				
 				SpawnedActors.Emplace(NewActor);
@@ -51,23 +52,23 @@ void UEquipmentInstance::SpawnEquipmentActors(const TArray<FEquipmentActorsToSpa
 			else
 			{
 				Manager.RequestAsyncLoad(ActorToSpawn.EquipmentClass.ToSoftObjectPath(),
-					[WeakThis,ActorToSpawn, OwningCharacter,SlotTag]
+					[WeakThis,ActorToSpawn, this,SlotTag]
 					{
 						if (!WeakThis.IsValid())
 							return;
 						
 						AEquipmentActor* NewActor = WeakThis->GetWorld()->SpawnActorDeferred<AEquipmentActor>(ActorToSpawn.EquipmentClass.Get(),
-					FTransform::Identity, OwningCharacter);
+					FTransform::Identity, OwnedCharacter);
 						NewActor->FinishSpawning(FTransform::Identity);
-						NewActor->AttachToComponent(OwningCharacter->GetMesh(), FAttachmentTransformRules::KeepRelativeTransform, ActorToSpawn.AttachName);
+						NewActor->AttachToComponent(OwnedCharacter->GetMesh(), FAttachmentTransformRules::KeepRelativeTransform, ActorToSpawn.AttachName);
 
 						if (SlotTag.MatchesTagExact(RPGInventoryTags::ItemsCategory::EquipmentData::Slot::RightHand))
 						{
-							OwningCharacter->SetRightHandEquipment(NewActor);
+							OwnedCharacter->SetRightHandEquipment(NewActor);
 						}
 						else
 						{
-							OwningCharacter->SetLeftHandEquipment(NewActor);
+							OwnedCharacter->SetLeftHandEquipment(NewActor);
 						}
 						
 						WeakThis->SpawnedActors.Emplace(NewActor);
@@ -77,12 +78,22 @@ void UEquipmentInstance::SpawnEquipmentActors(const TArray<FEquipmentActorsToSpa
 	}
 }
 
-void UEquipmentInstance::DestroySpawnedActors()
+void UEquipmentInstance::DestroySpawnedActors(FGameplayTag SlotTag)
 {
 	for (AActor* Actor : SpawnedActors)
 	{
+		Actor->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+		if (SlotTag.MatchesTagExact(RPGInventoryTags::ItemsCategory::EquipmentData::Slot::RightHand))
+		{
+			OwnedCharacter->RemoveRightHandEquipment();
+		}
+		else
+		{
+			OwnedCharacter->RemoveLeftHandEquipment();
+		}
 		Actor->Destroy();
 	}
+	SpawnedActors.Empty();
 }
 
 ACharacter* UEquipmentInstance::GetCharacter()

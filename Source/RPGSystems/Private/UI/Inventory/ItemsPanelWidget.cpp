@@ -7,11 +7,12 @@
 #include "Components/UniformGridSlot.h"
 #include "Engine/AssetManager.h"
 #include "UI/Inventory/InventoryWidget.h"
-#include "UI/Inventory/ItemSlotDroppedDragDrop.h"
+#include "UI/Inventory/ItemSlotDragDrogOperation.h"
 #include "UI/Inventory/ItemSlotWidget.h"
 #include "UI/Inventory/SortPanelWidget.h"
 #include "AbilitySystem/NativeTags/RPGInventoryTags.h"
 #include "Blueprint/SlateBlueprintLibrary.h"
+#include "UI/Inventory/ItemDragVisualWidget.h"
 #include "UI/Inventory/ItemToolTip.h"
 #include "UI/Inventory/Equipment/EquipmentSlot.h"
 
@@ -73,7 +74,7 @@ void UItemsPanelWidget::RemoveItem(const int64 ItemID)
 	ResetCategory(CurrentCategoryTag);
 }
 
-int32 UItemsPanelWidget::FindItemIndex(const int64 ItemID,FGameplayTag ItemTag)
+int32 UItemsPanelWidget::FindGridIndexByItemID(const int64 ItemID,FGameplayTag ItemTag)
 {
 	TArray<FItemSlotData>* ItemsArrayPtr = CategoryItemsMap.Find(GetItemCategory(ItemTag));
 	
@@ -296,11 +297,11 @@ void UItemsPanelWidget::BindItemSlotDelegates(UItemSlotWidget* NewWidget)
 	NewWidget->OnItemRowClickedDelegate.BindUObject(this, &UItemsPanelWidget::HandleSlotClicked);
 	NewWidget->OnSlotMouseEnteredDelegate.BindUObject(this,&UItemsPanelWidget::HandleSlotHovered);
 	NewWidget->OnSlotMouseLeavedDelegate.BindUObject(this,&UItemsPanelWidget::HandleSlotLeaved);
-	NewWidget->OnEquipmentEnteredDelegate.BindUObject(this,&UItemsPanelWidget::HandleEquipmentEntered);
+	NewWidget->OnNewDragOperation.BindUObject(this,&UItemsPanelWidget::HandleEquipmentEntered);
 	// NewWidget->OnItemSlotMouseEnteredDelegate.BindUObject(this,&UItemsPanelWidget::HandleSlotHovered);
 }
 
-void UItemsPanelWidget::HandleEquipmentEntered(UItemSlotDroppedDragDrop* InCurrentDragOperation)
+void UItemsPanelWidget::HandleEquipmentEntered(UItemSlotDragDrogOperation* InCurrentDragOperation)
 {
 	CurrentDragOperation = InCurrentDragOperation;
 }
@@ -601,19 +602,19 @@ void UItemsPanelWidget::ResolvePair(const TArray<FItemSlotData>& ItemsArray, int
 
 void UItemsPanelWidget::HandleItemDropped(int32 DroppedIndex,int32 NewIndex)
 {
+	TArray<FItemSlotData>& ItemsArray = *CategoryItemsMap.Find(CurrentCategoryTag);
+	if (!ItemsArray.IsValidIndex(NewIndex) && ItemsArray[NewIndex].bIsEmpty) return;
+
+	const FItemSlotData& DroppedSlot = ItemsArray[NewIndex];
+		
 	if (TryDropInNewSlot(DroppedIndex,NewIndex))
 	{
 		ResetCategory(CurrentCategoryTag);
-		
-		TArray<FItemSlotData>& ItemsArray = *CategoryItemsMap.Find(CurrentCategoryTag);
-		if (ItemsArray.IsValidIndex(NewIndex) && !ItemsArray[NewIndex].bIsEmpty)
-		{
-			SelectSlotAtIndex(NewIndex);
-		}
+		SelectSlotAtIndex(NewIndex);
 	}
 	else
 	{
-		HandleDragCancelled(NewIndex);
+		HandleDragCancelled(DroppedSlot.Entry);
 	}
 }
 
@@ -671,9 +672,9 @@ void UItemsPanelWidget::HandleDraggedItemEntered(int32 DraggedIndex, int32 Targe
 		if (IsValid(TopWidget))
 		{
 			TopWidget->EnableDragOverPreview(Result);
-			TopWidget->EnableDragOverResultIcon(Result, DraggedSlot.Size);
 		}
 		if (IsValid(BottomWidget)) BottomWidget->EnableDragOverPreview(Result);
+		CurrentDragOperation->ItemDraggedIconWidget->EnableDragOverResultIcon(Result);
 
 		return;
 	}
@@ -706,7 +707,8 @@ void UItemsPanelWidget::HandleDraggedItemEntered(int32 DraggedIndex, int32 Targe
 		if (IsValid(TopWidget))
 		{
 			TopWidget->EnableDragOverPreview(EDragOverResult::Swap);
-			TopWidget->EnableDragOverResultIcon(EDragOverResult::Swap, DraggedSlot.Size);
+			CurrentDragOperation->ItemDraggedIconWidget->EnableDragOverResultIcon(EDragOverResult::Swap);
+			//TopWidget->EnableDragOverResultIcon(EDragOverResult::Swap, DraggedSlot.Size);
 		}
 		if (IsValid(BottomWidget)) BottomWidget->EnableDragOverPreview(EDragOverResult::Drop);
 		return;
@@ -723,7 +725,8 @@ void UItemsPanelWidget::HandleDraggedItemEntered(int32 DraggedIndex, int32 Targe
 		if (IsValid(TopWidget))
 		{
 			TopWidget->EnableDragOverPreview(Result);
-			TopWidget->EnableDragOverResultIcon(Result, DraggedSlot.Size);
+			//TopWidget->EnableDragOverResultIcon(Result, DraggedSlot.Size);
+			CurrentDragOperation->ItemDraggedIconWidget->EnableDragOverResultIcon(Result);
 		}
 		if (IsValid(BottomWidget)) BottomWidget->EnableDragOverPreview(Result);
 		return;
@@ -740,7 +743,8 @@ void UItemsPanelWidget::HandleDraggedItemEntered(int32 DraggedIndex, int32 Targe
 		if (IsValid(TopWidget))
 		{
 			TopWidget->EnableDragOverPreview(Result);
-			TopWidget->EnableDragOverResultIcon(Result, DraggedSlot.Size);
+			//TopWidget->EnableDragOverResultIcon(Result, DraggedSlot.Size);
+			CurrentDragOperation->ItemDraggedIconWidget->EnableDragOverResultIcon(Result);
 		}
 		if (IsValid(BottomWidget)) BottomWidget->EnableDragOverPreview(Result);
 		return;
@@ -785,7 +789,8 @@ void UItemsPanelWidget::HandleDraggedItemEntered(int32 DraggedIndex, int32 Targe
 	if (IsValid(TopWidget))
 	{
 		TopWidget->EnableDragOverPreview(Result);
-		TopWidget->EnableDragOverResultIcon(Result, DraggedSlot.Size);
+		//TopWidget->EnableDragOverResultIcon(Result, DraggedSlot.Size);
+		CurrentDragOperation->ItemDraggedIconWidget->EnableDragOverResultIcon(Result);
 	}
 	if (IsValid(BottomWidget)) BottomWidget->EnableDragOverPreview(Result);
 }
@@ -835,10 +840,11 @@ bool UItemsPanelWidget::TryDropInNewSlot(int32 FromIndex, int32 ToIndex)
 			// TopSlot = BuildSlotDataFromDrag(CurrentDragOperation, true);
 			// BottomSlot = BuildSlotDataFromDrag(CurrentDragOperation, false);
 
-			// quitar del equipment
+			// Add equipment to inventory
 			OnEquipmentDropped.ExecuteIfBound(CurrentDragOperation->ItemEntry->ItemTag,CurrentDragOperation->ItemEntry->ItemID);
-			
+			// Reset Equipment Slot
 			CurrentDragOperation->SourceEquipmentSlot->EmptySlot();
+			// Remove Equipment from Component and Character
 			CurrentDragOperation->SourceEquipmentSlot->OnUnequipItem.ExecuteIfBound(*CurrentDragOperation->ItemEntry);
 			
 			return true;
@@ -979,7 +985,8 @@ void UItemsPanelWidget::HandleDraggedItemLeaved(int32 DraggedIndex, int32 Target
 		if (IsValid(TopWidget))
 		{
 			TopWidget->DisableDragOverPreview();
-			TopWidget->DisableDragOverResultIcon();
+			//TopWidget->DisableDragOverResultIcon();
+			CurrentDragOperation->ItemDraggedIconWidget->DisableDragOverResultIcon();
 		}
 		if (IsValid(BottomWidget)) BottomWidget->DisableDragOverPreview();
 
@@ -1038,19 +1045,24 @@ void UItemsPanelWidget::HandleDraggedItemLeaved(int32 DraggedIndex, int32 Target
 	if (IsValid(TopWidget))
 	{
 		TopWidget->DisableDragOverPreview();
-		TopWidget->DisableDragOverResultIcon();
+		CurrentDragOperation->ItemDraggedIconWidget->DisableDragOverResultIcon();
 	}
 	if (IsValid(BottomWidget)) BottomWidget->DisableDragOverPreview();
 }
  
 
-void UItemsPanelWidget::HandleDragCancelled(int LastEnterIndex) const
+void UItemsPanelWidget::HandleDragCancelled(const FRPGInventoryEntry& Entry)
 {
 	const TArray<FItemSlotData>& ItemsArray = *CategoryItemsMap.Find(CurrentCategoryTag);
 	if (ItemsArray.IsEmpty()) return;
+	
+	int32 LastEnterIndex = FindGridIndexByItemID(Entry.ItemID,Entry.ItemTag);
+	
 	if (!ItemsArray.IsValidIndex(LastEnterIndex)) return;
  
 	const FItemSlotData& LastEnterSlot = ItemsArray[LastEnterIndex];
+	if (LastEnterSlot.Size == UniqueSlot) return;
+	
 	const ESlotSizeCategories DraggedSizeGuess =
 		(LastEnterSlot.Size == LowerSlotVertical || LastEnterSlot.Size == SuperiorSlotVertical)
 		? LastEnterSlot.Size.GetValue()
@@ -1065,7 +1077,7 @@ void UItemsPanelWidget::HandleDragCancelled(int LastEnterIndex) const
 	                                  ? GetItemSlotbyIndex(TargetLowerIndex)
 	                                  : nullptr;
  
-	if (IsValid(TopWidget))    { TopWidget->DisableDragOverPreview(); TopWidget->DisableDragOverResultIcon(); }
+	if (IsValid(TopWidget))    { TopWidget->DisableDragOverPreview(); CurrentDragOperation->ItemDraggedIconWidget->DisableDragOverResultIcon();/*TopWidget->DisableDragOverResultIcon();*/ }
 	if (IsValid(BottomWidget))   BottomWidget->DisableDragOverPreview();
 }
 

@@ -7,7 +7,7 @@
 #include "BaseInventorySlot.generated.h"
 
 class UItemToolTip;
-class UItemSlotIcon;
+class UItemDragVisualWidget;
 class UImage;
 enum class EItemRarity : uint8;
 struct FRPGInventoryEntry;
@@ -32,6 +32,7 @@ public:
     void SetIcon(const FSlateBrush& Brush);
     void EquipVisual(UTexture2D* Texture, EItemRarity Rarity);
     virtual void EmptySlot();
+    virtual void DisableDragOverPreview() {}
 
     // Animation
     virtual void StartSelectedAnimation();
@@ -84,10 +85,10 @@ protected:
     UWidgetAnimation* SelectedSlotAnimation;
 
     UPROPERTY(EditDefaultsOnly, Category="Style")
-    TSubclassOf<UItemSlotIcon> IconWidgetClass;
+    TSubclassOf<UItemDragVisualWidget> IconWidgetClass;
 
-    UPROPERTY()
-    UItemSlotIcon* IconWidgetReference;
+    // UPROPERTY()
+    // UItemDragVisualWidget* IconWidgetReference;
 
     FTimerHandle ItemTooltipTimerHandle;
 private:

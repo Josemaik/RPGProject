@@ -310,6 +310,10 @@ void URPGAbilitySystemComponent::AddEquipmentAbility(FRPGEquipmentEntry* Equipme
 
 void URPGAbilitySystemComponent::RemoveEquipmentAbility(const FRPGEquipmentEntry* EquipmentEntry)
 {
+	if (!EquipmentEntry) return;
+	
+	CancelAbilityHandle(EquipmentEntry->GrantedHandles.GrantedAbility);
+
 	ClearAbility(EquipmentEntry->GrantedHandles.GrantedAbility);
 }
 

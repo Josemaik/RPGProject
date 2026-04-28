@@ -10,6 +10,14 @@
 #include "Net/Serialization/FastArraySerializer.h"
 #include "EquipmentManagerComponent.generated.h"
 
+UENUM()
+enum class EUnequipReason : uint8
+{
+	Manual,  // double clikc
+	Swap,    // swapped by other item
+	Drop     // drop to world
+};
+
 class URPGAbilitySystemComponent;
 class UEquipmentInstance;
 class UEquipmentDefinition;
@@ -90,6 +98,8 @@ struct FRPGEquipmentList : public FFastArraySerializer
 	void BindAbilitySystemDelegates();
 	bool CheckAbilitySingleEffect(FGameplayAbilitySpec& Spec, const FEquipmentStatEffectGroup& StatEffect);
 	void CheckAbilityLevels(UAbilitySystemComponent* ASC, FRPGEquipmentEntry* EquipmentEntry,bool bAsync);
+
+	UEquipmentInstance* FindInstanceByTag(FGameplayTag ItemTag);
 	
 	// FFastArraySerializer Contract
 	void PreReplicatedRemove(const TArrayView<int32> RemovedIndices, int32 FinalSize);
@@ -139,6 +149,7 @@ public:
 	
 	void EquipItem(const TSubclassOf<UEquipmentDefinition>& EquipmentDefinition,const FEquipmentEffectPackage& EffectPackage);
 	void UnEquipItem(UEquipmentInstance* InEquipmentInstance);
+	void UnEquipItemByTag(FGameplayTag ItemTag,EUnequipReason Reason);
 	void HandleEquipmentRequested(const TSubclassOf<UEquipmentDefinition>& EquipmentDefinition,
 	const FEquipmentEffectPackage& EffectPackage);
 	void HandleUnEquippedItem(const FRPGEquipmentEntry& UnEquippedEntry) const;
@@ -148,6 +159,8 @@ protected:
 	virtual void BeginPlay() override;
 
 private:
+	EUnequipReason CurrentUnequipReason = EUnequipReason::Manual;
+	
 	bool bIsSwappingEquipment = false;
 	
 	UPROPERTY()
@@ -158,5 +171,10 @@ private:
 
 	UFUNCTION(Server, Reliable)
 	void ServerUnEquipItem(UEquipmentInstance* InEquipmentInstance);
+
+	UFUNCTION(Server, Reliable)
+	void ServerUnEquipItemByTag(FGameplayTag ItemTag,EUnequipReason Reason);
 };
+
+
 

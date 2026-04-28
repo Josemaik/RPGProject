@@ -6,7 +6,7 @@
 #include "Animation/WidgetAnimation.h"
 #include "Components/Image.h"
 #include "Libraries/RPGUIStatics.h"
-#include "UI/Inventory/ItemSlotIcon.h"
+#include "UI/Inventory/ItemDragVisualWidget.h"
 
 void UBaseInventorySlot::NativeConstruct()
 {
@@ -20,11 +20,11 @@ void UBaseInventorySlot::CancelLeaveTimer()
 
 void UBaseInventorySlot::SetIcon(const FSlateBrush& Brush)
 {
-    IconWidgetReference = Cast<UItemSlotIcon>(CreateWidget(this, IconWidgetClass));
-    if (IsValid(IconWidgetReference))
-    {
-        IconWidgetReference->SetIcon(CurrentItemDefinition.Icon.Get(), CurrentSlotSize);
-    }
+    // IconWidgetReference = Cast<UItemDragVisualWidget>(CreateWidget(this, IconWidgetClass));
+    // if (IsValid(IconWidgetReference))
+    // {
+    //     IconWidgetReference->SetIcon(CurrentItemDefinition.Icon.Get(), CurrentSlotSize);
+    // }
     if (!IsValid(IconBox)) return;
     IconBox->SetBrush(Brush);
     IconBox->SetColorAndOpacity(FLinearColor::White);

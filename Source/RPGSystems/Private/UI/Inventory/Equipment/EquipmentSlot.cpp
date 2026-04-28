@@ -8,8 +8,8 @@
 #include "Components/Image.h"
 #include "InventorySection/InventoryComponent.h"
 #include "Libraries/RPGUIStatics.h"
-#include "UI/Inventory/ItemSlotDroppedDragDrop.h"
-#include "UI/Inventory/ItemSlotIcon.h"
+#include "UI/Inventory/ItemSlotDragDrogOperation.h"
+#include "UI/Inventory/ItemDragVisualWidget.h"
 #include "UI/Inventory/ItemToolTip.h"
 
 void UEquipmentSlot::NativeConstruct()
@@ -35,12 +35,6 @@ void UEquipmentSlot::EquipItemSlot(const FRPGInventoryEntry& Entry,const FMaster
 	CurrentItemDefinition = ItemDefinition;
 	CurrentSlotSize = ItemDefinition.SlotsSize > 1 ? SuperiorSlotVertical : LowerSlotVertical;
 	bIsEmpty = false;
-
-	SlotIcon = Cast<UItemSlotIcon>(CreateWidget(this,IconWidgetClass));
-	if (IsValid(SlotIcon))
-	{
-		SlotIcon->SetIcon(CurrentItemDefinition.Icon.Get(),CurrentSlotSize);
-	}
 }
 
 void UEquipmentSlot::DragVisualEnable(bool bEnable)
@@ -55,6 +49,11 @@ void UEquipmentSlot::DragVisualEnable(bool bEnable)
 	{
 		BackgroundRarity->SetColorAndOpacity(FLinearColor(1.f, 1.f, 1.f, 0.f));
 	}
+}
+
+void UEquipmentSlot::DisableDragOverPreview()
+{
+	DragOverPreview->SetColorAndOpacity( FLinearColor(1.f, 1.f, 1.f, 0.f));
 }
 
 void UEquipmentSlot::EmptySlot()
@@ -93,46 +92,6 @@ void UEquipmentSlot::HandleMouseLeaved(UBaseInventorySlot* BaseSlot)
 	ItemToolTipReference->SetVisibility(ESlateVisibility::Collapsed);
 }
 
-// void UEquipmentSlot::NativeOnDragDetected(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent,
-// 	UDragDropOperation*& OutOperation)
-// {
-// 	if (bIsEmpty) return;
-// 	
-// 	Super::NativeOnDragDetected(InGeometry, InMouseEvent, OutOperation);
-// 	
-// 	BuildDragOperation(OutOperation);
-// }
-
-// FReply UEquipmentSlot::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
-// {
-// 	if (!InMouseEvent.IsMouseButtonDown(EKeys::LeftMouseButton)) return FReply::Unhandled();
-// 	if (bIsEmpty) return FReply::Unhandled();
-//
-// 	ClickCount++;
-//
-// 	if (ClickCount >= 2)
-// 	{
-// 		ClickCount = 0;
-// 		GetWorld()->GetTimerManager().ClearTimer(DoubleClickTimerHandle);
-//
-// 		FRPGInventoryEntry EntryCopy = ItemEntry;
-// 		EmptySlot();
-// 		OnUnequipItem.ExecuteIfBound(EntryCopy);
-// 		OnEquipmentDropped.ExecuteIfBound(EntryCopy.ItemTag,EntryCopy.ItemID);
-//
-// 		BackgroundRarity->SetBrushTintColor(FLinearColor(0.f,0.f,0.f,0.f));
-// 		ItemToolTipReference->SetVisibility(ESlateVisibility::Collapsed);
-// 		return FReply::Handled();
-// 	}
-// 	
-// 	GetWorld()->GetTimerManager().SetTimer(DoubleClickTimerHandle, [this]
-// 	{
-// 		ClickCount = 0;
-// 	}, DoubleClickThreshold, false);
-// 	
-// 	return Super::NativeOnMouseButtonDown(InGeometry, InMouseEvent);
-// }
-
 FReply UEquipmentSlot::NativeOnMouseButtonDoubleClick(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
 {
 	if (bIsEmpty) return FReply::Unhandled();
@@ -150,11 +109,18 @@ FReply UEquipmentSlot::NativeOnMouseButtonDoubleClick(const FGeometry& InGeometr
 
 void UEquipmentSlot::BuildDragOperation(UDragDropOperation*& OutOperation)
 {
-	UItemSlotDroppedDragDrop* DragOp = Cast<UItemSlotDroppedDragDrop>(
-	   UWidgetBlueprintLibrary::CreateDragDropOperation(UItemSlotDroppedDragDrop::StaticClass()));
+	UItemSlotDragDrogOperation* DragOp = Cast<UItemSlotDragDrogOperation>(
+	   UWidgetBlueprintLibrary::CreateDragDropOperation(UItemSlotDragDrogOperation::StaticClass()));
 
+	UItemDragVisualWidget* DragVisual = CreateWidget<UItemDragVisualWidget>(GetWorld(),IconWidgetClass);
+	if (!IsValid(DragVisual)) return;
+	
+	DragVisual->SetIcon(CurrentItemDefinition.Icon.Get(),CurrentSlotSize);
+	
 	DragOp->Pivot             = EDragPivot::CenterCenter;
-	DragOp->DefaultDragVisual = SlotIcon;
+	DragOp->ItemDraggedIconWidget = DragVisual;
+	DragOp->DefaultDragVisual = DragVisual;
+	
 	DragOp->ItemEntry         = &ItemEntry;
 	DragOp->SlotSize          = CurrentSlotSize; 
 	DragOp->ItemDefinition = CurrentItemDefinition;
@@ -167,13 +133,12 @@ void UEquipmentSlot::BuildDragOperation(UDragDropOperation*& OutOperation)
 	IconBox->SetBrushFromTexture(PlaceholderTexture);
 	BackgroundRarity->SetOpacity(0.f);
 	//EmptySlot(); //-si cancelo prque no llego a dropear hay que restore
-	//OnUnequipItem.ExecuteIfBound(EntryCopy);
 }
 
 bool UEquipmentSlot::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent,
 								  UDragDropOperation* InOperation)
 {
-	UItemSlotDroppedDragDrop* DragOp = Cast<UItemSlotDroppedDragDrop>(InOperation);
+	UItemSlotDragDrogOperation* DragOp = Cast<UItemSlotDragDrogOperation>(InOperation);
 	if (!DragOp || !DragOp->ItemEntry) return false;
 
 	if (!DragOp->ItemDefinition.ItemTag.MatchesTag(EquipmentTag)) return false;
@@ -185,7 +150,8 @@ bool UEquipmentSlot::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEv
 	}
 	
 	EquipItemSlot(*DragOp->ItemEntry,DragOp->ItemDefinition);
-	SlotIcon = Cast<UItemSlotIcon>(DragOp->DefaultDragVisual);
+
+	DragOp->ItemDraggedIconWidget->DisableDragOverResultIcon();
 	
 	return true;
 }
@@ -195,18 +161,22 @@ void UEquipmentSlot::NativeOnDragEnter(const FGeometry& InGeometry, const FDragD
 {
 	Super::NativeOnDragEnter(InGeometry, InDragDropEvent, InOperation);
 
-	UItemSlotDroppedDragDrop* DragOp = Cast<UItemSlotDroppedDragDrop>(InOperation);
+	UItemSlotDragDrogOperation* DragOp = Cast<UItemSlotDragDrogOperation>(InOperation);
 	if (!IsValid(DragOp) || !DragOp->ItemEntry) return;
 
 	//if (DragOp->SourceEquipmentSlot == this) return;
+	DragOp->LastEnterSlotWidget = this;
+	GEngine->AddOnScreenDebugMessage(-1,3.f,FColor::Red,FString::Printf(TEXT("End Drag Equip")));
 	
 	const bool bCompatible = DragOp->ItemDefinition.ItemTag.MatchesTag(EquipmentTag);
 	if (IsValid(DragOverPreview))
 	{
 		DragOverPreview->SetColorAndOpacity(bCompatible
 			? FLinearColor(0.287f, 0.138f, 0.041f, 0.5f)   
-			: FLinearColor(1.f, 0.f, 0.f, 0.5f));  
+			: FLinearColor(1.f, 0.f, 0.f, 0.5f));
 	}
+	EDragOverResult Result = bCompatible ? EDragOverResult::Drop : EDragOverResult::Invalid;
+	DragOp->ItemDraggedIconWidget->EnableDragOverResultIcon(Result);
 }
 
 void UEquipmentSlot::NativeOnDragLeave(const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation)
@@ -216,6 +186,9 @@ void UEquipmentSlot::NativeOnDragLeave(const FDragDropEvent& InDragDropEvent, UD
 		DragOverPreview->SetColorAndOpacity( FLinearColor(1.f, 1.f, 1.f, 0.f));
 		BackgroundRarity->SetBrushTintColor(FLinearColor(0.f,0.f,0.f,0.f));
 	}
+	UItemSlotDragDrogOperation* DragOp = Cast<UItemSlotDragDrogOperation>(InOperation);
+	if (!IsValid(DragOp)) return;
+	DragOp->ItemDraggedIconWidget->DisableDragOverResultIcon();
 }
 
 

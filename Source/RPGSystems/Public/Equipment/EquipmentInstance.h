@@ -6,6 +6,7 @@
 #include "UObject/NoExportTypes.h"
 #include "EquipmentInstance.generated.h"
 
+class ARPGSystemsCharacter;
 struct FEquipmentActorsToSpawn;
 struct FGameplayTag;
 /**
@@ -20,10 +21,13 @@ public:
 	virtual void OnUnEquipped();
 
 	void SpawnEquipmentActors(const TArray<FEquipmentActorsToSpawn>& ActorsToSpawn,FGameplayTag SlotTag);
-	void DestroySpawnedActors();
+	void DestroySpawnedActors(FGameplayTag SlotTag);
 
 private:
 
+	UPROPERTY()
+	ARPGSystemsCharacter* OwnedCharacter;
+	
 	UPROPERTY()
 	TArray<AActor*> SpawnedActors;
 	

@@ -16,6 +16,7 @@ class UEquipmentStaffEfects;
 class UItemTypesToTables;
 class UInventoryComponent;
 class UUniformGridSlot;
+enum class EUnequipReason : uint8;
 
 DECLARE_MULTICAST_DELEGATE_TwoParams(FEquipmentItemUsed, const TSubclassOf<UEquipmentDefinition>& /*Equipment Definition*/,const FEquipmentEffectPackage& /* Stat Effects and one Ability */)
 
@@ -51,6 +52,7 @@ DECLARE_MULTICAST_DELEGATE_OneParam(FDirtyInventoryItemsSignature, const FRPGInv
 DECLARE_MULTICAST_DELEGATE_OneParam(FInventoryItemRemovedSignature, const FRPGInventoryEntry& /*Removed Item*/)
 DECLARE_MULTICAST_DELEGATE_TwoParams(FItemDroppedSignature, const FRPGInventoryEntry* /*Entry*/, int32 /*NumItems*/)
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnWeightChangedSignature, float /*NewWeight*/);
+DECLARE_MULTICAST_DELEGATE_TwoParams(FOnEquipmentItemDropped, FGameplayTag, EUnequipReason)
 
 USTRUCT()
 struct FRPGInventoryList : public FFastArraySerializer
@@ -122,6 +124,7 @@ public:
 	FEquipmentItemUsed EquipmentItemDelegate;
 	FItemDroppedSignature ItemDroppedDelegate;
 	FOnWeightChangedSignature OnWeightChanged;
+	FOnEquipmentItemDropped OnEquipmentItemDroppedDelegate;
 	
 	UPROPERTY(Replicated,ReplicatedUsing = OnRep_InventoryList)
 	FRPGInventoryList InventoryList;

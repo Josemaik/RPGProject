@@ -5,7 +5,7 @@
 
 #include "Components/Image.h"
 #include "Components/TextBlock.h"
-#include "UI/Inventory/ItemSlotDroppedDragDrop.h"
+#include "UI/Inventory/ItemSlotDragDrogOperation.h"
 
 void UItemsDropToWorldWidget::NativeDestruct()
 {
@@ -18,7 +18,7 @@ bool UItemsDropToWorldWidget::NativeOnDrop(const FGeometry& InGeometry, const FD
 {
 	GEngine->AddOnScreenDebugMessage(-1,5.f,FColor::White,FString::Printf(TEXT("Drop To World")));
 
-	UItemSlotDroppedDragDrop* DragDropOp = Cast<UItemSlotDroppedDragDrop>(InOperation);
+	UItemSlotDragDrogOperation* DragDropOp = Cast<UItemSlotDragDrogOperation>(InOperation);
 	if (!IsValid(DragDropOp)) return false;
 	
 	OnItemDroppedPanelDelegate.ExecuteIfBound(*DragDropOp->ItemEntry);

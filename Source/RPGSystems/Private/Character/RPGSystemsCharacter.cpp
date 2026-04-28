@@ -267,6 +267,12 @@ void ARPGSystemsCharacter::AddEquipmentToCharacterCapture(AActor* Actor) const
 	CharacterCaptureComponent->ShowOnlyActors.Add(Actor);
 }
 
+void ARPGSystemsCharacter::RemoveEquipmentFromCharacterCapture(AActor* Actor) const
+{
+	if (!IsValid(CharacterCaptureComponent)) return;
+	CharacterCaptureComponent->ShowOnlyActors.Remove(Actor);
+}
+
 void ARPGSystemsCharacter::OnRep_InventoryComponent()
 {
 	InventoryComponent->InventoryList.OwningObject = this;
@@ -330,6 +336,19 @@ void ARPGSystemsCharacter::SetLeftHandEquipment(AEquipmentActor* NewLeftHandEqui
 	LeftHandEquipment = NewLeftHandEquipment;
 	AddEquipmentToCharacterCapture(NewLeftHandEquipment);
 }
+
+void ARPGSystemsCharacter::RemoveRightHandEquipment()
+{
+	RightHandEquipment = nullptr;
+	RemoveEquipmentFromCharacterCapture(RightHandEquipment);
+}
+
+void ARPGSystemsCharacter::RemoveLeftHandEquipment()
+{
+	LeftHandEquipment = nullptr;
+	RemoveEquipmentFromCharacterCapture(LeftHandEquipment);
+}
+
 
 void ARPGSystemsCharacter::Move(const FInputActionValue& Value)
 {

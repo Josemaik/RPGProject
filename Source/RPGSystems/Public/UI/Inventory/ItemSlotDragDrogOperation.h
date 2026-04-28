@@ -5,23 +5,26 @@
 #include "CoreMinimal.h"
 #include "Blueprint/DragDropOperation.h"
 #include "InventorySection/ItemTypes.h"
-#include "ItemSlotDroppedDragDrop.generated.h"
+#include "ItemSlotDragDrogOperation.generated.h"
 
+class UItemDragVisualWidget;
 class UEquipmentSlot;
 struct FMasterItemDefinition;
 enum ESlotSizeCategories : uint8;
 enum class EItemRarity : uint8;
 class UItemSlotWidget;
+class UBaseInventorySlot;
 struct FRPGInventoryEntry;
 /**
  * 
  */
 UCLASS()
-class RPGSYSTEMS_API UItemSlotDroppedDragDrop : public UDragDropOperation
+class RPGSYSTEMS_API UItemSlotDragDrogOperation : public UDragDropOperation
 {
 	GENERATED_BODY()
 
 public:
+	//Context
 	UPROPERTY()
 	UItemSlotWidget* ItemSlot_Payload;
 	
@@ -29,16 +32,15 @@ public:
 	UEquipmentSlot* SourceEquipmentSlot = nullptr;
 
 	UPROPERTY()
-	UItemSlotWidget* LastEnterSlotWidget;
-	
+	UBaseInventorySlot* LastEnterSlotWidget; //only keep this
+
+	//Visual
+	UPROPERTY()
+	UItemDragVisualWidget* ItemDraggedIconWidget;
+
+	//Data
 	FRPGInventoryEntry* ItemEntry;
-
 	FMasterItemDefinition ItemDefinition;
-
-	// UPROPERTY()
-	// UTexture2D* IconTexture;
-	
 	ESlotSizeCategories SlotSize;
-
-	//EItemRarity Rarity;
+	
 };

@@ -93,6 +93,8 @@ public:
 	AEquipmentActor* GetLeftHandEquipmentActor() const { return LeftHandEquipment; }
 	void SetRightHandEquipment(AEquipmentActor* NewRightHandEquipment);
 	void SetLeftHandEquipment(AEquipmentActor* NewLeftHandEquipment);
+	void RemoveRightHandEquipment();
+	void RemoveLeftHandEquipment();
 
 	UArrowComponent* GetKickSphereTracePoint() const { return KickSphereTracePoint; }
 protected:
@@ -118,7 +120,7 @@ protected:
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 
 	void AddEquipmentToCharacterCapture(AActor* Actor) const;
-	
+	void RemoveEquipmentFromCharacterCapture(AActor* Actor) const;
 private:
 	UFUNCTION()
 	void OnRep_InventoryComponent();
@@ -180,4 +182,3 @@ private:
 	UPROPERTY(BlueprintReadOnly,meta =(AllowPrivateAccess=true))
 	TObjectPtr<URPGAttributeSet> RPGAttributes;
 };
-

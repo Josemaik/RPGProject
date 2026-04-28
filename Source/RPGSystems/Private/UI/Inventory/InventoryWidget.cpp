@@ -84,7 +84,7 @@ void UInventoryWidget::NativeConstruct()
 
 void UInventoryWidget::HandleUnequipItem(const FRPGInventoryEntry& Entry)
 {
-	// Make function in InventoryWidgetController ->  UEquipmentManagerComponent::UnEquipItem()
+	InventoryWidgetController->UnEquipItem(Entry.ItemTag);
 }
 
 void UInventoryWidget::InitEquipmentWidget(UEquipmentSlot* EquipmentSlot)
@@ -107,7 +107,8 @@ void UInventoryWidget::FinishDestroy()
 
 void UInventoryWidget::OnEquipmentDropped(FGameplayTag ItemTag,uint64 ExistingID)
 {
-	InventoryWidgetController->AddEquipItem(ItemTag,ExistingID);
+	InventoryWidgetController->AddEquippedItem(ItemTag,ExistingID);
+	InventoryWidgetController->UnEquipItem(ItemTag);
 }
 
 void UInventoryWidget::BindInventoryItemDelegates()
@@ -200,7 +201,7 @@ void UInventoryWidget::OnSortPanelOptionChanged(EItemSortType ItemSort)
 void UInventoryWidget::HandleInventoryItemReceived(const FRPGInventoryEntry& Entry)
 {
 	if (!IsValid(ItemsContainer)) return;
-	if (ItemsContainer->FindItemIndex(Entry.ItemID,Entry.ItemTag) != INDEX_NONE)
+	if (ItemsContainer->FindGridIndexByItemID(Entry.ItemID,Entry.ItemTag) != INDEX_NONE)
 	{
 		ItemsContainer->UpdateItemSlot(Entry);
 		return;
