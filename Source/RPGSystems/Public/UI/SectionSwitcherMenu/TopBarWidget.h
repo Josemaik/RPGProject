@@ -16,6 +16,7 @@ class UTextBlock;
 
 // Delegate que escucha SectionSwitcher
 DECLARE_DELEGATE_OneParam(FOnSectionChanged, int32 Direction); // +1 o -1
+DECLARE_DELEGATE(FOnCloseButtonClicked);
 /**
  * Pure View — displays data from UTopBarViewModel via MVVM bindings.
  */
@@ -30,11 +31,15 @@ public:
 	void SetActiveSection(int32 Index);
 
 	FOnSectionChanged OnSectionChanged;
+	FOnCloseButtonClicked OnCloseButtonClickedDelegate;
 
 	UPROPERTY(BlueprintReadOnly)
 	TObjectPtr<UTopBarViewModel> TopBarViewModel;
 private:
 	virtual void NativeConstruct() override;
+	
+	UFUNCTION()
+	void OnCloseButtonClicked();
 	
 	UFUNCTION()
 	void OnPrevClicked();
@@ -99,6 +104,9 @@ private:
 	
 	UPROPERTY(EditDefaultsOnly, meta = (BindWidget),Category = "UI")
 	UTextBlock* CurrentLevelMaxExperienceText;
+
+	UPROPERTY(EditDefaultsOnly, meta = (BindWidget),Category = "UI")
+	UButton* CloseButton;
 };
 
 

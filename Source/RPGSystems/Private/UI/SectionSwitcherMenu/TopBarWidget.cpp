@@ -18,6 +18,13 @@ void UTopBarWidget::NativeConstruct()
 
 	if (ButtomPreviousCategory) ButtomPreviousCategory->OnClicked.AddDynamic(this, &UTopBarWidget::OnPrevClicked);
 	if (ButtomNextCategory) ButtomNextCategory->OnClicked.AddDynamic(this, &UTopBarWidget::OnNextClicked);
+
+	if (CloseButton) CloseButton->OnClicked.AddDynamic(this, &UTopBarWidget::OnCloseButtonClicked);
+}
+
+void UTopBarWidget::OnCloseButtonClicked()
+{
+	OnCloseButtonClickedDelegate.ExecuteIfBound();
 }
 
 void UTopBarWidget::InitCarousel(int32 NumSections)

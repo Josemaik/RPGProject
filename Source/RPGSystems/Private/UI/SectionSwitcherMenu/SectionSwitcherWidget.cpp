@@ -71,6 +71,10 @@ void USectionSwitcherWidget::InitializeTopBarWidget()
 	//Carousel visuals and Input Delegate
 	TopBarWidget->InitCarousel(SectionsCarousel.Num());
 	TopBarWidget->OnSectionChanged.BindUObject(this, &USectionSwitcherWidget::HandleSectionNavigation);
+	TopBarWidget->OnCloseButtonClickedDelegate.BindLambda([this]()
+	{
+		PlayerControllerRef->DisableSectionWidget();
+	});
 }
 
 
