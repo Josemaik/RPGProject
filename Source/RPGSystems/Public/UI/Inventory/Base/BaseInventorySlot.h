@@ -6,6 +6,7 @@
 #include "InventorySection/InventoryComponent.h"
 #include "BaseInventorySlot.generated.h"
 
+class USizeBox;
 class UItemToolTip;
 class UItemDragVisualWidget;
 class UImage;
@@ -75,6 +76,10 @@ protected:
     FSlateBrush         CurrentIconBrush;
 
     // Layout
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget), Category="UI")
+    USizeBox* SizeBox;
+    
     UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(BindWidget), Category="UI")
     UImage* IconBox;
 

@@ -136,11 +136,11 @@ private:
 	TSubclassOf<UItemCategoryButton> CategoryButtonClass;
 
 	//Search Bar
-	UPROPERTY(VisibleAnywhere, meta = (BindWidget), Category = "UI")
-	UEditableText* SearchBar;
+	// UPROPERTY(VisibleAnywhere, meta = (BindWidget), Category = "UI")
+	// UEditableText* SearchBar;
 
-	UPROPERTY(VisibleAnywhere, meta = (BindWidget), Category = "UI")
-	UTextBlock* CategoryText;
+	// UPROPERTY(VisibleAnywhere, meta = (BindWidget), Category = "UI")
+	// UTextBlock* CategoryText;
 	
 	/////////////////////////////////
 	//ItemsPanel

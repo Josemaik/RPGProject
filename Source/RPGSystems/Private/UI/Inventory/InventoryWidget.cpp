@@ -57,7 +57,7 @@ void UInventoryWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 	
-	SearchBar->OnTextChanged.AddDynamic(this, &ThisClass::OnSearchBarTextChanged);
+	//SearchBar->OnTextChanged.AddDynamic(this, &ThisClass::OnSearchBarTextChanged);
 	
 	//funcion bind inventoryequipmentdelegates
 	ItemToolTipReference = CreateWidget<UItemToolTip>(GetOwningPlayer(), TooltipWidgetClass);
@@ -133,7 +133,7 @@ void UInventoryWidget::HandleCategorySelected(FGameplayTag CategorySelected)
 	FString RightPart;
 	TagString.Split(TEXT("."), nullptr, &RightPart, ESearchCase::IgnoreCase, ESearchDir::FromEnd);
 
-	CategoryText->SetText(FText::FromString(RightPart));
+	//CategoryText->SetText(FText::FromString(RightPart));
 }
 
 UItemSlotWidget* UInventoryWidget::NewActiveItem(const FRPGInventoryEntry& Entry)

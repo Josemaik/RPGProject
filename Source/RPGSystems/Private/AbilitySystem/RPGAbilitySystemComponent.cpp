@@ -311,9 +311,26 @@ void URPGAbilitySystemComponent::AddEquipmentAbility(FRPGEquipmentEntry* Equipme
 void URPGAbilitySystemComponent::RemoveEquipmentAbility(const FRPGEquipmentEntry* EquipmentEntry)
 {
 	if (!EquipmentEntry) return;
-	
-	CancelAbilityHandle(EquipmentEntry->GrantedHandles.GrantedAbility);
 
+	FGameplayAbilitySpec* Spec = FindAbilitySpecFromHandle(EquipmentEntry->GrantedHandles.GrantedAbility);
+	if (Spec)
+	{
+		// Instance per actor -> cancel instances
+		TArray<UGameplayAbility*> Instances = Spec->GetAbilityInstances();
+		for (UGameplayAbility* Instance : Instances)
+		{
+			if (IsValid(Instance))
+			{
+				Instance->CancelAbility(
+					Spec->Handle,
+					Instance->GetCurrentActorInfo(),
+					Instance->GetCurrentActivationInfo(),
+					true
+				);
+			}
+		}
+	}
+	
 	ClearAbility(EquipmentEntry->GrantedHandles.GrantedAbility);
 }
 

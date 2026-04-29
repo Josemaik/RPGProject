@@ -5,7 +5,10 @@
 
 #include "Blueprint/SlateBlueprintLibrary.h"
 #include "Blueprint/WidgetBlueprintLibrary.h"
+#include "Components/CanvasPanelSlot.h"
 #include "Components/Image.h"
+#include "Components/OverlaySlot.h"
+#include "Components/SizeBox.h"
 #include "InventorySection/InventoryComponent.h"
 #include "Libraries/RPGUIStatics.h"
 #include "UI/Inventory/ItemSlotDragDrogOperation.h"
@@ -19,6 +22,7 @@ void UEquipmentSlot::NativeConstruct()
 	OnSlotMouseEnteredDelegate.BindUObject(this, &UEquipmentSlot::HandleMouseEntered);
 	OnSlotMouseLeavedDelegate.BindUObject(this,  &UEquipmentSlot::HandleMouseLeaved);
 
+	IconBox->SetBrushFromTexture(PlaceholderTexture);
 	//DragVisualEnable();
 
 	//EmptySlot();
@@ -28,6 +32,12 @@ void UEquipmentSlot::EquipItemSlot(const FRPGInventoryEntry& Entry,const FMaster
 {
 	ItemEntry = Entry;
 	EquipVisual(ItemDefinition.Icon.Get(), ItemDefinition.Rarity);
+	
+	IconBoxSlot = Cast<UOverlaySlot>(IconBox->Slot);
+	if (!IsValid(IconBoxSlot)) return;
+
+	IconBoxSlot->SetPadding(0.f);
+	
 	DragOverPreview->SetColorAndOpacity(FLinearColor(1.f, 1.f, 1.f, 0.f));
 	
 	OnEquipItem.ExecuteIfBound(Entry);
@@ -56,10 +66,18 @@ void UEquipmentSlot::DisableDragOverPreview()
 	DragOverPreview->SetColorAndOpacity( FLinearColor(1.f, 1.f, 1.f, 0.f));
 }
 
+void UEquipmentSlot::NativePreConstruct()
+{
+	Super::NativePreConstruct();
+	SizeBox->SetWidthOverride(SlotWidth);
+	SizeBox->SetHeightOverride(SlotHeight);
+}
+
 void UEquipmentSlot::EmptySlot()
 {
 	Super::EmptySlot();
 	IconBox->SetBrushFromTexture(PlaceholderTexture);
+	//	IconBoxSlot->SetPadding(20.f);
 	IconBox->SetColorAndOpacity(FLinearColor(1.f, 1.f, 1.f, 1.f));
 	//DragVisualEnable();
 }
@@ -150,7 +168,7 @@ bool UEquipmentSlot::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEv
 	}
 	
 	EquipItemSlot(*DragOp->ItemEntry,DragOp->ItemDefinition);
-
+	
 	DragOp->ItemDraggedIconWidget->DisableDragOverResultIcon();
 	
 	return true;
@@ -175,6 +193,7 @@ void UEquipmentSlot::NativeOnDragEnter(const FGeometry& InGeometry, const FDragD
 			? FLinearColor(0.287f, 0.138f, 0.041f, 0.5f)   
 			: FLinearColor(1.f, 0.f, 0.f, 0.5f));
 	}
+	
 	EDragOverResult Result = bCompatible ? EDragOverResult::Drop : EDragOverResult::Invalid;
 	DragOp->ItemDraggedIconWidget->EnableDragOverResultIcon(Result);
 }
@@ -189,6 +208,11 @@ void UEquipmentSlot::NativeOnDragLeave(const FDragDropEvent& InDragDropEvent, UD
 	UItemSlotDragDrogOperation* DragOp = Cast<UItemSlotDragDrogOperation>(InOperation);
 	if (!IsValid(DragOp)) return;
 	DragOp->ItemDraggedIconWidget->DisableDragOverResultIcon();
+
+	if (!bIsEmpty)
+	{
+		IconBoxSlot->SetPadding(20.f);
+	}
 }
 
 

@@ -52,6 +52,8 @@ private:
 
 	UFUNCTION()
 	void OnHitActor(AActor* HitActor,const FVector& HitLocation);
+	/*Timers*/
+	FTimerHandle DelayBeforeAttackTimer;
 	
 	/*Animation Data*/
 	UPROPERTY()

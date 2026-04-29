@@ -9,6 +9,7 @@
 #include "UI/Inventory/Base/BaseInventorySlot.h"
 #include "EquipmentSlot.generated.h"
 
+class UOverlaySlot;
 enum class EItemRarity : uint8;
 class USizeBox;
 struct FRPGInventoryEntry;
@@ -45,6 +46,7 @@ protected:
 	virtual void DragVisualEnable(bool bEnable) override;
 	virtual void DisableDragOverPreview() override;
 private:
+	virtual void NativePreConstruct() override;
 	void HandleMouseEntered(UBaseInventorySlot* BaseSlot);
 	void HandleMouseLeaved(UBaseInventorySlot* BaseSlot);
 	
@@ -57,8 +59,17 @@ private:
 	UPROPERTY(EditAnywhere,BlueprintReadOnly,meta=(BindWidget,AllowPrivateAccess=true))
 	UImage* DragOverPreview;
 
+	UPROPERTY(EditAnywhere,BlueprintReadOnly, Category="Config",meta=(AllowPrivateAccess=true))
+	float SlotWidth;
+
+	UPROPERTY(EditAnywhere,BlueprintReadOnly, Category="Config",meta=(AllowPrivateAccess=true))
+	float SlotHeight;
+	
 	UPROPERTY()
 	UItemToolTip* ItemToolTipReference;
+
+	UPROPERTY()
+	UOverlaySlot* IconBoxSlot;
 	
 	int32 ClickCount = 0;
 	FTimerHandle DoubleClickTimerHandle;

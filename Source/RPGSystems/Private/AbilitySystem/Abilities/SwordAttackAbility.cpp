@@ -49,12 +49,24 @@ void USwordAttackAbility::EndAbility(const FGameplayAbilitySpecHandle Handle,
 	const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo,
 	bool bReplicateEndAbility, bool bWasCancelled)
 {
-	if (IsValid(WaitInputPressedEvent)) WaitInputPressedEvent->EndTask();
-	if (IsValid(WaitStartComboEvent)) WaitStartComboEvent->EndTask();
-	if (IsValid(WaitEndComboEvent)) WaitEndComboEvent->EndTask();
-	if (IsValid(WaitEndHitTrace)) WaitEndHitTrace->EndTask();
-	if (IsValid(WaitStartHitTrace)) WaitStartHitTrace->EndTask();
-	if (IsValid(WaitKickHit)) WaitKickHit->EndTask();
+	if (UWorld* World = GetWorld())
+	{
+		World->GetTimerManager().ClearTimer(DelayBeforeAttackTimer);
+	}
+
+	IsAttacking = false;
+	saveAttack = false;
+	AttackIndex = 0;
+	//CanAttack = false;
+	
+	if (IsValid(WaitInputPressedEvent)) WaitInputPressedEvent->EndTask(); WaitInputPressedEvent = nullptr;
+	if (IsValid(WaitStartComboEvent)) WaitStartComboEvent->EndTask(); WaitStartComboEvent = nullptr;
+	if (IsValid(WaitEndComboEvent)) WaitEndComboEvent->EndTask(); WaitEndComboEvent = nullptr;
+	if (IsValid(WaitEndHitTrace)) WaitEndHitTrace->EndTask(); WaitEndHitTrace = nullptr;
+	if (IsValid(WaitStartHitTrace)) WaitStartHitTrace->EndTask(); WaitStartHitTrace = nullptr; 
+	if (IsValid(WaitKickHit)) WaitKickHit->EndTask(); WaitKickHit = nullptr;
+	if (IsValid(ShordTraceTask)) ShordTraceTask->EndTask(); ShordTraceTask = nullptr;
+	if (IsValid(KickHitTrace)) KickHitTrace->EndTask(); KickHitTrace = nullptr;	
 	
 	Super::EndAbility(Handle,ActorInfo,ActivationInfo,bReplicateEndAbility, bWasCancelled);
 }
@@ -101,6 +113,7 @@ void USwordAttackAbility::ManageComboLogic()
 
 void USwordAttackAbility::PlayCombo(FGameplayEventData Payload)
 {
+	if (!IsActive() || !CanAttack) return;
 	if (saveAttack)
 	{
 		saveAttack = false;
@@ -161,6 +174,8 @@ void USwordAttackAbility::OnKickHitEvent(FGameplayEventData Payload)
 
 void USwordAttackAbility::OnInputPressed(float TimeWait)
 {
+	if (!IsActive()) return;
+	
 	ManageComboLogic();
 	WaitInputPressedEvent->EndTask();
 	SetupInputTask();
@@ -173,21 +188,21 @@ void USwordAttackAbility::ChooseAttack()
 	{
 		return;
 	}
+
+	TWeakObjectPtr<USwordAttackAbility> WeakThis(this);
 	
-	FTimerManager& TimerManager = World->GetTimerManager();	
-	
-	FTimerHandle DelayBeforeAttackTimer;
-	TimerManager.SetTimer(DelayBeforeAttackTimer,[this]()
+	World->GetTimerManager().SetTimer(DelayBeforeAttackTimer,[WeakThis]()
 	{
-		switch (AttackIndex)
+		if (!WeakThis.IsValid()) return;
+		switch (WeakThis->AttackIndex)
 		{
-			case 0: AnimInstance->Montage_Play(Attack1); AttackIndex = 1; 
+			case 0: WeakThis->AnimInstance->Montage_Play(WeakThis->Attack1); WeakThis->AttackIndex = 1; 
 				break;
-			case 1: AnimInstance->Montage_Play(Attack2); AttackIndex = 2; 
+			case 1: WeakThis->AnimInstance->Montage_Play(WeakThis->Attack2); WeakThis->AttackIndex = 2; 
 				break;
-			case 2: AnimInstance->Montage_Play(Attack3); AttackIndex = 3; 
+			case 2: WeakThis->AnimInstance->Montage_Play(WeakThis->Attack3); WeakThis->AttackIndex = 3; 
 				break;
-			case 3: AnimInstance->Montage_Play(Attack4); AttackIndex = 4; 
+			case 3: WeakThis->AnimInstance->Montage_Play(WeakThis->Attack4); WeakThis->AttackIndex = 4; 
 				break;
 			default: break;
 		}
