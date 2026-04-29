@@ -9,6 +9,7 @@
 #include "InventorySection/InventoryComponent.h"
 #include "ItemsPanelWidget.generated.h"
 
+class UTextBlock;
 class UItemSlotDragDrogOperation;
 class UBaseInventorySlot;
 class UItemToolTip;
@@ -95,6 +96,7 @@ public:
 
 private:
 	virtual void NativeConstruct() override;
+	virtual void NativePreConstruct() override;
 	
 	static void ResolvePair(const TArray<FItemSlotData>& ItemsArray,int32 TargetIndex,ESlotSizeCategories DraggedSize,
 	                        int32 MaxColumns,int32& OutSuperior,int32& OutLower);
@@ -116,10 +118,16 @@ private:
 	void ResetSlotData(FItemSlotData& ItemSlotData);
 
 	int32 LastHoveredIndex = INDEX_NONE;
-	int32 CurrentSelectedIndex = INDEX_NONE;
+	int32 CurrentSelectedIndex = 0;
 	
 	UPROPERTY(VisibleAnywhere, meta = (BindWidget), Category = "UI")
 	UUniformGridPanel* ItemsPanel;
+
+	UPROPERTY(VisibleAnywhere, meta = (BindWidget), Category = "UI")
+	UTextBlock* SubCategoryText;
+
+	UPROPERTY(EditAnywhere,BlueprintReadOnly, Category="UI", meta=(ExposeOnSpawn=true,AllowPrivateAccess=true))
+	FText SubCategoryEditableText;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Data")
 	TSubclassOf<UItemSlotWidget> ItemSlotWidgetClass;

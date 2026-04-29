@@ -8,6 +8,8 @@
 #include "InventorySection/InventoryComponent.h"
 #include "InventoryWidget.generated.h"
 
+class UBaseCategoryWidget;
+class UWidgetSwitcher;
 class UItemToolTip;
 class USortPanelWidget;
 class UButton;
@@ -61,6 +63,8 @@ public:
 	//void InitializeKeyHints();
 	
 	void SortItems(bool Quickly);
+
+	UBaseCategoryWidget* GetActiveCategoryWidget() const;
 
 protected:
 	UFUNCTION()
@@ -145,8 +149,16 @@ private:
 	/////////////////////////////////
 	//ItemsPanel
 
-	UPROPERTY(VisibleAnywhere, meta = (BindWidget), Category = "UI")
-	UItemsPanelWidget* ItemsContainer;
+	// UPROPERTY(VisibleAnywhere, meta = (BindWidget), Category = "UI")
+	// UItemsPanelWidget* ItemsContainer;
+	UPROPERTY(meta=(BindWidget))
+	UWidgetSwitcher* CategorySwitcher;
+
+	UPROPERTY(EditDefaultsOnly, Category="Categories")
+	TMap<FGameplayTag, TSubclassOf<UBaseCategoryWidget>> CategoryWidgetClasses;
+
+	UPROPERTY()
+	TMap<FGameplayTag, UBaseCategoryWidget*> CategoryWidgets;
 
 	///Sort Panel
 	UPROPERTY(VisibleAnywhere, meta = (BindWidget), Category = "UI")

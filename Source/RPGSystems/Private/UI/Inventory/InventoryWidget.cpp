@@ -8,7 +8,7 @@
 #include "Components/EditableText.h"
 #include "Components/HorizontalBox.h"
 #include "Components/Spacer.h"
-#include "Components/TextBlock.h"
+#include "Components/WidgetSwitcher.h"
 #include "InventorySection/InventoryComponent.h"
 #include "UI/Inventory/ItemCategoryButton.h"
 #include "UI/Inventory/ItemsDropToWorldWidget.h"
@@ -16,6 +16,7 @@
 #include "UI/Inventory/ItemsPanelWidget.h"
 #include "UI/Inventory/ItemToolTip.h"
 #include "UI/Inventory/SortPanelWidget.h"
+#include "UI/Inventory/Categories/BaseCategoryWidget.h"
 #include "UI/Inventory/Equipment/EquipmentSlot.h"
 #include "UI/WidgetController/InventoryWidgetController.h"
 
@@ -24,7 +25,17 @@ void UInventoryWidget::SetWidgetController(UInventoryWidgetController* InWidgetC
 	InventoryWidgetController = InWidgetController;
 	
 	CurrentCategorySelected = RPGInventoryTags::ItemsCategory::Equipment;
-	ItemsContainer->CurrentCategoryTag = CurrentCategorySelected;
+	//ItemsContainer->CurrentCategoryTag = CurrentCategorySelected;
+	//Add category widgets to switcher and map
+	for (const FCategoryButtonData& Data : Categories)
+	{
+		if (TSubclassOf<UBaseCategoryWidget>* WidgetClass = CategoryWidgetClasses.Find(Data.CategoryTag))
+		{
+			UBaseCategoryWidget* CategoryWidget = CreateWidget<UBaseCategoryWidget>(this, *WidgetClass);
+			CategorySwitcher->AddChild(CategoryWidget);
+			CategoryWidgets.Add(Data.CategoryTag, CategoryWidget);
+		}
+	}
 	//CacheEssentialVars();
 	BindInventoryItemDelegates();
 
@@ -49,7 +60,7 @@ void UInventoryWidget::SetWidgetController(UInventoryWidgetController* InWidgetC
 
 		CategoriesContainer->AddChildToHorizontalBox(Spacer);
 
-		ItemsContainer->AddEmptySlots(Data.CategoryTag);
+		//ItemsContainer->AddEmptySlots(Data.CategoryTag);
 	}
 }
 
@@ -118,7 +129,7 @@ void UInventoryWidget::BindInventoryItemDelegates()
 	InventoryWidgetController->OnSortItemsRequested.AddUObject(this, &UInventoryWidget::SortItems);
 	InventoryWidgetController->OnEquipKeyPressed.AddUObject(this,&UInventoryWidget::OnEquipKeyPressed);
 	InventoryWidgetController->OnDropKeyPressed.AddUObject(this,&UInventoryWidget::OnDropKeyPressed);
-	ItemsContainer->OnEquipmentDropped.BindUObject(this,&UInventoryWidget::OnEquipmentDropped);
+	//ItemsContainer->OnEquipmentDropped.BindUObject(this,&UInventoryWidget::OnEquipmentDropped);
 }
 
 void UInventoryWidget::HandleCategorySelected(FGameplayTag CategorySelected)
@@ -127,13 +138,18 @@ void UInventoryWidget::HandleCategorySelected(FGameplayTag CategorySelected)
 	
 	//New Category
 	CurrentCategorySelected = CategorySelected;
-	ItemsContainer->ResetCategory(CurrentCategorySelected);
-	
-	FString TagString = CurrentCategorySelected.GetTagName().ToString();
-	FString RightPart;
-	TagString.Split(TEXT("."), nullptr, &RightPart, ESearchCase::IgnoreCase, ESearchDir::FromEnd);
+	// ItemsContainer->ResetCategory(CurrentCategorySelected);
+	//
+	// FString TagString = CurrentCategorySelected.GetTagName().ToString();
+	// FString RightPart;
+	// TagString.Split(TEXT("."), nullptr, &RightPart, ESearchCase::IgnoreCase, ESearchDir::FromEnd);
 
 	//CategoryText->SetText(FText::FromString(RightPart));
+
+	if (UBaseCategoryWidget** Widget = CategoryWidgets.Find(CategorySelected))
+	{
+		CategorySwitcher->SetActiveWidget(*Widget);
+	}
 }
 
 UItemSlotWidget* UInventoryWidget::NewActiveItem(const FRPGInventoryEntry& Entry)
@@ -153,28 +169,28 @@ UItemSlotWidget* UInventoryWidget::NewActiveItem(const FRPGInventoryEntry& Entry
 	return CurrentItemSlotWidget;
 }
 
-void UInventoryWidget::AddItemToGrid(const FRPGInventoryEntry& Entry, const FMasterItemDefinition& ItemDefinition)
-{
-	if (!IsValid(ItemsContainer))
-	{
-		return;
-	}
-
-	ItemsContainer->AddItemSlot(Entry,ItemDefinition);
-}
+// void UInventoryWidget::AddItemToGrid(const FRPGInventoryEntry& Entry, const FMasterItemDefinition& ItemDefinition)
+// {
+// 	if (!IsValid(ItemsContainer))
+// 	{
+// 		return;
+// 	}
+//
+// 	ItemsContainer->AddItemSlot(Entry,ItemDefinition);
+// }
 
 void UInventoryWidget::SortItems(bool Quickly)
 {
-	if (!IsValid(ItemsContainer)) return;
-	
-	if (Quickly)
-	{
-		ItemsContainer->SortItemsQuicly();
-	}
-	else
-	{
-		SetSortPanelVisibility();
-	}
+	// if (!IsValid(ItemsContainer)) return;
+	//
+	// if (Quickly)
+	// {
+	// 	ItemsContainer->SortItemsQuicly();
+	// }
+	// else
+	// {
+	// 	SetSortPanelVisibility();
+	// }
 }
 
 void UInventoryWidget::OnQuickSortButtonClicked()
@@ -195,20 +211,25 @@ void UInventoryWidget::OnSortPanelCloseButtonClicked()
 void UInventoryWidget::OnSortPanelOptionChanged(EItemSortType ItemSort)
 {
 	HideSortPanel();
-	ItemsContainer->SortItemsBy(ItemSort);
+	//ItemsContainer->SortItemsBy(ItemSort);
 }
 
 void UInventoryWidget::HandleInventoryItemReceived(const FRPGInventoryEntry& Entry)
 {
-	if (!IsValid(ItemsContainer)) return;
-	if (ItemsContainer->FindGridIndexByItemID(Entry.ItemID,Entry.ItemTag) != INDEX_NONE)
-	{
-		ItemsContainer->UpdateItemSlot(Entry);
-		return;
-	}
+	// if (!IsValid(ItemsContainer)) return;
+	// if (ItemsContainer->FindGridIndexByItemID(Entry.ItemID,Entry.ItemTag) != INDEX_NONE)
+	// {
+	// 	ItemsContainer->UpdateItemSlot(Entry);
+	// 	return;
+	// }
 
+	// const FMasterItemDefinition& ItemDefinition = InventoryWidgetController->GetInventoryItemDefinition(Entry.ItemTag);
+	// AddItemToGrid(Entry, ItemDefinition);
 	const FMasterItemDefinition& ItemDefinition = InventoryWidgetController->GetInventoryItemDefinition(Entry.ItemTag);
-	AddItemToGrid(Entry, ItemDefinition);
+	UBaseCategoryWidget* CurrentCategoryWidget = *CategoryWidgets.Find(CurrentCategorySelected);
+	if (!IsValid(CurrentCategoryWidget)) return;
+
+	CurrentCategoryWidget->ReceiveInventoryEntry(Entry, ItemDefinition);
 }
 
 void UInventoryWidget::HandleItemDropped(const FRPGInventoryEntry& Entry) const
@@ -221,7 +242,11 @@ void UInventoryWidget::HandleItemDropped(const FRPGInventoryEntry& Entry) const
 
 void UInventoryWidget::HandleInventoryItemRemoved(const FRPGInventoryEntry& Entry) const
 {
-	ItemsContainer->RemoveItem(Entry.ItemID);
+	//ItemsContainer->RemoveItem(Entry.ItemID);
+	UBaseCategoryWidget* CurrentCategoryWidget = *CategoryWidgets.Find(CurrentCategorySelected);
+	if (!IsValid(CurrentCategoryWidget)) return;
+
+	CurrentCategoryWidget->RemoveEntry(Entry.ItemID);
 }
 
 void UInventoryWidget::OnSearchBarTextChanged(const FText& InText)
@@ -263,9 +288,15 @@ void UInventoryWidget::OnEquipItem(const FRPGInventoryEntry& Entry)
 
 void UInventoryWidget::OnEquipKeyPressed()
 {
-	const FRPGInventoryEntry& SelectedItem = ItemsContainer->GetSelectedItem();
-	if (SelectedItem.ItemID == INDEX_NONE) return;
-	
+	if (CurrentCategorySelected != RPGInventoryTags::ItemsCategory::Equipment) return;
+
+	UBaseCategoryWidget* EquipmentCategoryWidget = *CategoryWidgets.Find(RPGInventoryTags::ItemsCategory::Equipment);
+	if (!IsValid(EquipmentCategoryWidget)) return;
+
+	const FRPGInventoryEntry& SelectedItem = EquipmentCategoryWidget->GetSelectedItem();
+	// const FRPGInventoryEntry& SelectedItem = ItemsContainer->GetSelectedItem();
+	// if (SelectedItem.ItemID == INDEX_NONE) return;
+	//
 	const FMasterItemDefinition& ItemDefinition = InventoryWidgetController->GetInventoryItemDefinition(SelectedItem.ItemTag);
 	SilverSword->EquipItemSlot(SelectedItem,ItemDefinition);
 	
@@ -274,7 +305,11 @@ void UInventoryWidget::OnEquipKeyPressed()
 
 void UInventoryWidget::OnDropKeyPressed()
 {
-	const FRPGInventoryEntry& SelectedItem = ItemsContainer->GetSelectedItem();
+	UBaseCategoryWidget* CurrentCategoryWidget = *CategoryWidgets.Find(CurrentCategorySelected);
+	if (!IsValid(CurrentCategoryWidget)) return;
+
+	const FRPGInventoryEntry& SelectedItem = CurrentCategoryWidget->GetSelectedItem();
+	//const FRPGInventoryEntry& SelectedItem = ItemsContainer->GetSelectedItem();
 	if (SelectedItem.ItemID == INDEX_NONE) return;
 	
 	InventoryWidgetController->DropItemToWorld(SelectedItem);

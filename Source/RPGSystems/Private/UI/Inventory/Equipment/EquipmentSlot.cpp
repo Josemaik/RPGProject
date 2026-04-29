@@ -208,11 +208,8 @@ void UEquipmentSlot::NativeOnDragLeave(const FDragDropEvent& InDragDropEvent, UD
 	UItemSlotDragDrogOperation* DragOp = Cast<UItemSlotDragDrogOperation>(InOperation);
 	if (!IsValid(DragOp)) return;
 	DragOp->ItemDraggedIconWidget->DisableDragOverResultIcon();
-
-	if (!bIsEmpty)
-	{
-		IconBoxSlot->SetPadding(20.f);
-	}
+	
+	bIsEmpty = true;
 }
 
 

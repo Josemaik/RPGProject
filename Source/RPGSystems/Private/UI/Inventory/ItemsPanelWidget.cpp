@@ -12,6 +12,7 @@
 #include "UI/Inventory/SortPanelWidget.h"
 #include "AbilitySystem/NativeTags/RPGInventoryTags.h"
 #include "Blueprint/SlateBlueprintLibrary.h"
+#include "Components/TextBlock.h"
 #include "UI/Inventory/ItemDragVisualWidget.h"
 #include "UI/Inventory/ItemToolTip.h"
 #include "UI/Inventory/Equipment/EquipmentSlot.h"
@@ -49,7 +50,7 @@ void UItemsPanelWidget::AddItemToGrid(UItemSlotWidget* Item,const int32 Index)
 void UItemsPanelWidget::RemoveItem(const int64 ItemID)
 {
 	ItemToolTipReference->SetVisibility(ESlateVisibility::Collapsed);
-	
+	bool ItemRemoved = false;
 	TArray<FItemSlotData>* ItemsArrayPtr = CategoryItemsMap.Find(CurrentCategoryTag);
 	if (!ItemsArrayPtr) return;
 	TArray<FItemSlotData>& ItemsArray = *ItemsArrayPtr;
@@ -67,10 +68,11 @@ void UItemsPanelWidget::RemoveItem(const int64 ItemID)
 				ResetSlotData(ItemsArray[i - MaxColumns]);
 			}
 			ResetSlotData(ItemSlotData);
+			ItemRemoved = true;
 			break;
 		}
 	}
-
+	if (!ItemRemoved) return;
 	ResetCategory(CurrentCategoryTag);
 }
 
@@ -165,14 +167,12 @@ void UItemsPanelWidget::AddItemSlot(const FRPGInventoryEntry& Entry,const FMaste
 		ItemsArray[FreeIndex + MaxColumns].Size = LowerSlotVertical;
 		ItemsArray[FreeIndex + MaxColumns].ItemDefinition = ItemDefinition;
 	}
+
+	CurrentSelectedIndex = FreeIndex;
 	
 	if (GetItemCategory(Entry.ItemTag) == CurrentCategoryTag && bResetPanel)
 	{
 		ResetCategory(CurrentCategoryTag);
-	}
-	if (CurrentSelectedIndex == INDEX_NONE)
-	{
-		CurrentSelectedIndex = FreeIndex;
 	}
 }
 
@@ -330,10 +330,10 @@ void UItemsPanelWidget::CreateSlotWidget(int32 Index,const FItemSlotData& SlotDa
 		BindItemSlotDelegates(NewWidget);
 		AddItemToGrid(NewWidget, Index);
 
-		if (CurrentSelectedIndex == INDEX_NONE)
-		{
-			CurrentSelectedIndex = Index;
-		}
+		// if (CurrentSelectedIndex != INDEX_NONE)
+		// {
+		// 	CurrentSelectedIndex = Index;
+		// }
 	}
 	else
 	{
@@ -350,10 +350,10 @@ void UItemsPanelWidget::CreateSlotWidget(int32 Index,const FItemSlotData& SlotDa
 					InitializeSlotWidget(SlotData, NewWidget, AsyncBrush);
 					BindItemSlotDelegates(NewWidget);
 					AddItemToGrid(NewWidget, Index);
-					if (CurrentSelectedIndex == INDEX_NONE)
-					{
-						CurrentSelectedIndex = Index;
-					}
+					// if (CurrentSelectedIndex == INDEX_NONE)
+					// {
+					// 	CurrentSelectedIndex = Index;
+					// }
 				}
 			})
 		);
@@ -394,10 +394,8 @@ void UItemsPanelWidget::ResetCategory(FGameplayTag InCurrentCategoryTag)
 			}
 		}
 	}
-	if (CurrentSelectedIndex != INDEX_NONE)
-	{
-		SelectSlotAtIndex(CurrentSelectedIndex);
-	}
+
+	SelectSlotAtIndex(CurrentSelectedIndex);
 }
 
 void UItemsPanelWidget::SortItemsQuicly()
@@ -444,6 +442,8 @@ void UItemsPanelWidget::SortItemsQuicly()
 	}
 
 	ResetCategory(CurrentCategoryTag);
+
+	SelectSlotAtIndex(0);
 }
 
 void UItemsPanelWidget::SortItemsBy(EItemSortType SortType)
@@ -528,6 +528,7 @@ void UItemsPanelWidget::SortItemsBy(EItemSortType SortType)
 	}
 
 	ResetCategory(CurrentCategoryTag);
+	SelectSlotAtIndex(0);
 }
 
 const FRPGInventoryEntry& UItemsPanelWidget::GetSelectedItem()
@@ -566,6 +567,14 @@ void UItemsPanelWidget::NativeConstruct()
 	ItemToolTipReference->SetVisibility(ESlateVisibility::Collapsed);
 
 	LastHoveredIndex = INDEX_NONE;
+
+	SubCategoryText->SetText(SubCategoryEditableText);
+}
+
+void UItemsPanelWidget::NativePreConstruct()
+{
+	Super::NativePreConstruct();
+	SubCategoryText->SetText(SubCategoryEditableText);
 }
 
 void UItemsPanelWidget::ResolvePair(const TArray<FItemSlotData>& ItemsArray, int32 TargetIndex,
