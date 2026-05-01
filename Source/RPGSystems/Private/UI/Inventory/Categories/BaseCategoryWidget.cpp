@@ -37,3 +37,19 @@ const FRPGInventoryEntry* UBaseCategoryWidget::GetSelectedItem()
 	}
 	return nullptr;
 }
+
+void UBaseCategoryWidget::QuickSortPanels()
+{
+	for (UItemsPanelWidget* Panel : SubCategoryPanels)
+	{
+		Panel->SortItemsQuicly();
+	}
+}
+
+void UBaseCategoryWidget::SortPanels(EItemSortType SortType)
+{
+	for (UItemsPanelWidget* Panel : SubCategoryPanels)
+	{
+		Panel->SortItemsBy(SortType);
+	}
+}

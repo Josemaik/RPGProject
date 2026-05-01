@@ -475,36 +475,54 @@ void UItemsPanelWidget::SortItemsBy(EItemSortType SortType)
 			}
 	case EItemSortType::Rarity :
 			{
-				// SortedItems.Sort([&](const FItemSlotData& A, const FItemSlotData& B)
-				// {
-				// 	if (A.ItemDefinition.Rarity != B.ItemDefinition.Rarity)
-				// 		return A.ItemDefinition.Rarity > B.ItemDefinition.Rarity;
-				// 	
-				// 	if (CurrentCategoryTag == RPGInventoryTags::ItemsCategory::Consumable)
-				// 	{
-				// 		return A.ItemDefinition.ConsumableType > B.ItemDefinition.ConsumableType;
-				// 	}
-				// 	return A.ItemDefinition.EquipmentType > B.ItemDefinition.EquipmentType;
-				// });
+				const TArray<FGameplayTag> RarityOrder = {
+					RPGInventoryTags::Rarity::Witcher,
+					RPGInventoryTags::Rarity::Relic,
+					RPGInventoryTags::Rarity::Magic,
+					RPGInventoryTags::Rarity::Master,
+					RPGInventoryTags::Rarity::Common
+				};
+				auto GetTagPriority = [](const FGameplayTag& Tag, const TArray<FGameplayTag>& Order) -> int32
+				{
+					int32 Index = Order.IndexOfByKey(Tag);
+					return Index == INDEX_NONE ? INT_MAX : Index; // Si no está, va al final
+				};
+				SortedItems.Sort([&](const FItemSlotData& A, const FItemSlotData& B)
+			   {
+				   int32 RarityA = GetTagPriority(A.ItemDefinition.RarityTag, RarityOrder);
+				   int32 RarityB = GetTagPriority(B.ItemDefinition.RarityTag, RarityOrder);
+
+				   if (RarityA != RarityB)
+				   {
+				   		return RarityA < RarityB; // Menor índice = mayor rareza
+				   }
+					return RarityA < RarityB;
+			   });
 				break;
 			}
 		case EItemSortType::Type :
 			{
-				// SortedItems.Sort([&](const FItemSlotData& A, const FItemSlotData& B)
-				// 	{
-				// 		if (CurrentCategoryTag == RPGInventoryTags::ItemsCategory::Consumable)
-				// 		{
-				// 			if (A.ItemDefinition.ConsumableType != B.ItemDefinition.ConsumableType)
-				// 				return A.ItemDefinition.ConsumableType > B.ItemDefinition.ConsumableType;
-				// 		}
-				// 		else
-				// 		{
-				// 			if (A.ItemDefinition.EquipmentType != B.ItemDefinition.EquipmentType)
-				// 				return A.ItemDefinition.EquipmentType > B.ItemDefinition.EquipmentType;
-				// 		}
-				//
-				// 		return A.ItemDefinition.Rarity > B.ItemDefinition.Rarity;
-				// });
+				auto GetTagPriority = [](const FGameplayTag& Tag, const TArray<FGameplayTag>& Order) -> int32
+				{
+					int32 Index = Order.IndexOfByKey(Tag);
+					return Index == INDEX_NONE ? INT_MAX : Index; // Si no está, va al final
+				};
+				static const TArray<FGameplayTag> EquipmentTypeOrder ={
+					RPGInventoryTags::ItemType::Sword,
+					RPGInventoryTags::ItemType::Torch
+				};
+				SortedItems.Sort([&](const FItemSlotData& A, const FItemSlotData& B)
+				{
+					int32 TypeA = GetTagPriority(A.ItemDefinition.SubcategoryTag, EquipmentTypeOrder);
+					int32 TypeB = GetTagPriority(B.ItemDefinition.SubcategoryTag, EquipmentTypeOrder);
+
+					if (TypeA != TypeB)
+					{
+						return TypeA < TypeB;
+					}
+					return TypeA < TypeB;
+				});
+			
 				break;
 			}
 		default: break;

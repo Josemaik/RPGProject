@@ -84,6 +84,9 @@ struct FMasterItemDefinition : public FTableRowBase
 	FGameplayTag SlotTag;           // UI Inventory slots Item.Slot.SilverSword / Item.Slot.Consumables
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Classification")
+	FGameplayTag TypeTag;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Classification")
 	FGameplayTag RarityTag;         // Item.Rarity.Common / Item.Rarity.Rare
 
 	// UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(EditCondition="CategoryTag == Item.Equipment", EditConditionHides))

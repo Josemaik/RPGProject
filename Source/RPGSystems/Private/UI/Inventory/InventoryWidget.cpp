@@ -168,16 +168,17 @@ void UInventoryWidget::HandleCategorySelected(FGameplayTag CategorySelected)
 
 void UInventoryWidget::SortItems(bool Quickly)
 {
-	// if (!IsValid(ItemsContainer)) return;
-	//
-	// if (Quickly)
-	// {
-	// 	ItemsContainer->SortItemsQuicly();
-	// }
-	// else
-	// {
-	// 	SetSortPanelVisibility();
-	// }
+	//if (!IsValid(ItemsContainer)) return;
+	UBaseCategoryWidget* ActiveCategory = Cast<UBaseCategoryWidget>(CategorySwitcher->GetActiveWidget());
+	if (!IsValid(ActiveCategory)) return;
+	if (Quickly)
+	{
+		ActiveCategory->QuickSortPanels();
+	}
+	else
+	{
+		SetSortPanelVisibility();
+	}
 }
 
 void UInventoryWidget::OnQuickSortButtonClicked()
@@ -198,6 +199,9 @@ void UInventoryWidget::OnSortPanelCloseButtonClicked()
 void UInventoryWidget::OnSortPanelOptionChanged(EItemSortType ItemSort)
 {
 	HideSortPanel();
+	UBaseCategoryWidget* ActiveCategory = Cast<UBaseCategoryWidget>(CategorySwitcher->GetActiveWidget());
+	if (!IsValid(ActiveCategory)) return;
+	ActiveCategory->SortPanels(ItemSort);
 	//ItemsContainer->SortItemsBy(ItemSort);
 }
 

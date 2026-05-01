@@ -7,6 +7,7 @@
 #include "Blueprint/UserWidget.h"
 #include "BaseCategoryWidget.generated.h"
 
+enum class EItemSortType : uint8;
 class UItemsPanelWidget;
 struct FMasterItemDefinition;
 struct FRPGInventoryEntry;
@@ -24,6 +25,8 @@ public:
 	virtual void RemoveEntry(int64 ItemID);
 	virtual void UpdateEntry(const FRPGInventoryEntry& Entry) {}
 	virtual const FRPGInventoryEntry* GetSelectedItem();
+	void QuickSortPanels();
+	void SortPanels(EItemSortType SortType);
 protected:
 	FGameplayTag LastSelectedSubCategory;
 	TArray<UItemsPanelWidget*> SubCategoryPanels;
