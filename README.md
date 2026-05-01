@@ -2,6 +2,12 @@
 Multiplayer RPG prototype made with Gameplay Ability System in UE5.6
 
 ## Inventory System / Equipment System
+<h3>-----------------------------------</h3>
+<h3>Updated: SubCategories Panels and Equipment Slots</h3>
+<h3>-----------------------------------</h3>
+<video src="https://github.com/user-attachments/assets/effedbf1-5a7a-46a9-8ce0-f173b53abc1b" width="700" controls></video>
+<video src="https://github.com/user-attachments/assets/b7847faf-5fd5-4556-bcbf-265bb5736e7b" width="700" controls></video>
+<video src="https://github.com/user-attachments/assets/f54cf9cc-7e1f-4343-992e-dd7b14d4aebf" width="700" controls></video>
 
 <h3>-----------------------------------</h3>
 <h3>PickUp and Add items</h3>
