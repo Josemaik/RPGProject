@@ -4,8 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "BaseCategoryWidget.h"
-#include "GameplayTagContainer.h"
-#include "Blueprint/UserWidget.h"
 #include "AlchemyCategoryConsumablesWidget.generated.h"
 
 class UItemsPanelWidget;
@@ -22,6 +20,9 @@ public:
 									   const FMasterItemDefinition& Definition) override;
 	virtual void RemoveEntry(int64 ItemID) override;
 private:
+
+	virtual void NativeConstruct() override;
+	
 	UPROPERTY(meta=(BindWidget))
 	UItemsPanelWidget* OilsPanel;  
 
@@ -30,13 +31,4 @@ private:
 
 	UPROPERTY(meta=(BindWidget))
 	UItemsPanelWidget* PotionsPanel; 
-
-	UPROPERTY(EditDefaultsOnly)
-	FGameplayTag OilsTag;
-
-	UPROPERTY(EditDefaultsOnly)
-	FGameplayTag BombsTag;
-
-	UPROPERTY(EditDefaultsOnly)
-	FGameplayTag PotionsTag;
 };

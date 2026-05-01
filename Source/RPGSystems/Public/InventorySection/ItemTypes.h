@@ -56,30 +56,43 @@ struct FMasterItemDefinition : public FTableRowBase
 {
 	GENERATED_BODY()
 
+	//Primary key
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	FGameplayTag ItemTag = FGameplayTag();
 	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	EItemRarity Rarity = EItemRarity::Common;
+	//Display
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Display")
+	FText ItemName;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(EditCondition="CategoryTag == Item.Equipment", EditConditionHides))
-	EEquipmentType EquipmentType;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly,Category="Display")
+	FText ItemDescription;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(EditCondition="CategoryTag == Item.Consumable", EditConditionHides))
-	EConsumableType ConsumableType;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly,Category="Display")
+	TSoftObjectPtr<UTexture2D> Icon;
 
-	UPROPERTY(EditDefaultsOnly,BlueprintReadOnly)
-	FText ItemName = FText();
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly,Category="Display")
+	TSoftObjectPtr<UStaticMesh> ItemMesh;	
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	FText ItemDescription = FText();
-	
-	UPROPERTY(EditDefaultsOnly,BlueprintReadOnly)
-	TSoftObjectPtr<UTexture2D> Icon = nullptr;
+	//Clasification tags
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Classification")
+	FGameplayTag CategoryTag;       // Item.Category.Equipment / Item.Category.Consumable
 
-	UPROPERTY(EditDefaultsOnly,BlueprintReadOnly)
-	TSoftObjectPtr<UStaticMesh> ItemMesh = nullptr;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Classification")
+	FGameplayTag SubcategoryTag;    // Item.Subcategory.Weapon / Item.Subcategory.Armor
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Classification")
+	FGameplayTag SlotTag;           // UI Inventory slots Item.Slot.SilverSword / Item.Slot.Consumables
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Classification")
+	FGameplayTag RarityTag;         // Item.Rarity.Common / Item.Rarity.Rare
+
+	// UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(EditCondition="CategoryTag == Item.Equipment", EditConditionHides))
+	// EEquipmentType EquipmentType;
+	//
+	// UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(EditCondition="CategoryTag == Item.Consumable", EditConditionHides))
+	// EConsumableType ConsumableType;
+
+	// chane to enum or gameplay tag
 	UPROPERTY(EditDefaultsOnly,BlueprintReadOnly)
 	int32 SlotsSize = 0;
 	

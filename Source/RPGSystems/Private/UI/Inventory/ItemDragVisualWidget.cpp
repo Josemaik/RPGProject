@@ -11,7 +11,7 @@ void UItemDragVisualWidget::SetIcon(TObjectPtr<UTexture2D> IconTexture, ESlotSiz
 {
 	if (!IsValid(SizeBox) || !IsValid(DragIcon)) return;
 	
-	FVector2f IconSize = (Size == LowerSlotVertical || Size == SuperiorSlotVertical) ?
+	FVector2f IconSize = (Size == ESlotSizeCategories::LowerSlotVertical || Size == ESlotSizeCategories::SuperiorSlotVertical) ?
 		IconSizeTwoSlots : IconSizeUniqueSlot;
 	
 	SizeBox->SetWidthOverride(IconSize.X);

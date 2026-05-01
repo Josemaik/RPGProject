@@ -38,7 +38,7 @@ void UEquipmentInstance::SpawnEquipmentActors(const TArray<FEquipmentActorsToSpa
 				NewActor->FinishSpawning(FTransform::Identity);
 				NewActor->AttachToComponent(OwnedCharacter->GetMesh(), FAttachmentTransformRules::KeepRelativeTransform, ActorToSpawn.AttachName);
 
-				if (SlotTag.MatchesTagExact(RPGInventoryTags::ItemsCategory::EquipmentData::Slot::RightHand))
+				if (SlotTag.MatchesTagExact(RPGInventoryTags::AttachPoint::RightHand))
 				{
 					OwnedCharacter->SetRightHandEquipment(NewActor);
 				}
@@ -62,7 +62,7 @@ void UEquipmentInstance::SpawnEquipmentActors(const TArray<FEquipmentActorsToSpa
 						NewActor->FinishSpawning(FTransform::Identity);
 						NewActor->AttachToComponent(OwnedCharacter->GetMesh(), FAttachmentTransformRules::KeepRelativeTransform, ActorToSpawn.AttachName);
 
-						if (SlotTag.MatchesTagExact(RPGInventoryTags::ItemsCategory::EquipmentData::Slot::RightHand))
+						if (SlotTag.MatchesTagExact(RPGInventoryTags::AttachPoint::RightHand))
 						{
 							OwnedCharacter->SetRightHandEquipment(NewActor);
 						}
@@ -78,12 +78,12 @@ void UEquipmentInstance::SpawnEquipmentActors(const TArray<FEquipmentActorsToSpa
 	}
 }
 
-void UEquipmentInstance::DestroySpawnedActors(FGameplayTag SlotTag)
+void UEquipmentInstance::DestroySpawnedActors(FGameplayTag AttachTag)
 {
 	for (AActor* Actor : SpawnedActors)
 	{
 		Actor->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
-		if (SlotTag.MatchesTagExact(RPGInventoryTags::ItemsCategory::EquipmentData::Slot::RightHand))
+		if (AttachTag.MatchesTagExact(RPGInventoryTags::AttachPoint::RightHand))
 		{
 			OwnedCharacter->RemoveRightHandEquipment();
 		}

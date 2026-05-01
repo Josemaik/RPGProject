@@ -31,9 +31,10 @@ public:
 
     // Visual
     void SetIcon(const FSlateBrush& Brush);
-    void EquipVisual(UTexture2D* Texture, EItemRarity Rarity);
+    void EquipVisual(UTexture2D* Texture, FGameplayTag RarityTag);
     virtual void EmptySlot();
     virtual void DisableDragOverPreview() {}
+    virtual int32 GetGridIndex() { return 0; }
 
     // Animation
     virtual void StartSelectedAnimation();
@@ -41,10 +42,11 @@ public:
 
     // Getters
     bool IsEmpty()                          const { return bIsEmpty; }
-    EItemRarity GetRarity()                 const { return CurrentItemDefinition.Rarity; }
+    //EItemRarity GetRarity()                 const { return CurrentItemDefinition.RarityTag; }
     ESlotSizeCategories GetCurrentSlotSize()const { return CurrentSlotSize; }
     TSoftObjectPtr<UTexture2D> GetIconTexture() const { return CurrentItemDefinition.Icon; }
     const FRPGInventoryEntry& GetItemEntry()const { return ItemEntry; }
+    const FMasterItemDefinition& GetCurrentItemDefinition() const { return CurrentItemDefinition; }
 
     // Delegates
     FOnBaseSlotMouseEntered  OnSlotMouseEnteredDelegate;

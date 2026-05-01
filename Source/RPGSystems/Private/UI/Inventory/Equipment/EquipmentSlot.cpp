@@ -31,7 +31,7 @@ void UEquipmentSlot::NativeConstruct()
 void UEquipmentSlot::EquipItemSlot(const FRPGInventoryEntry& Entry,const FMasterItemDefinition& ItemDefinition)
 {
 	ItemEntry = Entry;
-	EquipVisual(ItemDefinition.Icon.Get(), ItemDefinition.Rarity);
+	EquipVisual(ItemDefinition.Icon.Get(), ItemDefinition.RarityTag);
 	
 	IconBoxSlot = Cast<UOverlaySlot>(IconBox->Slot);
 	if (!IsValid(IconBoxSlot)) return;
@@ -43,7 +43,7 @@ void UEquipmentSlot::EquipItemSlot(const FRPGInventoryEntry& Entry,const FMaster
 	OnEquipItem.ExecuteIfBound(Entry);
 
 	CurrentItemDefinition = ItemDefinition;
-	CurrentSlotSize = ItemDefinition.SlotsSize > 1 ? SuperiorSlotVertical : LowerSlotVertical;
+	CurrentSlotSize = ItemDefinition.SlotsSize > 1 ? ESlotSizeCategories::SuperiorSlotVertical : ESlotSizeCategories::LowerSlotVertical;
 	bIsEmpty = false;
 }
 
@@ -150,7 +150,6 @@ void UEquipmentSlot::BuildDragOperation(UDragDropOperation*& OutOperation)
 
 	IconBox->SetBrushFromTexture(PlaceholderTexture);
 	BackgroundRarity->SetOpacity(0.f);
-	//EmptySlot(); //-si cancelo prque no llego a dropear hay que restore
 }
 
 bool UEquipmentSlot::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent,
@@ -159,7 +158,7 @@ bool UEquipmentSlot::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEv
 	UItemSlotDragDrogOperation* DragOp = Cast<UItemSlotDragDrogOperation>(InOperation);
 	if (!DragOp || !DragOp->ItemEntry) return false;
 
-	if (!DragOp->ItemDefinition.ItemTag.MatchesTag(EquipmentTag)) return false;
+	if (!DragOp->ItemDefinition.SlotTag.MatchesTag(SlotTag)) return false;
 
 	if (!bIsEmpty)
 	{
@@ -186,7 +185,7 @@ void UEquipmentSlot::NativeOnDragEnter(const FGeometry& InGeometry, const FDragD
 	DragOp->LastEnterSlotWidget = this;
 	GEngine->AddOnScreenDebugMessage(-1,3.f,FColor::Red,FString::Printf(TEXT("End Drag Equip")));
 	
-	const bool bCompatible = DragOp->ItemDefinition.ItemTag.MatchesTag(EquipmentTag);
+	const bool bCompatible = DragOp->ItemDefinition.SlotTag.MatchesTag(SlotTag);
 	if (IsValid(DragOverPreview))
 	{
 		DragOverPreview->SetColorAndOpacity(bCompatible

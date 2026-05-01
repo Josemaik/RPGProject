@@ -10,7 +10,7 @@
 class UItemDragVisualWidget;
 class UEquipmentSlot;
 struct FMasterItemDefinition;
-enum ESlotSizeCategories : uint8;
+enum class ESlotSizeCategories : uint8;
 enum class EItemRarity : uint8;
 class UItemSlotWidget;
 class UBaseInventorySlot;

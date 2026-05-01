@@ -14,7 +14,7 @@ enum class EDragOverResult : uint8
 	Invalid UMETA(DisplayName = "Invalid")
 };
 
-enum ESlotSizeCategories : uint8;
+enum class ESlotSizeCategories : uint8;
 class USizeBox;
 class UImage;
 /**

@@ -17,6 +17,7 @@
 #include "UI/Inventory/ItemToolTip.h"
 #include "UI/Inventory/SortPanelWidget.h"
 #include "UI/Inventory/Categories/BaseCategoryWidget.h"
+#include "UI/Inventory/Categories/EquipmentCategoryWidget.h"
 #include "UI/Inventory/Equipment/EquipmentSlot.h"
 #include "UI/WidgetController/InventoryWidgetController.h"
 
@@ -34,6 +35,13 @@ void UInventoryWidget::SetWidgetController(UInventoryWidgetController* InWidgetC
 			UBaseCategoryWidget* CategoryWidget = CreateWidget<UBaseCategoryWidget>(this, *WidgetClass);
 			CategorySwitcher->AddChild(CategoryWidget);
 			CategoryWidgets.Add(Data.CategoryTag, CategoryWidget);
+			if (Data.CategoryTag == RPGInventoryTags::ItemsCategory::Equipment)
+			{
+				UEquipmentCategoryWidget* EquipmentCatWidget = Cast<UEquipmentCategoryWidget>(CategoryWidget);
+				if (!IsValid(EquipmentCatWidget)) return;
+				EquipmentCatWidget->OnEquipmentDropped.BindUObject(this, &UInventoryWidget::OnEquipmentDropped);
+				CategorySwitcher->SetActiveWidget(CategoryWidget);
+			}
 		}
 	}
 	//CacheEssentialVars();
@@ -79,6 +87,12 @@ void UInventoryWidget::NativeConstruct()
 	SteelWeapon->OnEquipItem.BindUObject(this, &ThisClass::OnEquipItem);
 	Bolls->OnEquipItem.BindUObject(this, &ThisClass::OnEquipItem);
 	RangedWeapon->OnEquipItem.BindUObject(this, &ThisClass::OnEquipItem);
+
+	EquipmentSlots.Add(SilverSword);
+	EquipmentSlots.Add(SteelWeapon);
+	EquipmentSlots.Add(Bolls);
+	EquipmentSlots.Add(RangedWeapon);
+	
 	InitEquipmentWidget(SilverSword);
 	InitEquipmentWidget(Bolls);
 	InitEquipmentWidget(SteelWeapon);
@@ -151,33 +165,6 @@ void UInventoryWidget::HandleCategorySelected(FGameplayTag CategorySelected)
 		CategorySwitcher->SetActiveWidget(*Widget);
 	}
 }
-
-UItemSlotWidget* UInventoryWidget::NewActiveItem(const FRPGInventoryEntry& Entry)
-{
-	FMasterItemDefinition ItemDefinition = InventoryWidgetController->GetInventoryItemDefinition(Entry.ItemTag);
-	
-	UItemSlotWidget* CurrentItemSlotWidget = Cast<UItemSlotWidget>(CreateWidget(this,ItemSlotWidgetClass));
-	
-	if (!IsValid(CurrentItemSlotWidget))
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red,FString::Printf(TEXT("Item Widget is null")));
-		return nullptr;
-	}
-
-	CurrentItemSlotWidget->Init(Entry, ItemDefinition);
-
-	return CurrentItemSlotWidget;
-}
-
-// void UInventoryWidget::AddItemToGrid(const FRPGInventoryEntry& Entry, const FMasterItemDefinition& ItemDefinition)
-// {
-// 	if (!IsValid(ItemsContainer))
-// 	{
-// 		return;
-// 	}
-//
-// 	ItemsContainer->AddItemSlot(Entry,ItemDefinition);
-// }
 
 void UInventoryWidget::SortItems(bool Quickly)
 {
@@ -293,12 +280,21 @@ void UInventoryWidget::OnEquipKeyPressed()
 	UBaseCategoryWidget* EquipmentCategoryWidget = *CategoryWidgets.Find(RPGInventoryTags::ItemsCategory::Equipment);
 	if (!IsValid(EquipmentCategoryWidget)) return;
 
-	const FRPGInventoryEntry& SelectedItem = EquipmentCategoryWidget->GetSelectedItem();
+	const FRPGInventoryEntry& SelectedItem = *EquipmentCategoryWidget->GetSelectedItem();
 	// const FRPGInventoryEntry& SelectedItem = ItemsContainer->GetSelectedItem();
-	// if (SelectedItem.ItemID == INDEX_NONE) return;
-	//
+	if (SelectedItem.ItemID == INDEX_NONE) return;
+	
 	const FMasterItemDefinition& ItemDefinition = InventoryWidgetController->GetInventoryItemDefinition(SelectedItem.ItemTag);
-	SilverSword->EquipItemSlot(SelectedItem,ItemDefinition);
+
+	for (UEquipmentSlot* EquipmentSlot: EquipmentSlots)
+	{
+		if (EquipmentSlot->GetSlotTag().MatchesTagExact(ItemDefinition.SlotTag))
+		{
+			EquipmentSlot->EquipItemSlot(SelectedItem,ItemDefinition);
+			break;
+		}	
+	}
+	// SilverSword->EquipItemSlot(SelectedItem,ItemDefinition);
 	
 	InventoryWidgetController->EquipItem(SelectedItem);
 }
@@ -308,7 +304,7 @@ void UInventoryWidget::OnDropKeyPressed()
 	UBaseCategoryWidget* CurrentCategoryWidget = *CategoryWidgets.Find(CurrentCategorySelected);
 	if (!IsValid(CurrentCategoryWidget)) return;
 
-	const FRPGInventoryEntry& SelectedItem = CurrentCategoryWidget->GetSelectedItem();
+	const FRPGInventoryEntry& SelectedItem = *CurrentCategoryWidget->GetSelectedItem();
 	//const FRPGInventoryEntry& SelectedItem = ItemsContainer->GetSelectedItem();
 	if (SelectedItem.ItemID == INDEX_NONE) return;
 	

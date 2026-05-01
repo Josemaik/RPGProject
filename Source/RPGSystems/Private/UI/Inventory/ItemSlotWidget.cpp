@@ -80,7 +80,7 @@ void UItemSlotWidget::Init(const FRPGInventoryEntry& Entry,const FMasterItemDefi
 	CurrentIconBrush = Brush;
 	SetIcon(Brush);
 	
-	BackgroundRarity->SetBrushTintColor(FSlateColor(URPGUIStatics::GetColorForRarity(GetWorld(),Definition.Rarity)));
+	BackgroundRarity->SetBrushTintColor(FSlateColor(URPGUIStatics::GetColorByRarity(GetWorld(),Definition.RarityTag)));
 }
 
 void UItemSlotWidget::EmptySlot()
@@ -212,14 +212,16 @@ void UItemSlotWidget::NativeOnDragCancelled(const FDragDropEvent& InDragDropEven
 	UItemSlotDragDrogOperation* DragDropOp = Cast<UItemSlotDragDrogOperation>(InOperation);
 	if (!IsValid(DragDropOp)) return;
 	
-	UItemSlotWidget* DroppedItem = DragDropOp->ItemSlot_Payload;
-	if (!IsValid(DroppedItem)) return;
+	if (IsValid(DragDropOp->LastEnterSlotWidget))
+		DragDropOp->LastEnterSlotWidget->DisableDragOverPreview();
+
+	const int32 FailedIndex = IsValid(DragDropOp->LastEnterSlotWidget) 
+	   ? DragDropOp->LastEnterSlotWidget->GetGridIndex()
+	   : INDEX_NONE;
 	
-	if (!IsValid(DragDropOp->LastEnterSlotWidget)) return;
+	const FRPGInventoryEntry& Entry = DragDropOp->LastEnterSlotWidget->GetItemEntry();
 
-	DragDropOp->LastEnterSlotWidget->DisableDragOverPreview();
-
-	OnDragCancelledDelegate.ExecuteIfBound(DragDropOp->LastEnterSlotWidget->GetItemEntry());
+	OnDragCancelledDelegate.ExecuteIfBound(FailedIndex,DragDropOp->ItemSlot_Payload->GetGridIndex(), DragDropOp->SlotSize);
 }
 
 void UItemSlotWidget::NativeOnDragEnter(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent,
@@ -230,20 +232,23 @@ void UItemSlotWidget::NativeOnDragEnter(const FGeometry& InGeometry, const FDrag
 	UItemSlotDragDrogOperation* DragDropOp = Cast<UItemSlotDragDrogOperation>(InOperation);
 	if (!IsValid(DragDropOp)) return;
 
+	const bool bIsValid = IsItemValidForThisSlot(DragDropOp->ItemDefinition);
 	const bool bFromEquipmentSlot = !IsValid(DragDropOp->ItemSlot_Payload);
 	const int32 FromIndex = bFromEquipmentSlot ? INDEX_NONE : DragDropOp->ItemSlot_Payload->GetGridIndex();
 	const ESlotSizeCategories DroppedSize = DragDropOp->SlotSize;
-
-
-	if (bFromEquipmentSlot)
-	{
-		OnNewDragOperation.ExecuteIfBound(DragDropOp);
-	}
 	
+	OnNewDragOperation.ExecuteIfBound(DragDropOp);
 	DragDropOp->LastEnterSlotWidget = this;
 	
 	if (DroppedSize == ESlotSizeCategories::UniqueSlot)
 	{
+		if (!bIsValid)
+		{
+			EnableDragOverPreview(EDragOverResult::Invalid);
+			DragDropOp->ItemDraggedIconWidget->EnableDragOverResultIcon(EDragOverResult::Invalid);
+			return;	
+		}
+		
 		if (bIsEmpty)
 		{
 			// Empty target → can drop
@@ -264,7 +269,8 @@ void UItemSlotWidget::NativeOnDragEnter(const FGeometry& InGeometry, const FDrag
 		return;
 	}
 	
-	OnDragEnteredDelegate.ExecuteIfBound(FromIndex,CurrentGridIndex);
+	const EDragOverResult Result = bIsValid ? EDragOverResult::Drop : EDragOverResult::Invalid;
+	OnDragEnteredDelegate.ExecuteIfBound(FromIndex,CurrentGridIndex,Result);
 }
 
 void UItemSlotWidget::NativeOnDragLeave(const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation)
@@ -274,19 +280,22 @@ void UItemSlotWidget::NativeOnDragLeave(const FDragDropEvent& InDragDropEvent, U
 	UItemSlotDragDrogOperation* DragDropOp = Cast<UItemSlotDragDrogOperation>(InOperation);
 	if (!IsValid(DragDropOp)) return;
 
+	const bool bIsValid = IsItemValidForThisSlot(DragDropOp->ItemDefinition);
 	const bool bFromEquipmentSlot = !IsValid(DragDropOp->ItemSlot_Payload);
 	const int32 FromIndex = bFromEquipmentSlot ? INDEX_NONE : DragDropOp->ItemSlot_Payload->GetGridIndex();
 	const ESlotSizeCategories DroppedSize = DragDropOp->SlotSize;
+
+	DragDropOp->ItemDraggedIconWidget->DisableDragOverResultIcon();
 	
 	if (DroppedSize == ESlotSizeCategories::UniqueSlot)
 	{
-		// Only this slot was highlighted
 		DisableDragOverPreview();
 		DragDropOp->ItemDraggedIconWidget->DisableDragOverResultIcon();
 		return;
 	}
-	
-	OnDragLeavedDelegate.ExecuteIfBound(FromIndex,CurrentGridIndex);
+
+	const EDragOverResult Result = bIsValid ? EDragOverResult::Drop : EDragOverResult::Invalid;
+	OnDragLeavedDelegate.ExecuteIfBound(FromIndex,CurrentGridIndex,Result);
 }
 
 bool UItemSlotWidget::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent,
@@ -294,7 +303,9 @@ bool UItemSlotWidget::NativeOnDrop(const FGeometry& InGeometry, const FDragDropE
 {
 	UItemSlotDragDrogOperation* DragDropOp = Cast<UItemSlotDragDrogOperation>(InOperation);
 	if (!IsValid(DragDropOp)) return false;
-	
+
+	const bool bIsValid = IsItemValidForThisSlot(DragDropOp->ItemDefinition);
+	const EDragOverResult Result = bIsValid ? EDragOverResult::Drop : EDragOverResult::Invalid;
 	const bool bFromEquipmentSlot = !IsValid(DragDropOp->ItemSlot_Payload);
 	const int32 FromIndex = bFromEquipmentSlot ? INDEX_NONE : DragDropOp->ItemSlot_Payload->GetGridIndex();
 	
@@ -302,10 +313,14 @@ bool UItemSlotWidget::NativeOnDrop(const FGeometry& InGeometry, const FDragDropE
 	
 	if (DroppedSize == ESlotSizeCategories::UniqueSlot)
 	{
+		if (!bIsValid)
+		{
+			return false;
+		}
 		if (bIsEmpty)
 		{
 			// Move to empty slot
-			OnItemDroppedPanelDelegate.ExecuteIfBound(FromIndex, CurrentGridIndex);
+			OnItemDroppedPanelDelegate.ExecuteIfBound(FromIndex, CurrentGridIndex,Result);
 			DisableDragOverPreview();
 			//DisableDragOverResultIcon();
 			DragDropOp->ItemDraggedIconWidget->DisableDragOverResultIcon();
@@ -314,7 +329,7 @@ bool UItemSlotWidget::NativeOnDrop(const FGeometry& InGeometry, const FDragDropE
 		if (CurrentSlotSize == ESlotSizeCategories::UniqueSlot)
 		{
 			// Swap two unique slots
-			OnItemDroppedPanelDelegate.ExecuteIfBound(FromIndex, CurrentGridIndex);
+			OnItemDroppedPanelDelegate.ExecuteIfBound(FromIndex, CurrentGridIndex,Result);
 			DisableDragOverPreview();
 			//DisableDragOverResultIcon();
 			DragDropOp->ItemDraggedIconWidget->DisableDragOverResultIcon();
@@ -334,6 +349,12 @@ bool UItemSlotWidget::NativeOnDrop(const FGeometry& InGeometry, const FDragDropE
         UE_LOG(LogTemp, Warning, TEXT("Delegate NOT bound"));
     }
 	
-	OnItemDroppedPanelDelegate.ExecuteIfBound(FromIndex,CurrentGridIndex);
+	OnItemDroppedPanelDelegate.ExecuteIfBound(FromIndex,CurrentGridIndex,Result);
 	return true;
+}
+
+bool UItemSlotWidget::IsItemValidForThisSlot(const FMasterItemDefinition& Definition) const
+{
+	if (!AcceptedSubCategoryTag.IsValid()) return true;
+	return Definition.SubcategoryTag.MatchesTag(AcceptedSubCategoryTag);
 }

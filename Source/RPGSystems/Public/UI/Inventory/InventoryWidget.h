@@ -90,9 +90,6 @@ private:
 	//functions
 	void BindInventoryItemDelegates();
 	void HandleCategorySelected(FGameplayTag CategorySelected);
-
-	UItemSlotWidget* NewActiveItem(const FRPGInventoryEntry& Entry);
-	void AddItemToGrid(const FRPGInventoryEntry& Entry, const FMasterItemDefinition& ItemDefinition);
 	
 	//callbacks
 	UFUNCTION()
@@ -194,6 +191,8 @@ private:
 
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget,AllowPrivateAccess="true"), Category = "UI")
 	UEquipmentSlot* RangedWeapon;
+
+	TArray<UEquipmentSlot*> EquipmentSlots;
 };
 
 

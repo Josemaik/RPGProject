@@ -36,7 +36,7 @@ struct FRPGEquipmentEntry : public FFastArraySerializerItem
 	FGameplayTag SlotTag = FGameplayTag();
 
 	UPROPERTY(BlueprintReadOnly)
-	FGameplayTag RarityTag = FGameplayTag();
+	FGameplayTag AttachTag = FGameplayTag();
 
 	UPROPERTY(BlueprintReadOnly)
 	FEquipmentEffectPackage EffectPackage = FEquipmentEffectPackage();

@@ -3,30 +3,54 @@
 
 #include "UI/Inventory/Categories/EquipmentCategoryWidget.h"
 
-#include "InventorySection/InventoryComponent.h"
+#include "Components/HorizontalBoxSlot.h"
 #include "UI/Inventory/ItemsPanelWidget.h"
 
 void UEquipmentCategoryWidget::ReceiveInventoryEntry(const FRPGInventoryEntry& Entry,
                                                      const FMasterItemDefinition& Definition)
 {
-	if (Entry.ItemTag.MatchesTag(WeaponsTag))
-	{
-		WeaponsPanel->AddItemSlot(Entry, Definition);
-	}
-	else if (Entry.ItemTag.MatchesTag(ArmorTag))
-	{
-		ArmorPanel->AddItemSlot(Entry, Definition);
-	}
+	Super::ReceiveInventoryEntry(Entry, Definition);
 }
 
 void UEquipmentCategoryWidget::RemoveEntry(int64 ItemID)
 {
-	WeaponsPanel->RemoveItem(ItemID);
-	ArmorPanel->RemoveItem(ItemID);
+	Super::RemoveEntry(ItemID);
 }
 
-const FRPGInventoryEntry& UEquipmentCategoryWidget::GetSelectedItem()
+const FRPGInventoryEntry* UEquipmentCategoryWidget::GetSelectedItem()
 {
-	return WeaponsPanel->GetSelectedItem();
-	//ArmorPanel->GetSelectedItem();
+	return Super::GetSelectedItem();
 }
+
+void UEquipmentCategoryWidget::NativeConstruct()
+{
+	Super::NativeConstruct();
+	if (!IsValid(WeaponsPanel) || !IsValid(ArmorPanel)) return;
+	WeaponsPanel->OnSelectItemDelegate.BindLambda([this](int32 SelectedEntryIndex)
+	{
+		LastSelectedSubCategory = WeaponsPanel->GetSubCategoryTag();
+	});
+	ArmorPanel->OnSelectItemDelegate.BindLambda([this](int32 SelectedEntryIndex)
+	{
+		LastSelectedSubCategory = ArmorPanel->GetSubCategoryTag();
+	});
+	
+	SubCategoryPanels.Add(WeaponsPanel);
+	SubCategoryPanels.Add(ArmorPanel);
+
+	for (auto& Panel : SubCategoryPanels)
+	{
+		Panel->AddEmptySlots();
+		Panel->OnEquipmentDropped.BindLambda([this](FGameplayTag ItemTag,uint64 ExistingID)
+		{
+			OnEquipmentDropped.ExecuteIfBound(ItemTag,ExistingID);
+		});
+		if (UHorizontalBoxSlot* HSlot = Cast<UHorizontalBoxSlot>(Panel->Slot))
+		{
+			HSlot->SetHorizontalAlignment(HAlign_Left);
+			HSlot->SetSize(FSlateChildSize(ESlateSizeRule::Automatic));
+		}
+	}
+}
+
+

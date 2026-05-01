@@ -3,33 +3,50 @@
 
 #include "UI/Inventory/Categories/AlchemyCategoryConsumablesWidget.h"
 
-#include "InventorySection/InventoryComponent.h"
 #include "UI/Inventory/ItemsPanelWidget.h"
 
 void UAlchemyCategoryConsumablesWidget::ReceiveInventoryEntry(const FRPGInventoryEntry& Entry,
-                                                      const FMasterItemDefinition& Definition)
+															const FMasterItemDefinition& Definition)
 {
-	if (Entry.ItemTag.MatchesTag(PotionsTag))
-	{
-		PotionsPanel->AddItemSlot(Entry, Definition);
-		return;
-	}
-	
-	if (Entry.ItemTag.MatchesTag(OilsTag))
-	{
-		OilsPanel->AddItemSlot(Entry, Definition);
-		return;
-	}
-
-	if (Entry.ItemTag.MatchesTag(BombsTag))
-	{
-		BombsPanel->AddItemSlot(Entry, Definition);
-	}
+	Super::ReceiveInventoryEntry(Entry, Definition);
 }
 
 void UAlchemyCategoryConsumablesWidget::RemoveEntry(int64 ItemID)
 {
-	PotionsPanel->RemoveItem(ItemID);
-	OilsPanel->RemoveItem(ItemID);
-	BombsPanel->RemoveItem(ItemID);
+	Super::RemoveEntry(ItemID);
+}
+
+void UAlchemyCategoryConsumablesWidget::NativeConstruct()
+{
+	Super::NativeConstruct();
+	if (!IsValid(OilsPanel) || !IsValid(PotionsPanel) || !IsValid(BombsPanel)) return;
+
+	SubCategoryPanels.Add(OilsPanel);
+	SubCategoryPanels.Add(PotionsPanel);
+	SubCategoryPanels.Add(BombsPanel);
+
+	for (auto& Panel : SubCategoryPanels)
+	{
+		Panel->AddEmptySlots();
+	}
+	
+	OilsPanel->OnSelectItemDelegate.BindLambda([this](int32 SelectedEntryIndex)
+	{
+		LastSelectedSubCategory = OilsPanel->GetSubCategoryTag();
+	});
+	PotionsPanel->OnSelectItemDelegate.BindLambda([this](int32 SelectedEntryIndex)
+	{
+		LastSelectedSubCategory = PotionsPanel->GetSubCategoryTag();
+	});
+	BombsPanel->OnSelectItemDelegate.BindLambda([this](int32 SelectedEntryIndex)
+	{
+		LastSelectedSubCategory = BombsPanel->GetSubCategoryTag();
+	});
+	
+	
+
+	// for (auto& Panel : SubCategoryPanels)
+	// {
+	// 	Panel->AddEmptySlots();
+	// }
 }

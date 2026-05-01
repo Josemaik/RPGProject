@@ -11,18 +11,18 @@
 void UItemToolTip::SetData(const FMasterItemDefinition& ItemDefinition)
 {
 	ItemNameText->SetText(ItemDefinition.ItemName);
-	if (ItemDefinition.Rarity == EItemRarity::Common)
-	{
-		ItemTypeText->SetText(FText::FromString("OTHER"));
-	}
+	// if (ItemDefinition.RarityTag == /*gameplay tag common*/)
+	// {
+	// 	ItemTypeText->SetText(FText::FromString("OTHER"));
+	// }
 	ItemDescriptionText->SetText(ItemDefinition.ItemDescription);
-	FLinearColor RarityColor = URPGUIStatics::GetColorForRarity(GetWorld(),ItemDefinition.Rarity);
+	FLinearColor RarityColor = URPGUIStatics::GetColorByRarity(GetWorld(),ItemDefinition.RarityTag);
 	RarityBorder->SetBrushColor(FLinearColor(RarityColor.R, RarityColor.G, RarityColor.B, 0.6));
 
 	//Add prefixes,sufixes,Implicits
 	//for (ItemDefinition.ConsumableProps.)
 	
-	RarityText->SetText(URPGUIStatics::GetTextForRarity(GetWorld(),ItemDefinition.Rarity));
+	RarityText->SetText(URPGUIStatics::GetTextForRarity(GetWorld(),ItemDefinition.RarityTag));
 	LevelText->SetText(FText::FromString("1")); //to-do
 	WeightText->SetText(FText::AsNumber(ItemDefinition.Weight));
 	DurabilityText->SetText(FText::AsNumber(77)); // to-do

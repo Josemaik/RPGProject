@@ -2,41 +2,65 @@
 
 namespace RPGInventoryTags
 {
-	namespace ItemsCategory
-	{
-		UE_DEFINE_GAMEPLAY_TAG_COMMENT(Consumable,"Item.Consumable","Inventory Item consumable by player");
-		UE_DEFINE_GAMEPLAY_TAG_COMMENT(Equipment,"Item.Equipment","Inventory Item by player");
+    // Category
+    namespace ItemsCategory
+    {
+        UE_DEFINE_GAMEPLAY_TAG_COMMENT(Equipment,  "Item.Equipment",  "Key TagsToTables → DT_Equipment");
+        UE_DEFINE_GAMEPLAY_TAG_COMMENT(Consumable, "Item.Consumable", "Key TagsToTables → DT_Consumables");
+    }
 
-		namespace EquipmentData
-		{
-			namespace Slot
-			{
-				UE_DEFINE_GAMEPLAY_TAG_COMMENT(RightHand,"Equipment.Slot.RightHand","Equipment equipped in player right hand");
-				UE_DEFINE_GAMEPLAY_TAG_COMMENT(LeftHand,"Equipment.Slot.LeftHand","Equipment equipped in player left hand");
-			}
+    // SubCategory
+    namespace ItemsSubCategory
+    {
+        UE_DEFINE_GAMEPLAY_TAG_COMMENT(Weapons,  "Item.Equipment.Weapons",   "Subcategoría equipment");
+        UE_DEFINE_GAMEPLAY_TAG_COMMENT(Armor,    "Item.Equipment.Armor",     "Subcategoría equipment");
+        UE_DEFINE_GAMEPLAY_TAG_COMMENT(Utility,  "Item.Equipment.Utility",   "Subcategoría equipment");
+        UE_DEFINE_GAMEPLAY_TAG_COMMENT(Potions,  "Item.Consumable.Potions",  "Subcategoría consumable");
+        UE_DEFINE_GAMEPLAY_TAG_COMMENT(Bombs,    "Item.Consumable.Bombs",    "Subcategoría consumable");
+        UE_DEFINE_GAMEPLAY_TAG_COMMENT(Oils,     "Item.Consumable.Oils",     "Subcategoría consumable");
+    }
 
-			namespace Type
-			{
-				UE_DEFINE_GAMEPLAY_TAG(Shield,"Item.Equipment.LeftHand.Shield");
-				UE_DEFINE_GAMEPLAY_TAG(Axe,"Item.Equipment.RightHand.Axe");
-				UE_DEFINE_GAMEPLAY_TAG(Mace,"Item.Equipment.RightHand.Mace");
-				UE_DEFINE_GAMEPLAY_TAG(Crossbow,"Item.Equipment.RightHand.Crossbow");
-				UE_DEFINE_GAMEPLAY_TAG(Sword,"Item.Equipment.RightHand.Sword");
-			}
-		}
-		namespace ConsumableType
-		{
-			UE_DEFINE_GAMEPLAY_TAG(Potion,"Item.Consumable.Potion");
-			UE_DEFINE_GAMEPLAY_TAG(Bomb,"Item.Consumable.Bomb");
-		}
-	}
+    // Type
+    namespace ItemType
+    {
+        UE_DEFINE_GAMEPLAY_TAG_COMMENT(Sword,     "Item.Type.Sword",    "");
+        UE_DEFINE_GAMEPLAY_TAG_COMMENT(Axe,       "Item.Type.Axe",      "");
+        UE_DEFINE_GAMEPLAY_TAG_COMMENT(Crossbow,  "Item.Type.Crossbow", "");
+        UE_DEFINE_GAMEPLAY_TAG_COMMENT(Torch,     "Item.Type.Torch",    "");
+        UE_DEFINE_GAMEPLAY_TAG_COMMENT(Shield,    "Item.Type.Shield",   "");
+    }
 
-	namespace Rarity
-	{
-		UE_DEFINE_GAMEPLAY_TAG(Common,"Item.Rarity.Common");
-		UE_DEFINE_GAMEPLAY_TAG(Master,"Item.Rarity.Master");
-		UE_DEFINE_GAMEPLAY_TAG(Magic,"Item.Rarity.Magic");
-		UE_DEFINE_GAMEPLAY_TAG(Relic,"Item.Rarity.Relic");
-		UE_DEFINE_GAMEPLAY_TAG(Witcher,"Item.Rarity.Witcher");
-	}
+    // Rarity
+    namespace Rarity
+    {
+        UE_DEFINE_GAMEPLAY_TAG_COMMENT(Common,   "Item.Rarity.Common",   "");
+        UE_DEFINE_GAMEPLAY_TAG_COMMENT(Magic,    "Item.Rarity.Magic",    "");
+        UE_DEFINE_GAMEPLAY_TAG_COMMENT(Master,   "Item.Rarity.Master",   "");
+        UE_DEFINE_GAMEPLAY_TAG_COMMENT(Relic,    "Item.Rarity.Relic",    "");
+        UE_DEFINE_GAMEPLAY_TAG_COMMENT(Witcher,  "Item.Rarity.Witcher",  "");
+    }
+
+    // Equipment Slot UI
+    namespace EquipmentSlot
+    {
+        UE_DEFINE_GAMEPLAY_TAG_COMMENT(SilverWeapon, "Equipment.Slot.SilverWeapon", "Witcher: espada de plata");
+        UE_DEFINE_GAMEPLAY_TAG_COMMENT(SteelWeapon,  "Equipment.Slot.SteelWeapon",  "Witcher: espada de acero");
+        UE_DEFINE_GAMEPLAY_TAG_COMMENT(Chest,        "Equipment.Slot.Chest",        "");
+        UE_DEFINE_GAMEPLAY_TAG_COMMENT(Gauntlets,    "Equipment.Slot.Gauntlets",    "");
+        UE_DEFINE_GAMEPLAY_TAG_COMMENT(Trousers,     "Equipment.Slot.Trousers",     "");
+        UE_DEFINE_GAMEPLAY_TAG_COMMENT(Boots,        "Equipment.Slot.Boots",        "");
+        UE_DEFINE_GAMEPLAY_TAG_COMMENT(Consumable,   "Equipment.Slot.Consumable",   "");
+        UE_DEFINE_GAMEPLAY_TAG_COMMENT(Bombs,        "Equipment.Slot.Bombs",        "");
+        UE_DEFINE_GAMEPLAY_TAG_COMMENT(Utility,      "Equipment.Slot.Utility",      "");
+    }
+
+    // AttachPoint
+    namespace AttachPoint
+    {
+        UE_DEFINE_GAMEPLAY_TAG_COMMENT(RightHand, "Equipment.AttachPoint.RightHand", "hand_r");
+        UE_DEFINE_GAMEPLAY_TAG_COMMENT(LeftHand,  "Equipment.AttachPoint.LeftHand",  "hand_l");
+        UE_DEFINE_GAMEPLAY_TAG_COMMENT(Back,      "Equipment.AttachPoint.Back",      "spine_03");
+        UE_DEFINE_GAMEPLAY_TAG_COMMENT(Hip,       "Equipment.AttachPoint.Hip",       "");
+        UE_DEFINE_GAMEPLAY_TAG_COMMENT(Chest,     "Equipment.AttachPoint.Chest",     "");
+    }
 }

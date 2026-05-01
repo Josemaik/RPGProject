@@ -27,26 +27,21 @@
 
 FRPGInventoryEntry* FRPGInventoryList::AddItem(const FGameplayTag& ItemTag,uint64 ExistingID, int32 NumItems)
 {
-	if (ItemTag.MatchesTag(RPGInventoryTags::ItemsCategory::Equipment))
-	{
-		//cannot stack these categories, do nothing	
-	}
-	else
-	{
-		 if (FRPGInventoryEntry* StackedEntry = TryStackItem(ItemTag, NumItems))
-		 {
-			 return StackedEntry;
-		 }
-	}
-	
 	const FMasterItemDefinition Item = OwnerComponent->GetItemDefinitionByTag(ItemTag);
+	if (!Item.CategoryTag.MatchesTag(RPGInventoryTags::ItemsCategory::Equipment))
+	{
+		if (FRPGInventoryEntry* StackedEntry = TryStackItem(ItemTag, NumItems))
+		{
+			return StackedEntry;
+		}
+	}
 	
 	FRPGInventoryEntry& NewEntry = Entries.AddDefaulted_GetRef();
 	NewEntry.ItemTag = ItemTag;
 	NewEntry.Quantity = NumItems;
 	NewEntry.ItemID = (ExistingID != 0) ? ExistingID : GenerateID();
 
-	if (NewEntry.ItemTag.MatchesTag(RPGInventoryTags::ItemsCategory::Equipment) && IsValid(WeakStats.Get()))
+	if (Item.CategoryTag.MatchesTag(RPGInventoryTags::ItemsCategory::Equipment) && IsValid(WeakStats.Get()))
 	{
 		UEquipmentGenerator::RollForStats(NewEntry.EffectPackage,Item.EquipmentItemProps.EquipmentClass,WeakStats.Get());
 	}
@@ -270,31 +265,28 @@ void UInventoryComponent::UseItem(const FRPGInventoryEntry& Entry, int32 NumItem
 		return;
 	}
 	
-	if (InventoryList.HasEnough(Entry.ItemTag, NumItems))
+	if (!InventoryList.HasEnough(Entry.ItemTag, NumItems)) return;
+
+	const FMasterItemDefinition Item = GetItemDefinitionByTag(Entry.ItemTag);
+	UAbilitySystemComponent* OwnerASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Owner);
+	if (!IsValid(OwnerASC)) return;
+	
+	if (Item.CategoryTag.MatchesTag(RPGInventoryTags::ItemsCategory::Consumable))
 	{
-		const FMasterItemDefinition Item = GetItemDefinitionByTag(Entry.ItemTag);
+		if (!IsValid(Item.ConsumableProps.ItemEffectClass)) return;
 		
-		
-		if (UAbilitySystemComponent* OwnerASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Owner))
-		{
-			if (IsValid(Item.ConsumableProps.ItemEffectClass))
-			{
-				const FGameplayEffectContextHandle ContextHandle = OwnerASC->MakeEffectContext();
-				const FGameplayEffectSpecHandle SpecHandle = OwnerASC->MakeOutgoingSpec(Item.ConsumableProps.ItemEffectClass,
-				Item.ConsumableProps.ItemEffectLevel,ContextHandle);
-				OwnerASC->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
+		const FGameplayEffectContextHandle ContextHandle = OwnerASC->MakeEffectContext();
+		const FGameplayEffectSpecHandle SpecHandle = OwnerASC->MakeOutgoingSpec(Item.ConsumableProps.ItemEffectClass,
+		Item.ConsumableProps.ItemEffectLevel,ContextHandle);
+		OwnerASC->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
 
-				InventoryList.RemoveItem(Entry);
-
-				GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Magenta,FString::Printf(TEXT("Server Item ussed: %s"),
-					*Item.ItemTag.ToString()));
-			}
-			if (IsValid(Item.EquipmentItemProps.EquipmentClass))
-			{
-				EquipmentItemDelegate.Broadcast(Item.EquipmentItemProps.EquipmentClass,Entry.EffectPackage);
-				InventoryList.RemoveItem(Entry);
-			}
-		}
+		InventoryList.RemoveItem(Entry);
+	}
+	if (Item.CategoryTag.MatchesTag(RPGInventoryTags::ItemsCategory::Equipment))
+	{
+		if (!IsValid(Item.EquipmentItemProps.EquipmentClass)) return;
+		EquipmentItemDelegate.Broadcast(Item.EquipmentItemProps.EquipmentClass,Entry.EffectPackage);
+		InventoryList.RemoveItem(Entry);
 	}
 }
 

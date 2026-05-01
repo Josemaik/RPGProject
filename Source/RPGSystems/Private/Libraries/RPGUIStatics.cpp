@@ -8,18 +8,20 @@
 #include "Kismet/GameplayStatics.h"
 
 
-FLinearColor URPGUIStatics::GetColorForRarity(const UObject* WorldContext, EItemRarity Rarity)
+FLinearColor URPGUIStatics::GetColorByRarity(const UObject* WorldContext, FGameplayTag RarityTag)
 {
+	if (!RarityTag.IsValid()) return FLinearColor::Gray;
+	
 	ARPGGameMode* RPGGameMode = Cast<ARPGGameMode>(UGameplayStatics::GetGameMode(WorldContext));
 	if (!IsValid(RPGGameMode)) return FLinearColor::White;
 
 	URarityDataAsset* RarityColorDA = RPGGameMode->GetRPGUIStatics();
 	if (!IsValid(RarityColorDA)) return FLinearColor::White;
 	
-	return RarityColorDA->RarityColors.Find(Rarity)->Color;
+	return RarityColorDA->RarityColors.Find(RarityTag)->Color;
 }
 
-FText URPGUIStatics::GetTextForRarity(const UObject* WorldContext, EItemRarity Rarity)
+FText URPGUIStatics::GetTextForRarity(const UObject* WorldContext, FGameplayTag Raritytag)
 {
 	ARPGGameMode* RPGGameMode = Cast<ARPGGameMode>(UGameplayStatics::GetGameMode(WorldContext));
 	if (!IsValid(RPGGameMode)) return FText();
@@ -27,7 +29,7 @@ FText URPGUIStatics::GetTextForRarity(const UObject* WorldContext, EItemRarity R
 	URarityDataAsset* RarityColorDA = RPGGameMode->GetRPGUIStatics();
 	if (!IsValid(RarityColorDA)) return FText();
 	
-	return RarityColorDA->RarityColors.Find(Rarity)->RarityText;
+	return RarityColorDA->RarityColors.Find(Raritytag)->RarityText;
 }
 
 

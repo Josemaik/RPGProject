@@ -29,6 +29,7 @@ public:
 	void EquipItemSlot(const FRPGInventoryEntry& Entry,const FMasterItemDefinition& ItemDefinition);
 	void SetTooltipReference(UItemToolTip* InTooltip) { ItemToolTipReference = InTooltip; }
 	virtual void EmptySlot() override;
+	FGameplayTag GetSlotTag() const { return SlotTag; };
 	
 	FOnEquipItem OnEquipItem;
 	FOnUnequipItem OnUnequipItem;
@@ -51,7 +52,7 @@ private:
 	void HandleMouseLeaved(UBaseInventorySlot* BaseSlot);
 	
 	UPROPERTY(EditAnywhere,BlueprintReadOnly, Category= "Config",meta=(AllowPrivateAccess=true))
-	FGameplayTag EquipmentTag;
+	FGameplayTag SlotTag;
 	
 	UPROPERTY(EditAnywhere,BlueprintReadOnly,meta=(AllowPrivateAccess=true))
 	UTexture2D* PlaceholderTexture;

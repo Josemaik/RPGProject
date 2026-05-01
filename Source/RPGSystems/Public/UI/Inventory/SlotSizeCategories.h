@@ -2,8 +2,8 @@
 
 #include "SlotSizeCategories.generated.h"
 
-UENUM()
-enum ESlotSizeCategories : uint8
+UENUM(BlueprintType)
+enum class ESlotSizeCategories : uint8
 {
 	UniqueSlot,
 	SuperiorSlotVertical,

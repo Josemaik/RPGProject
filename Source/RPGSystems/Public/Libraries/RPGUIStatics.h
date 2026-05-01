@@ -17,8 +17,8 @@ class RPGSYSTEMS_API URPGUIStatics : public UBlueprintFunctionLibrary
 
 public:
 	UFUNCTION(BlueprintCallable, Category = "UI")
-	static FLinearColor GetColorForRarity(const UObject* WorldContext, EItemRarity Rarity);
+	static FLinearColor GetColorByRarity(const UObject* WorldContext, FGameplayTag Raritytag);
 
 	UFUNCTION(BlueprintCallable, Category = "UI")
-	static FText GetTextForRarity(const UObject* WorldContext, EItemRarity Rarity);
+	static FText GetTextForRarity(const UObject* WorldContext, FGameplayTag Raritytag);
 };

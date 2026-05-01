@@ -3,9 +3,11 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "GameplayTagContainer.h"
 #include "Blueprint/UserWidget.h"
 #include "BaseCategoryWidget.generated.h"
 
+class UItemsPanelWidget;
 struct FMasterItemDefinition;
 struct FRPGInventoryEntry;
 /**
@@ -18,10 +20,11 @@ class RPGSYSTEMS_API UBaseCategoryWidget : public UUserWidget
 
 public:
 	virtual void ReceiveInventoryEntry(const FRPGInventoryEntry& Entry, 
-									   const FMasterItemDefinition& Definition) {}
-	virtual void RemoveEntry(int64 ItemID) {}
+									   const FMasterItemDefinition& Definition);
+	virtual void RemoveEntry(int64 ItemID);
 	virtual void UpdateEntry(const FRPGInventoryEntry& Entry) {}
-	virtual const FRPGInventoryEntry& GetSelectedItem(){ return *LastSelectedEntry; };
+	virtual const FRPGInventoryEntry* GetSelectedItem();
 protected:
-	FRPGInventoryEntry* LastSelectedEntry;
+	FGameplayTag LastSelectedSubCategory;
+	TArray<UItemsPanelWidget*> SubCategoryPanels;
 };

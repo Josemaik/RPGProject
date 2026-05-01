@@ -48,11 +48,12 @@ UEquipmentInstance* FRPGEquipmentList::AddEntry(const TSubclassOf<UEquipmentDefi
 	FRPGEquipmentEntry& NewEntry = Entries.AddDefaulted_GetRef();
 	NewEntry.EntryTag = EquipmentCTO->ItemTag;
 	NewEntry.SlotTag = EquipmentCTO->SlotTag;
+	NewEntry.AttachTag = EquipmentCTO->AttachTag;
 	NewEntry.EquipmentDefinition = InEquipmentDefinition;
 	NewEntry.EffectPackage = EffectPackage;
 	NewEntry.Instance = NewObject<UEquipmentInstance>(OwnerComponent->GetOwner(), InstanceType);
 
-	NewEntry.Instance->SpawnEquipmentActors(EquipmentCTO->ActorsToSpawn,EquipmentCTO->SlotTag);
+	NewEntry.Instance->SpawnEquipmentActors(EquipmentCTO->ActorsToSpawn,EquipmentCTO->AttachTag);
 	
 	if (NewEntry.HasAbility())
 	{
@@ -92,7 +93,7 @@ void FRPGEquipmentList::RemoveEntry(UEquipmentInstance* InEquipmentInstance)
 
 		if (Entry.Instance == InEquipmentInstance)
 		{
-			Entry.Instance->DestroySpawnedActors(Entry.SlotTag);
+			Entry.Instance->DestroySpawnedActors(Entry.AttachTag);
 			RemoveEquipmentStats(&Entry);
 			RemoveEquipmentAbility(&Entry);
 			EntryIt.RemoveCurrent();

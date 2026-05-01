@@ -30,7 +30,7 @@ void UBaseInventorySlot::SetIcon(const FSlateBrush& Brush)
     IconBox->SetColorAndOpacity(FLinearColor::White);
 }
 
-void UBaseInventorySlot::EquipVisual(UTexture2D* Texture, EItemRarity Rarity)
+void UBaseInventorySlot::EquipVisual(UTexture2D* Texture, FGameplayTag RarityTag)
 {
     if (!IsValid(IconBox)) return;
     IconBox->SetBrushFromTexture(Texture);
@@ -38,7 +38,7 @@ void UBaseInventorySlot::EquipVisual(UTexture2D* Texture, EItemRarity Rarity)
     if (IsValid(BackgroundRarity))
     {
         BackgroundRarity->SetOpacity(1.f);
-        BackgroundRarity->SetBrushTintColor(URPGUIStatics::GetColorForRarity(GetWorld(), Rarity));
+        BackgroundRarity->SetBrushTintColor(URPGUIStatics::GetColorByRarity(GetWorld(), RarityTag));
     }
     bIsEmpty = false;
 }

@@ -26,10 +26,10 @@ class UButton;
 class UItemSlotWidget;
 
 DECLARE_DELEGATE_OneParam(FOnItemRowClicked, int32 ClickedItemIndex);
-DECLARE_DELEGATE_TwoParams(FOnItemDroppedPanel, int32 DroppedItemIndex, int32 DropItemIndex);
-DECLARE_DELEGATE_TwoParams(FOnDragEntered,int32 DraggedItemIndex, int32 EnterItemIndex);
-DECLARE_DELEGATE_TwoParams(FOnDragLeaved, int32 DraggedItemIndex,int32 LeaveItemIndex);
-DECLARE_DELEGATE_OneParam(FOnDragCancelled,const FRPGInventoryEntry& Entry);
+DECLARE_DELEGATE_ThreeParams(FOnItemDroppedPanel, int32 DroppedItemIndex, int32 DropItemIndex,EDragOverResult SubCategoryResult);
+DECLARE_DELEGATE_ThreeParams(FOnDragEntered,int32 DraggedItemIndex, int32 EnterItemIndex,EDragOverResult Result);
+DECLARE_DELEGATE_ThreeParams(FOnDragLeaved, int32 DraggedItemIndex,int32 LeaveItemIndex,EDragOverResult SubCategoryResult);
+DECLARE_DELEGATE_ThreeParams(FOnDragCancelled, int32 /*FailedIndex*/, int32 /*FromIndex*/, ESlotSizeCategories /*DraggedSize*/);
 DECLARE_DELEGATE_OneParam(FOnNewDragOperation,UItemSlotDragDrogOperation* DragDropOp);
 /**
  * 
@@ -67,12 +67,13 @@ public:
 
 	void StartSelectedAnimation();
 	void StopSelectedAnimation();
-	
+
+	void SetAcceptedSubCategory(const FGameplayTag& InTag) { AcceptedSubCategoryTag = InTag; }
 	//void SetLinkedSlot(UItemSlotWidget* InSlot) { LinkedSlot = InSlot; }
 	
 	//bool IsEmpty() const { return bIsEmpty; }
 	//TSoftObjectPtr<UTexture2D> GetIconTexture() const { return  SoftIconTexture; }
-	int32 GetGridIndex() const { return CurrentGridIndex; }
+	virtual int32 GetGridIndex() override { return CurrentGridIndex; }
 	void SetGridIndex(const int32 NewIndex) { CurrentGridIndex = NewIndex; }
 	//ESlotSizeCategories GetCurrentSlotSize() const { return CurrentSlotSize; }
 	//const FSlateBrush& GetIconBrush() const { return CurrentIconBrush; }
@@ -94,7 +95,7 @@ private:
 	// virtual void NativeOnMouseEnter(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 	// virtual void NativeOnMouseLeave(const FPointerEvent& InMouseEvent) override;
 	//void CancelLeaveTimer();
-
+	bool IsItemValidForThisSlot(const FMasterItemDefinition& Definition) const;
 	// UPROPERTY()
 	// TObjectPtr<UItemSlotWidget> LinkedSlot;
 
@@ -119,7 +120,8 @@ private:
 	
 	UPROPERTY()
 	TObjectPtr<UUniformGridSlot> GridSlot = nullptr;
-	
+
+	FGameplayTag AcceptedSubCategoryTag;
 	// UPROPERTY()
 	// UItemSlotIcon* IconWidgetReference;
 	

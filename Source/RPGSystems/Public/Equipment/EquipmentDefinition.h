@@ -79,6 +79,9 @@ public:
 	
 	UPROPERTY(EditDefaultsOnly, Category="Custom Values|Info")
 	FGameplayTag SlotTag;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Custom Values|Info")
+	FGameplayTag AttachTag; // Equipment.RightHand / Equipment.LeftHand
 	
 	UPROPERTY(EditDefaultsOnly, Category="Custom Values|Info")
 	TSubclassOf<UEquipmentInstance> InstanceType;
