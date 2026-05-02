@@ -16,6 +16,7 @@
 #include "Components/CanvasPanelSlot.h"
 #include "Components/SizeBox.h"
 #include "Components/TextBlock.h"
+#include "Libraries/RPGUIStatics.h"
 #include "UI/Inventory/ItemDragVisualWidget.h"
 #include "UI/Inventory/ItemToolTip.h"
 #include "UI/Inventory/Equipment/EquipmentSlot.h"
@@ -460,52 +461,36 @@ void UItemsPanelWidget::SortItemsBy(EItemSortType SortType)
 			}
 	case EItemSortType::Rarity :
 			{
-				const TArray<FGameplayTag> RarityOrder = {
-					RPGInventoryTags::Rarity::Witcher,
-					RPGInventoryTags::Rarity::Relic,
-					RPGInventoryTags::Rarity::Magic,
-					RPGInventoryTags::Rarity::Master,
-					RPGInventoryTags::Rarity::Common
-				};
-				auto GetTagPriority = [](const FGameplayTag& Tag, const TArray<FGameplayTag>& Order) -> int32
-				{
-					int32 Index = Order.IndexOfByKey(Tag);
-					return Index == INDEX_NONE ? INT_MAX : Index; // Si no está, va al final
-				};
 				SortedItems.Sort([&](const FItemSlotData& A, const FItemSlotData& B)
-			   {
-				   int32 RarityA = GetTagPriority(A.ItemDefinition.RarityTag, RarityOrder);
-				   int32 RarityB = GetTagPriority(B.ItemDefinition.RarityTag, RarityOrder);
+			    {
+				   int32 RarityA = URPGUIStatics::GetRarityTagPriority(GetWorld(),A.ItemDefinition.RarityTag);
+				   int32 RarityB = URPGUIStatics::GetRarityTagPriority(GetWorld(),B.ItemDefinition.RarityTag);
 
 				   if (RarityA != RarityB)
 				   {
 				   		return RarityA < RarityB; // Menor índice = mayor rareza
 				   }
-					return RarityA < RarityB;
-			   });
+					int32 TypeA = URPGUIStatics::GetTypePriorityInCategory(GetWorld(),A.ItemDefinition.SubcategoryTag,A.ItemDefinition.TypeTag);
+				    int32 TypeB = URPGUIStatics::GetTypePriorityInCategory(GetWorld(),B.ItemDefinition.SubcategoryTag,B.ItemDefinition.TypeTag);
+					return TypeA < TypeB;
+			    });
 				break;
 			}
 		case EItemSortType::Type :
 			{
-				auto GetTagPriority = [](const FGameplayTag& Tag, const TArray<FGameplayTag>& Order) -> int32
-				{
-					int32 Index = Order.IndexOfByKey(Tag);
-					return Index == INDEX_NONE ? INT_MAX : Index; // Si no está, va al final
-				};
-				static const TArray<FGameplayTag> EquipmentTypeOrder ={
-					RPGInventoryTags::ItemType::Sword,
-					RPGInventoryTags::ItemType::Torch
-				};
 				SortedItems.Sort([&](const FItemSlotData& A, const FItemSlotData& B)
 				{
-					int32 TypeA = GetTagPriority(A.ItemDefinition.SubcategoryTag, EquipmentTypeOrder);
-					int32 TypeB = GetTagPriority(B.ItemDefinition.SubcategoryTag, EquipmentTypeOrder);
+					int32 TypeA = URPGUIStatics::GetTypePriorityInCategory(GetWorld(),A.ItemDefinition.SubcategoryTag,A.ItemDefinition.TypeTag);
+					int32 TypeB = URPGUIStatics::GetTypePriorityInCategory(GetWorld(),B.ItemDefinition.SubcategoryTag,B.ItemDefinition.TypeTag);
 
 					if (TypeA != TypeB)
 					{
 						return TypeA < TypeB;
 					}
-					return TypeA < TypeB;
+
+					int32 RarityA = URPGUIStatics::GetRarityTagPriority(GetWorld(),A.ItemDefinition.RarityTag);
+					int32 RarityB = URPGUIStatics::GetRarityTagPriority(GetWorld(),B.ItemDefinition.RarityTag);
+					return RarityA < RarityB;
 				});
 			
 				break;
@@ -575,42 +560,42 @@ void UItemsPanelWidget::NativePreConstruct()
 	SubCategoryText->SetText(SubCategoryEditableText);
 }
 
-void UItemsPanelWidget::ResolvePair(const TArray<FItemSlotData>& ItemsArray, int32 TargetIndex,
-                                    ESlotSizeCategories DraggedSize, int32 MaxColumns, int32& OutSuperior, int32& OutLower)
-{
-	 // Given TargetIndex and DraggedSize,
-	 // Determines the pair (SuperiorIndex, LowerIndex) that should fill.
-	const FItemSlotData& TargetSlot = ItemsArray[TargetIndex];
-	
-	if (TargetSlot.Size == ESlotSizeCategories::SuperiorSlotVertical)
-	{
-		OutSuperior = TargetIndex;
-		OutLower    = TargetIndex + MaxColumns;
-	}
-	else if (TargetSlot.Size == ESlotSizeCategories::LowerSlotVertical)
-	{
-		OutSuperior = TargetIndex;
-		OutLower    = TargetIndex + MaxColumns;
-	}
-	else // empty
-	{
-		// const int32 PotentialSuperior = TargetIndex - MaxColumns;
-  //       
-		// if (PotentialSuperior < 0)
-		// {
-		// 	// Can't go up, force downward pair instead
-		// 	OutSuperior = TargetIndex;
-		// 	OutLower    = TargetIndex + MaxColumns;
-		// }
-		// else
-		// {
-		// 	OutSuperior = PotentialSuperior;
-		// 	OutLower    = TargetIndex;
-		// }
-		OutSuperior = TargetIndex;
-		OutLower    = TargetIndex + MaxColumns;
-	}
-}
+// void UItemsPanelWidget::ResolvePair(const TArray<FItemSlotData>& ItemsArray, int32 TargetIndex,
+//                                     ESlotSizeCategories DraggedSize, int32 MaxColumns, int32& OutSuperior, int32& OutLower)
+// {
+// 	 // Given TargetIndex and DraggedSize,
+// 	 // Determines the pair (SuperiorIndex, LowerIndex) that should fill.
+// 	const FItemSlotData& TargetSlot = ItemsArray[TargetIndex];
+// 	
+// 	if (TargetSlot.Size == ESlotSizeCategories::SuperiorSlotVertical)
+// 	{
+// 		OutSuperior = TargetIndex;
+// 		OutLower    = TargetIndex + MaxColumns;
+// 	}
+// 	else if (TargetSlot.Size == ESlotSizeCategories::LowerSlotVertical)
+// 	{
+// 		OutSuperior = TargetIndex;
+// 		OutLower    = TargetIndex + MaxColumns;
+// 	}
+// 	else // empty
+// 	{
+// 		// const int32 PotentialSuperior = TargetIndex - MaxColumns;
+//   //       
+// 		// if (PotentialSuperior < 0)
+// 		// {
+// 		// 	// Can't go up, force downward pair instead
+// 		// 	OutSuperior = TargetIndex;
+// 		// 	OutLower    = TargetIndex + MaxColumns;
+// 		// }
+// 		// else
+// 		// {
+// 		// 	OutSuperior = PotentialSuperior;
+// 		// 	OutLower    = TargetIndex;
+// 		// }
+// 		OutSuperior = TargetIndex;
+// 		OutLower    = TargetIndex + MaxColumns;
+// 	}
+// }
 
 void UItemsPanelWidget::HandleItemDropped(int32 DroppedIndex,int32 NewIndex,EDragOverResult SubCategoryResult)
 {
@@ -648,6 +633,9 @@ void UItemsPanelWidget::HandleDraggedItemEntered(int32 DraggedIndex, int32 Targe
 	const bool bFromEquipment = (DraggedIndex == INDEX_NONE);
 	
 	FItemSlotData DraggedSlot;
+	int32 TargetSuperiorIndex = TargetIndex;
+	int32 TargetLowerIndex    = TargetIndex + MaxColumns;
+	
 	//From Equipment Slot
 	if (bFromEquipment)
 	{
@@ -656,10 +644,7 @@ void UItemsPanelWidget::HandleDraggedItemEntered(int32 DraggedIndex, int32 Targe
 		DraggedSlot.Size = CurrentDragOperation->SlotSize;
 		DraggedSlot.bIsEmpty = false;
 
-		int32 TargetSuperiorIndex = INDEX_NONE;
-		int32 TargetLowerIndex    = INDEX_NONE;
-
-		ResolvePair(ItemsArray, TargetIndex, DraggedSlot.Size, MaxColumns, TargetSuperiorIndex, TargetLowerIndex);
+		//ResolvePair(ItemsArray, TargetIndex, DraggedSlot.Size, MaxColumns, TargetSuperiorIndex, TargetLowerIndex);
 	
 		if (!ItemsArray.IsValidIndex(TargetSuperiorIndex) || !ItemsArray.IsValidIndex(TargetLowerIndex)) return;
 
@@ -743,9 +728,9 @@ void UItemsPanelWidget::HandleDraggedItemEntered(int32 DraggedIndex, int32 Targe
 	
 	if (SubCategoryResult == EDragOverResult::Invalid)
 	{
-		int32 TargetSuperiorIndex = INDEX_NONE;
-		int32 TargetLowerIndex    = INDEX_NONE;
-		ResolvePair(ItemsArray, TargetIndex, DraggedSlot.Size, MaxColumns, TargetSuperiorIndex, TargetLowerIndex);
+		// int32 TargetSuperiorIndex = INDEX_NONE;
+		// int32 TargetLowerIndex    = INDEX_NONE;
+		//ResolvePair(ItemsArray, TargetIndex, DraggedSlot.Size, MaxColumns, TargetSuperiorIndex, TargetLowerIndex);
 		
 		if (UItemSlotWidget* TopWidget = GetItemSlotbyIndex(TargetSuperiorIndex))
 			TopWidget->EnableDragOverPreview(EDragOverResult::Invalid);
@@ -808,9 +793,9 @@ void UItemsPanelWidget::HandleDraggedItemEntered(int32 DraggedIndex, int32 Targe
 	}
  
 	// Resolve Pair
-	int32 TargetSuperiorIndex = INDEX_NONE;
-	int32 TargetLowerIndex    = INDEX_NONE;
-	ResolvePair(ItemsArray, TargetIndex, DraggedSlot.Size, MaxColumns, TargetSuperiorIndex, TargetLowerIndex);
+	// int32 TargetSuperiorIndex = INDEX_NONE;
+	// int32 TargetLowerIndex    = INDEX_NONE;
+	// ResolvePair(ItemsArray, TargetIndex, DraggedSlot.Size, MaxColumns, TargetSuperiorIndex, TargetLowerIndex);
  
 	if (!ItemsArray.IsValidIndex(TargetSuperiorIndex) || !ItemsArray.IsValidIndex(TargetLowerIndex)) return;
  
@@ -885,7 +870,7 @@ bool UItemsPanelWidget::TryDropInNewSlot(int32 FromIndex, int32 ToIndex)
 		int32 ToSuperiorIndex = INDEX_NONE;
 		int32 ToLowerIndex    = INDEX_NONE;
 
-		ResolvePair(ItemsArray, ToIndex, FromSize, MaxColumns, ToSuperiorIndex, ToLowerIndex);
+		//ResolvePair(ItemsArray, ToIndex, FromSize, MaxColumns, ToSuperiorIndex, ToLowerIndex);
 
 		if (!ItemsArray.IsValidIndex(ToSuperiorIndex) || !ItemsArray.IsValidIndex(ToLowerIndex)) return false;
 		
@@ -995,9 +980,9 @@ bool UItemsPanelWidget::TryDropInNewSlot(int32 FromIndex, int32 ToIndex)
 	}
  
 	//No overlap
-	int32 ToSuperiorIndex = INDEX_NONE;
-	int32 ToLowerIndex    = INDEX_NONE;
-	ResolvePair(ItemsArray, ToIndex, FromSize, MaxColumns, ToSuperiorIndex, ToLowerIndex);
+	int32 ToSuperiorIndex = ToIndex;
+	int32 ToLowerIndex    = ToIndex + MaxColumns;
+	//ResolvePair(ItemsArray, ToIndex, FromSize, MaxColumns, ToSuperiorIndex, ToLowerIndex);
  
 	if (!ItemsArray.IsValidIndex(ToSuperiorIndex) || !ItemsArray.IsValidIndex(ToLowerIndex)) return false;
 	if (ToSuperiorIndex == FromSuperiorIndex) return false;
@@ -1038,10 +1023,10 @@ void UItemsPanelWidget::HandleDraggedItemLeaved(int32 DraggedIndex, int32 Target
 		FItemSlotData DraggedSlot;
 		DraggedSlot.Size = CurrentDragOperation->SlotSize;
 
-		int32 CleanTopIndex    = INDEX_NONE;
-		int32 CleanBottomIndex = INDEX_NONE;
+		int32 CleanTopIndex    = TargetIndex;
+		int32 CleanBottomIndex = TargetIndex + MaxColumns;
 
-		ResolvePair(ItemsArray, TargetIndex, DraggedSlot.Size, MaxColumns, CleanTopIndex, CleanBottomIndex);
+		//ResolvePair(ItemsArray, TargetIndex, DraggedSlot.Size, MaxColumns, CleanTopIndex, CleanBottomIndex);
 
 		if (CleanTopIndex == INDEX_NONE) return;
 
@@ -1081,10 +1066,10 @@ void UItemsPanelWidget::HandleDragCancelled(int32 FailedIndex, int32 FromIndex, 
 	if (ItemsArray.IsEmpty()) return;
 	
 	// clean target
+	int32 ToSuperior = FailedIndex, ToLower = FailedIndex + MaxColumns;
 	if (ItemsArray.IsValidIndex(FailedIndex))
 	{
-		int32 ToSuperior = INDEX_NONE, ToLower = INDEX_NONE;
-		ResolvePair(ItemsArray, FailedIndex, DraggedSize, MaxColumns, ToSuperior, ToLower);
+		//ResolvePair(ItemsArray, FailedIndex, DraggedSize, MaxColumns, ToSuperior, ToLower);
 
 		if (UItemSlotWidget* W = GetItemSlotbyIndex(ToSuperior)) W->DisableDragOverPreview();
 		if (ItemsArray.IsValidIndex(ToLower))
@@ -1094,12 +1079,12 @@ void UItemsPanelWidget::HandleDragCancelled(int32 FailedIndex, int32 FromIndex, 
 	// clean origin
 	if (ItemsArray.IsValidIndex(FromIndex))
 	{
-		int32 FromSuperior = INDEX_NONE, FromLower = INDEX_NONE;
-		ResolvePair(ItemsArray, FromIndex, DraggedSize, MaxColumns, FromSuperior, FromLower);
+		//int32 FromSuperior = INDEX_NONE, FromLower = INDEX_NONE;
+		//ResolvePair(ItemsArray, FromIndex, DraggedSize, MaxColumns, FromSuperior, FromLower);
 
-		if (UItemSlotWidget* W = GetItemSlotbyIndex(FromSuperior)) W->DisableDragOverPreview();
-		if (ItemsArray.IsValidIndex(FromLower))
-			if (UItemSlotWidget* W = GetItemSlotbyIndex(FromLower)) W->DisableDragOverPreview();
+		if (UItemSlotWidget* W = GetItemSlotbyIndex(ToSuperior)) W->DisableDragOverPreview();
+		if (ItemsArray.IsValidIndex(ToLower))
+			if (UItemSlotWidget* W = GetItemSlotbyIndex(ToLower)) W->DisableDragOverPreview();
 	}
 
 	if (IsValid(CurrentDragOperation))

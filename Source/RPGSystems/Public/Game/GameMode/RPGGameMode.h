@@ -6,6 +6,7 @@
 #include "GameFramework/GameMode.h"
 #include "RPGGameMode.generated.h"
 
+class UTypeOrderDataAsset;
 class URarityDataAsset;
 class UProjectileInfo;
 class UCharacterClassInfo;
@@ -21,7 +22,9 @@ public:
 
 	UProjectileInfo* GetProjectileInfo() const;
 
-	URarityDataAsset* GetRPGUIStatics();
+	URarityDataAsset* GetRarityDA() const;
+
+	UTypeOrderDataAsset* GetTypeOrderDA() const;
 private:
 	UPROPERTY(EditDefaultsOnly, Category= "Default Values|Class Defaults")
 	TObjectPtr<UCharacterClassInfo> ClassDefaults;
@@ -31,4 +34,7 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, Category= "Default Values|Class Defaults")
 	TObjectPtr<URarityDataAsset> RarityColorInfo;
+
+	UPROPERTY(EditDefaultsOnly, Category= "Default Values|Class Defaults")
+	TObjectPtr<UTypeOrderDataAsset> TypeOrderDataAsset;
 };

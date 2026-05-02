@@ -102,8 +102,8 @@ private:
 	virtual void NativeConstruct() override;
 	virtual void NativePreConstruct() override;
 	
-	static void ResolvePair(const TArray<FItemSlotData>& ItemsArray,int32 TargetIndex,ESlotSizeCategories DraggedSize,
-	                        int32 MaxColumns,int32& OutSuperior,int32& OutLower);
+	//static void ResolvePair(const TArray<FItemSlotData>& ItemsArray,int32 TargetIndex,ESlotSizeCategories DraggedSize,
+	//                        int32 MaxColumns,int32& OutSuperior,int32& OutLower);
 	void HandleItemDropped(int32 DroppedIndex,int32 NewIndex,EDragOverResult SubCategoryResult);
 	bool TryDropInNewSlot(int32 DroppedIndex,int32 NewIndex);
 	void HandleDraggedItemEntered(int32 EnteredIndex,int32 NewIndex,EDragOverResult Result);
