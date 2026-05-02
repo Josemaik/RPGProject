@@ -43,7 +43,7 @@ void UEquipmentSlot::EquipItemSlot(const FRPGInventoryEntry& Entry,const FMaster
 	OnEquipItem.ExecuteIfBound(Entry);
 
 	CurrentItemDefinition = ItemDefinition;
-	CurrentSlotSize = ItemDefinition.SlotsSize > 1 ? ESlotSizeCategories::SuperiorSlotVertical : ESlotSizeCategories::LowerSlotVertical;
+	CurrentSlotSize = ItemDefinition.SlotsSize > 1 ? ESlotSizeCategories::SuperiorSlotVertical : ESlotSizeCategories::UniqueSlot;
 	bIsEmpty = false;
 }
 
@@ -113,6 +113,7 @@ void UEquipmentSlot::HandleMouseLeaved(UBaseInventorySlot* BaseSlot)
 FReply UEquipmentSlot::NativeOnMouseButtonDoubleClick(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
 {
 	if (bIsEmpty) return FReply::Unhandled();
+	if (!IsValid(ItemToolTipReference)) return FReply::Unhandled();
 	
 	FRPGInventoryEntry EntryCopy = ItemEntry;
 	EmptySlot();
@@ -120,6 +121,7 @@ FReply UEquipmentSlot::NativeOnMouseButtonDoubleClick(const FGeometry& InGeometr
 	OnEquipmentDropped.ExecuteIfBound(EntryCopy.ItemTag,EntryCopy.ItemID);
 
 	BackgroundRarity->SetBrushTintColor(FLinearColor(0.f,0.f,0.f,0.f));
+	
 	ItemToolTipReference->SetVisibility(ESlateVisibility::Collapsed);
 	return FReply::Handled();
 }

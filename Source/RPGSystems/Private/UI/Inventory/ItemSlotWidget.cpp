@@ -126,6 +126,7 @@ void UItemSlotWidget::DisableDragOverPreview()
 void UItemSlotWidget::StartSelectedAnimation()
 {
 	OutlineSlot();
+	GEngine->AddOnScreenDebugMessage(-1,3.f,FColor::Blue,FString::Printf(TEXT("Animation start")));
 	if (!IsValid(SelectedSlotAnimation)) return;
 	PlayAnimation(SelectedSlotAnimation,0.f,0,EUMGSequencePlayMode::Forward);
 }
@@ -268,6 +269,14 @@ void UItemSlotWidget::NativeOnDragEnter(const FGeometry& InGeometry, const FDrag
 		}
 		return;
 	}
+
+	//int32 NormalizedTargetIndex = CurrentGridIndex;
+
+	// Siempre normalizar al Superior, sea cual sea el slot que se entre
+	// if (CurrentSlotSize == ESlotSizeCategories::LowerSlotVertical)
+	// {
+	// 	NormalizedTargetIndex = FMath::Max(0, CurrentGridIndex - MaxColumns);
+	// }
 	
 	const EDragOverResult Result = bIsValid ? EDragOverResult::Drop : EDragOverResult::Invalid;
 	OnDragEnteredDelegate.ExecuteIfBound(FromIndex,CurrentGridIndex,Result);
@@ -293,6 +302,12 @@ void UItemSlotWidget::NativeOnDragLeave(const FDragDropEvent& InDragDropEvent, U
 		DragDropOp->ItemDraggedIconWidget->DisableDragOverResultIcon();
 		return;
 	}
+
+	// int32 NormalizedTargetIndex = CurrentGridIndex;
+	// if (CurrentSlotSize == ESlotSizeCategories::LowerSlotVertical)
+	// {
+	// 	NormalizedTargetIndex = CurrentGridIndex - MaxColumns;
+	// }
 
 	const EDragOverResult Result = bIsValid ? EDragOverResult::Drop : EDragOverResult::Invalid;
 	OnDragLeavedDelegate.ExecuteIfBound(FromIndex,CurrentGridIndex,Result);
@@ -348,6 +363,13 @@ bool UItemSlotWidget::NativeOnDrop(const FGeometry& InGeometry, const FDragDropE
     {
         UE_LOG(LogTemp, Warning, TEXT("Delegate NOT bound"));
     }
+
+	// int32 NormalizedTargetIndex = CurrentGridIndex;
+	// if (DroppedSize != ESlotSizeCategories::UniqueSlot && 
+	// 	CurrentSlotSize == ESlotSizeCategories::LowerSlotVertical)
+	// {
+	// 	NormalizedTargetIndex = CurrentGridIndex - MaxColumns;
+	// }
 	
 	OnItemDroppedPanelDelegate.ExecuteIfBound(FromIndex,CurrentGridIndex,Result);
 	return true;
