@@ -36,28 +36,28 @@ FText URPGUIStatics::GetTextForRarity(const UObject* WorldContext, FGameplayTag 
 int32 URPGUIStatics::GetRarityTagPriority(const UObject* WorldContext, FGameplayTag Raritytag)
 {
 	ARPGGameMode* RPGGameMode = Cast<ARPGGameMode>(UGameplayStatics::GetGameMode(WorldContext));
-	if (!IsValid(RPGGameMode)) return -1;
+	if (!IsValid(RPGGameMode)) return INT32_MAX;
 
 	URarityDataAsset* RarityDA = RPGGameMode->GetRarityDA();
-	if (!IsValid(RarityDA)) return -1;
+	if (!IsValid(RarityDA)) return INT32_MAX;
 
 	int32 Index = RarityDA->RarityTagsPriority.IndexOfByKey(Raritytag);
-	return Index == INDEX_NONE ? INT_MAX : Index;
+	return Index == INDEX_NONE ? INT32_MAX : Index;
 }
 
 int32 URPGUIStatics::GetTypePriorityInCategory(const UObject* WorldContex,const FGameplayTag& Category,const FGameplayTag& TypeTag)
 {
 	ARPGGameMode* RPGGameMode = Cast<ARPGGameMode>(UGameplayStatics::GetGameMode(WorldContex));
-	if (!IsValid(RPGGameMode)) return -1;
+	if (!IsValid(RPGGameMode)) return INT32_MAX;
 
 	UTypeOrderDataAsset* TypeDA = RPGGameMode->GetTypeOrderDA();
-	if (!IsValid(TypeDA)) return -1;
+	if (!IsValid(TypeDA)) return INT32_MAX;
 
 	const FGameplayTagArray* OrderArray = TypeDA->TypeOrderByCategory.Find(Category);
-	if (!OrderArray) return -1;
+	if (!OrderArray) return INT32_MAX;
 
 	const int32 Index = OrderArray->Tags.IndexOfByKey(TypeTag);
-	return Index != INDEX_NONE ? Index : -1;
+	return Index != INDEX_NONE ? Index : INT32_MAX;
 }
 
 

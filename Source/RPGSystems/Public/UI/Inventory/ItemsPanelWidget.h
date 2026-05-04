@@ -9,6 +9,7 @@
 #include "InventorySection/InventoryComponent.h"
 #include "ItemsPanelWidget.generated.h"
 
+class UBorder;
 class USizeBox;
 enum class EDragOverResult : uint8;
 class UTextBlock;
@@ -24,7 +25,7 @@ class UItemSlotWidget;
 class UUniformGridPanel;
 
 DECLARE_DELEGATE_TwoParams(FOnEquipentDropped,FGameplayTag ItemTag,uint64 ExistingID)
-DECLARE_DELEGATE_OneParam(FOnSelectItem, int32 SelectedEntryIndex)
+DECLARE_DELEGATE_OneParam(FOnSelectItem, FGameplayTag SubCategory)
 USTRUCT()
 struct FItemSlotData
 {
@@ -78,6 +79,9 @@ public:
 	void AddEmptySlots();
 	void CreateSlotWidget(int32 Index,const FItemSlotData& SlotData);
 	void ClearPanel();
+
+	void ActivateCurrentSelectedSlot();
+	void DeactivateCurrentSelectedSlot();
 	
 	void ResetItemsArray();
 
@@ -102,8 +106,6 @@ private:
 	virtual void NativeConstruct() override;
 	virtual void NativePreConstruct() override;
 	
-	//static void ResolvePair(const TArray<FItemSlotData>& ItemsArray,int32 TargetIndex,ESlotSizeCategories DraggedSize,
-	//                        int32 MaxColumns,int32& OutSuperior,int32& OutLower);
 	void HandleItemDropped(int32 DroppedIndex,int32 NewIndex,EDragOverResult SubCategoryResult);
 	bool TryDropInNewSlot(int32 DroppedIndex,int32 NewIndex);
 	void HandleDraggedItemEntered(int32 EnteredIndex,int32 NewIndex,EDragOverResult Result);
@@ -115,14 +117,16 @@ private:
 	
 	void HandleSlotClicked(int32 ClickedIndex);
 	void SelectCurrentIndexSlot(int32 NewIndex);
-	void DeselectCurrentSlot();
+	void DeactivateSlotAtIndex(int32 Index);
+	void ActivateSlotAtIndex(int32 Index);
 
 	void HandleEquipmentEntered(UItemSlotDragDrogOperation* InCurrentDragOperation);
 	
 	void ResetSlotData(FItemSlotData& ItemSlotData);
-
 	int32 LastHoveredIndex = INDEX_NONE;
+	int32 OldSelectedIndex = INDEX_NONE;
 	int32 CurrentSelectedIndex = 0;
+	bool IsPanelFocus = false;
 
 	UPROPERTY(EditAnywhere, Category = "Grid")
 	float SlotSize = 90.f;
@@ -141,6 +145,12 @@ private:
 
 	UPROPERTY(EditAnywhere, meta = (BindWidget), Category = "UI")
 	FGameplayTag SubCategoryTag;
+
+	UPROPERTY(EditAnywhere, meta = (BindWidget), Category = "UI")
+	UBorder* BorderWidget;
+
+	UPROPERTY(Transient, meta=(BindWidgetAnim))
+	UWidgetAnimation* SelectedPanelAnimation;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Data")
 	TSubclassOf<UItemSlotWidget> ItemSlotWidgetClass;

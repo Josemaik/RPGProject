@@ -18,7 +18,6 @@ void UAlchemyCategoryConsumablesWidget::RemoveEntry(int64 ItemID)
 
 void UAlchemyCategoryConsumablesWidget::NativeConstruct()
 {
-	Super::NativeConstruct();
 	if (!IsValid(OilsPanel) || !IsValid(PotionsPanel) || !IsValid(BombsPanel)) return;
 
 	SubCategoryPanels.Add(OilsPanel);
@@ -29,24 +28,5 @@ void UAlchemyCategoryConsumablesWidget::NativeConstruct()
 	{
 		Panel->AddEmptySlots();
 	}
-	
-	OilsPanel->OnSelectItemDelegate.BindLambda([this](int32 SelectedEntryIndex)
-	{
-		LastSelectedSubCategory = OilsPanel->GetSubCategoryTag();
-	});
-	PotionsPanel->OnSelectItemDelegate.BindLambda([this](int32 SelectedEntryIndex)
-	{
-		LastSelectedSubCategory = PotionsPanel->GetSubCategoryTag();
-	});
-	BombsPanel->OnSelectItemDelegate.BindLambda([this](int32 SelectedEntryIndex)
-	{
-		LastSelectedSubCategory = BombsPanel->GetSubCategoryTag();
-	});
-	
-	
-
-	// for (auto& Panel : SubCategoryPanels)
-	// {
-	// 	Panel->AddEmptySlots();
-	// }
+	Super::NativeConstruct();
 }

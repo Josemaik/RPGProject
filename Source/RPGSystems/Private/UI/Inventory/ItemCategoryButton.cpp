@@ -14,6 +14,18 @@ void UItemCategoryButton::Init(FGameplayTag Category, FText CategoryText, UTextu
 	Icon->SetDesiredSizeOverride(FVector2d(32.f,32.f));
 }
 
+void UItemCategoryButton::DeSelect()
+{
+	Selected = false;
+	Icon->SetColorAndOpacity(FLinearColor(FColor::FromHex(TEXT("926839FF"))));
+}
+
+void UItemCategoryButton::Select()
+{
+	Selected = true;
+	Icon->SetColorAndOpacity(FLinearColor::White);
+}
+
 void UItemCategoryButton::NativeConstruct()
 {
 	Super::NativeConstruct();
@@ -25,12 +37,14 @@ void UItemCategoryButton::NativeConstruct()
 
 void UItemCategoryButton::OnActionButtonHovered()
 {
-	Icon->SetBrushTintColor(FSlateColor(HoverColor));
+	if (Selected) return;
+	Icon->SetColorAndOpacity(FLinearColor::White);
 }
 
 void UItemCategoryButton::OnActionButtonUnhovered()
 {
-	Icon->SetBrushTintColor(FSlateColor(UnhoverColor));
+	if (Selected) return;
+	Icon->SetColorAndOpacity(FLinearColor(FColor::FromHex(TEXT("926839FF"))));
 }
 
 void UItemCategoryButton::OnActionButtonClicked()

@@ -25,6 +25,9 @@ public:
 	FOnCategorySelected OnCategorySelected;
 
 	void Init(FGameplayTag Category,FText CategoryText, UTexture2D* IconTexture);
+
+	void DeSelect();
+	void Select();
 private:
 	virtual void NativeConstruct() override;
 	
@@ -35,11 +38,16 @@ private:
 	UFUNCTION()
 	void OnActionButtonClicked();
 
+	bool Selected = false;
+
 	UPROPERTY(EditDefaultsOnly, Category = "Style")
 	FLinearColor HoverColor;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Style")
 	FLinearColor UnhoverColor;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Style")
+	FLinearColor SelectedColor;
 
 	UPROPERTY(EditInstanceOnly, meta=(AllowPrivateAccess=true),Category= "TagInfo")
 	FGameplayTag CategoryTag;

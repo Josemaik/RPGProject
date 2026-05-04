@@ -99,7 +99,7 @@ private:
 	void HandleItemDropped(const FRPGInventoryEntry& Entry) const;
 	
 	UFUNCTION()
-	void HandleInventoryItemRemoved(const FRPGInventoryEntry& Entry) const;
+	void HandleInventoryItemRemoved(const FRPGInventoryEntry& Entry);
 	
 	UFUNCTION()
 	void OnSearchBarTextChanged(const FText& InText);
@@ -129,6 +129,11 @@ private:
 
 	UPROPERTY(meta=(BindWidget))
 	UHorizontalBox* CategoriesContainer;
+
+	TMap<FGameplayTag, UItemCategoryButton*> CategoryButtonsMap;
+
+	UPROPERTY()
+	UItemCategoryButton* LastCategorySelected;
 
 	UPROPERTY(EditAnywhere, Category="Categories")
 	TArray<FCategoryButtonData> Categories;
@@ -180,6 +185,7 @@ private:
 	TSubclassOf<UItemToolTip> TooltipWidgetClass;
 	
 	//Equipments Panel
+	//Weapons
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget,AllowPrivateAccess="true"), Category = "UI")
 	UEquipmentSlot* SilverSword;
 	
@@ -191,6 +197,15 @@ private:
 
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget,AllowPrivateAccess="true"), Category = "UI")
 	UEquipmentSlot* RangedWeapon;
+	//Consumables
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget,AllowPrivateAccess="true"), Category = "UI")
+	UEquipmentSlot* ConsumableSlot0;
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget,AllowPrivateAccess="true"), Category = "UI")
+	UEquipmentSlot* ConsumableSlot1;
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget,AllowPrivateAccess="true"), Category = "UI")
+	UEquipmentSlot* ConsumableSlot2;
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget,AllowPrivateAccess="true"), Category = "UI")
+	UEquipmentSlot* ConsumableSlot3;
 
 	TArray<UEquipmentSlot*> EquipmentSlots;
 };

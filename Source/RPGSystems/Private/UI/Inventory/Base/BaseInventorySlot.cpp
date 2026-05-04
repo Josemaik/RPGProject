@@ -4,6 +4,7 @@
 #include "UI/Inventory/Base/BaseInventorySlot.h"
 
 #include "Animation/WidgetAnimation.h"
+#include "Components/CanvasPanelSlot.h"
 #include "Components/Image.h"
 #include "Libraries/RPGUIStatics.h"
 #include "UI/Inventory/ItemDragVisualWidget.h"

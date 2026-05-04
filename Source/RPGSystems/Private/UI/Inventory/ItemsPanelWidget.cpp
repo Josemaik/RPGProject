@@ -13,6 +13,7 @@
 #include "AbilitySystem/NativeTags/RPGInventoryTags.h"
 #include "Blueprint/SlateBlueprintLibrary.h"
 #include "Blueprint/WidgetLayoutLibrary.h"
+#include "Components/Border.h"
 #include "Components/CanvasPanelSlot.h"
 #include "Components/SizeBox.h"
 #include "Components/TextBlock.h"
@@ -126,7 +127,11 @@ FGameplayTag UItemsPanelWidget::GetItemCategory(FGameplayTag ItemTag)
 void UItemsPanelWidget::AddItemSlot(const FRPGInventoryEntry& Entry,const FMasterItemDefinition& ItemDefinition,bool bResetPanel)
 {
 	//Already exist
-	if (FindGridIndexByItemID(Entry.ItemID, ItemDefinition.ItemTag) != INDEX_NONE) return;
+	if (FindGridIndexByItemID(Entry.ItemID, ItemDefinition.ItemTag) != INDEX_NONE)
+	{
+		UpdateItemSlot(Entry);
+		return;
+	}
 	
 	int32 FreeIndex = INDEX_NONE;
 
@@ -163,15 +168,13 @@ void UItemsPanelWidget::AddItemSlot(const FRPGInventoryEntry& Entry,const FMaste
 		ItemsArray[FreeIndex + MaxColumns].Size = ESlotSizeCategories::LowerSlotVertical;
 		ItemsArray[FreeIndex + MaxColumns].ItemDefinition = ItemDefinition;
 	}
-
-	CurrentSelectedIndex = FreeIndex;
 	
 	if (bResetPanel)
 	{
 		ResetItemsArray();
 	}
 
-	SelectCurrentIndexSlot(CurrentSelectedIndex);
+	SelectCurrentIndexSlot(FreeIndex);
 }
 
 void UItemsPanelWidget::ClearPanel()
@@ -183,59 +186,75 @@ void UItemsPanelWidget::ClearPanel()
 
 void UItemsPanelWidget::SelectCurrentIndexSlot(int32 NewIndex)
 {
-	// Deselect old last selected
-	if (CurrentSelectedIndex != NewIndex)
-	{
-		DeselectCurrentSlot();
-	}
-
+	OldSelectedIndex = CurrentSelectedIndex;
 	CurrentSelectedIndex = NewIndex;
 	
-	if (!ItemsArray.IsValidIndex(CurrentSelectedIndex)) return;
-	
-	UItemSlotWidget* SlotWidget = GetItemSlotbyIndex(CurrentSelectedIndex);
-	if (IsValid(SlotWidget) && !SlotWidget->IsEmpty()) SlotWidget->StartSelectedAnimation();
-	
-
-	const FItemSlotData& SlotData = ItemsArray[CurrentSelectedIndex];
-	OnSelectItemDelegate.ExecuteIfBound(CurrentSelectedIndex);
-	
-	if (SlotData.Size == ESlotSizeCategories::SuperiorSlotVertical)
-	{
-		if (!ItemsArray.IsValidIndex(CurrentSelectedIndex + MaxColumns)) return;
-		UItemSlotWidget* LowerWidget = GetItemSlotbyIndex(CurrentSelectedIndex + MaxColumns);
-		if (IsValid(LowerWidget) && !LowerWidget->IsEmpty()) LowerWidget->StartSelectedAnimation();
-	}
-	else if (SlotData.Size == ESlotSizeCategories::LowerSlotVertical)
-	{
-		if (!ItemsArray.IsValidIndex(CurrentSelectedIndex - MaxColumns)) return;
-		UItemSlotWidget* SuperiorWidget = GetItemSlotbyIndex(CurrentSelectedIndex - MaxColumns);
-		if (IsValid(SuperiorWidget) && !SuperiorWidget->IsEmpty()) SuperiorWidget->StartSelectedAnimation();
-	}
+	OnSelectItemDelegate.ExecuteIfBound(SubCategoryTag);
 }
 
-void UItemsPanelWidget::DeselectCurrentSlot()
+void UItemsPanelWidget::DeactivateSlotAtIndex(int32 Index)
 {
-	if (!ItemsArray.IsValidIndex(CurrentSelectedIndex))
-	{
-		return;
-	}
+	GEngine->AddOnScreenDebugMessage(-1,3.f,FColor::Green,FString::Printf(TEXT("DeactivateIndex: %d"),Index));
+	if (!ItemsArray.IsValidIndex(Index)) return;
 
-	UItemSlotWidget* SlotWidget = GetItemSlotbyIndex(CurrentSelectedIndex);
-	if (IsValid(SlotWidget)) SlotWidget->StopSelectedAnimation();
+	UItemSlotWidget* ItemSlot = GetItemSlotbyIndex(Index);
+	if (IsValid(ItemSlot)) ItemSlot->StopSelectedAnimation();
 
-	const FItemSlotData& SlotData = ItemsArray[CurrentSelectedIndex];
+	const FItemSlotData& SlotData = ItemsArray[Index];
 	if (SlotData.Size == ESlotSizeCategories::SuperiorSlotVertical)
 	{
-		UItemSlotWidget* LowerWidget = GetItemSlotbyIndex(CurrentSelectedIndex + MaxColumns);
-		if (IsValid(LowerWidget)) LowerWidget->StopSelectedAnimation();
+		UItemSlotWidget* Lower = GetItemSlotbyIndex(Index + MaxColumns);
+		if (IsValid(Lower)) Lower->StopSelectedAnimation();
 	}
 	else if (SlotData.Size == ESlotSizeCategories::LowerSlotVertical)
 	{
-		UItemSlotWidget* SuperiorWidget = GetItemSlotbyIndex(CurrentSelectedIndex - MaxColumns);
-		if (IsValid(SuperiorWidget)) SuperiorWidget->StopSelectedAnimation();
+		UItemSlotWidget* Superior = GetItemSlotbyIndex(Index - MaxColumns);
+		if (IsValid(Superior)) Superior->StopSelectedAnimation();
 	}
 }
+
+void UItemsPanelWidget::ActivateSlotAtIndex(int32 Index)
+{
+	GEngine->AddOnScreenDebugMessage(-1,3.f,FColor::Green,FString::Printf(TEXT("ActivateIndex: %d"),Index));
+	if (!ItemsArray.IsValidIndex(Index)) return;
+
+	UItemSlotWidget* ItemSlot = GetItemSlotbyIndex(Index);
+	if (IsValid(ItemSlot) && !ItemSlot->IsEmpty()) ItemSlot->StartSelectedAnimation();
+
+	const FItemSlotData& SlotData = ItemsArray[Index];
+	if (SlotData.Size == ESlotSizeCategories::SuperiorSlotVertical)
+	{
+		UItemSlotWidget* Lower = GetItemSlotbyIndex(Index + MaxColumns);
+		if (IsValid(Lower) && !Lower->IsEmpty()) Lower->StartSelectedAnimation();
+	}
+	else if (SlotData.Size == ESlotSizeCategories::LowerSlotVertical)
+	{
+		UItemSlotWidget* Superior = GetItemSlotbyIndex(Index - MaxColumns);
+		if (IsValid(Superior) && !Superior->IsEmpty()) Superior->StartSelectedAnimation();
+	}
+}
+
+void UItemsPanelWidget::ActivateCurrentSelectedSlot()
+{
+	if (!IsPanelFocus)
+	{
+		IsPanelFocus = true;
+		BorderWidget->SetBrushColor(FLinearColor(1.f,1.f,1.f,1.f));
+		PlayAnimation(SelectedPanelAnimation, 0.f, 0, EUMGSequencePlayMode::Forward, 1.f);
+	}
+	
+	if (!ItemsArray.IsValidIndex(CurrentSelectedIndex)) return;
+	DeactivateSlotAtIndex(OldSelectedIndex);
+	ActivateSlotAtIndex(CurrentSelectedIndex);
+}
+void UItemsPanelWidget::DeactivateCurrentSelectedSlot()
+{
+	IsPanelFocus = false;
+	StopAnimation(SelectedPanelAnimation);
+	BorderWidget->SetBrushColor(FLinearColor(1.f,1.f,1.f,0.f));
+	DeactivateSlotAtIndex(CurrentSelectedIndex);
+}
+
 
 void UItemsPanelWidget::AddEmptySlots()
 {
@@ -867,8 +886,8 @@ bool UItemsPanelWidget::TryDropInNewSlot(int32 FromIndex, int32 ToIndex)
 			return true;
 		}
 
-		int32 ToSuperiorIndex = INDEX_NONE;
-		int32 ToLowerIndex    = INDEX_NONE;
+		int32 ToSuperiorIndex = ToIndex;
+		int32 ToLowerIndex    = ToIndex + MaxColumns;
 
 		//ResolvePair(ItemsArray, ToIndex, FromSize, MaxColumns, ToSuperiorIndex, ToLowerIndex);
 

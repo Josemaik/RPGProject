@@ -24,16 +24,7 @@ const FRPGInventoryEntry* UEquipmentCategoryWidget::GetSelectedItem()
 
 void UEquipmentCategoryWidget::NativeConstruct()
 {
-	Super::NativeConstruct();
 	if (!IsValid(WeaponsPanel) || !IsValid(ArmorPanel)) return;
-	WeaponsPanel->OnSelectItemDelegate.BindLambda([this](int32 SelectedEntryIndex)
-	{
-		LastSelectedSubCategory = WeaponsPanel->GetSubCategoryTag();
-	});
-	ArmorPanel->OnSelectItemDelegate.BindLambda([this](int32 SelectedEntryIndex)
-	{
-		LastSelectedSubCategory = ArmorPanel->GetSubCategoryTag();
-	});
 	
 	SubCategoryPanels.Add(WeaponsPanel);
 	SubCategoryPanels.Add(ArmorPanel);
@@ -51,6 +42,8 @@ void UEquipmentCategoryWidget::NativeConstruct()
 			HSlot->SetSize(FSlateChildSize(ESlateSizeRule::Automatic));
 		}
 	}
+
+	Super::NativeConstruct();
 }
 
 

@@ -4,6 +4,16 @@
 #include "UI/Inventory/Categories/BaseCategoryWidget.h"
 #include "UI/Inventory/ItemsPanelWidget.h"
 
+void UBaseCategoryWidget::NativeConstruct()
+{
+	Super::NativeConstruct();
+
+	for (UItemsPanelWidget* Panel : SubCategoryPanels)
+	{
+		Panel->OnSelectItemDelegate.BindUObject(this,&UBaseCategoryWidget::OnSubPanelSelected);
+	}
+}
+
 void UBaseCategoryWidget::ReceiveInventoryEntry(const FRPGInventoryEntry& Entry,
 	const FMasterItemDefinition& Definition)
 {
@@ -52,4 +62,27 @@ void UBaseCategoryWidget::SortPanels(EItemSortType SortType)
 	{
 		Panel->SortItemsBy(SortType);
 	}
+}
+
+void UBaseCategoryWidget::OnSubPanelSelected(FGameplayTag NewSelectedCategory)
+{
+	if (SubCategoryPanels.IsEmpty()) return;
+
+	const bool bSameCategory = NewSelectedCategory.MatchesTagExact(LastSelectedSubCategory);
+
+	for (UItemsPanelWidget* Panel : SubCategoryPanels)
+	{
+		const FGameplayTag PanelTag = Panel->GetSubCategoryTag();
+
+		if (PanelTag.MatchesTagExact(NewSelectedCategory))
+		{
+			Panel->ActivateCurrentSelectedSlot();
+		}
+		else if (!bSameCategory && PanelTag.MatchesTagExact(LastSelectedSubCategory))
+		{
+			Panel->DeactivateCurrentSelectedSlot();
+		}
+	}
+
+	LastSelectedSubCategory = NewSelectedCategory;
 }

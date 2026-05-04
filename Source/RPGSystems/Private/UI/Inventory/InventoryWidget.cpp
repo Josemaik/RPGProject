@@ -61,6 +61,11 @@ void UInventoryWidget::SetWidgetController(UInventoryWidgetController* InWidgetC
 			HandleCategorySelected(CategoryTag);
 		});
 
+		if (Data.CategoryTag.MatchesTagExact(RPGInventoryTags::ItemsCategory::Equipment))
+		{
+			Button->Select();
+		}
+
 		CategoriesContainer->AddChildToHorizontalBox(Button);
 
 		USpacer* Spacer = NewObject<USpacer>(this);
@@ -68,7 +73,7 @@ void UInventoryWidget::SetWidgetController(UInventoryWidgetController* InWidgetC
 
 		CategoriesContainer->AddChildToHorizontalBox(Spacer);
 
-		//ItemsContainer->AddEmptySlots(Data.CategoryTag);
+		CategoryButtonsMap.Add(Data.CategoryTag, Button);
 	}
 }
 
@@ -87,16 +92,28 @@ void UInventoryWidget::NativeConstruct()
 	SteelWeapon->OnEquipItem.BindUObject(this, &ThisClass::OnEquipItem);
 	Bolls->OnEquipItem.BindUObject(this, &ThisClass::OnEquipItem);
 	RangedWeapon->OnEquipItem.BindUObject(this, &ThisClass::OnEquipItem);
+	ConsumableSlot0->OnEquipItem.BindUObject(this, &ThisClass::OnEquipItem);
+	ConsumableSlot1->OnEquipItem.BindUObject(this, &ThisClass::OnEquipItem);
+	ConsumableSlot2->OnEquipItem.BindUObject(this, &ThisClass::OnEquipItem);
+	ConsumableSlot3->OnEquipItem.BindUObject(this, &ThisClass::OnEquipItem);
 
 	EquipmentSlots.Add(SilverSword);
 	EquipmentSlots.Add(SteelWeapon);
 	EquipmentSlots.Add(Bolls);
 	EquipmentSlots.Add(RangedWeapon);
+	EquipmentSlots.Add(ConsumableSlot0);
+	EquipmentSlots.Add(ConsumableSlot1);
+	EquipmentSlots.Add(ConsumableSlot2);
+	EquipmentSlots.Add(ConsumableSlot3);
 	
 	InitEquipmentWidget(SilverSword);
 	InitEquipmentWidget(Bolls);
 	InitEquipmentWidget(SteelWeapon);
 	InitEquipmentWidget(RangedWeapon);
+	InitEquipmentWidget(ConsumableSlot0);
+	InitEquipmentWidget(ConsumableSlot1);
+	InitEquipmentWidget(ConsumableSlot2);
+	InitEquipmentWidget(ConsumableSlot3);
 	
 	ItemsDropToWorldWidget->OnItemDroppedPanelDelegate.BindUObject(this, &ThisClass::HandleItemDropped);
 
@@ -149,16 +166,20 @@ void UInventoryWidget::BindInventoryItemDelegates()
 void UInventoryWidget::HandleCategorySelected(FGameplayTag CategorySelected)
 {
 	if (CurrentCategorySelected.MatchesTagExact(CategorySelected)) return;
+
+	if (UItemCategoryButton* LastButton = CategoryButtonsMap.FindRef(CurrentCategorySelected))
+	{
+		LastButton->DeSelect();
+	}
+
+	if (UItemCategoryButton* NewButton = CategoryButtonsMap.FindRef(CategorySelected))
+	{
+		NewButton->Select();
+		LastCategorySelected = NewButton; // opcional si quieres mantenerlo
+	}
 	
 	//New Category
 	CurrentCategorySelected = CategorySelected;
-	// ItemsContainer->ResetCategory(CurrentCategorySelected);
-	//
-	// FString TagString = CurrentCategorySelected.GetTagName().ToString();
-	// FString RightPart;
-	// TagString.Split(TEXT("."), nullptr, &RightPart, ESearchCase::IgnoreCase, ESearchDir::FromEnd);
-
-	//CategoryText->SetText(FText::FromString(RightPart));
 
 	if (UBaseCategoryWidget** Widget = CategoryWidgets.Find(CategorySelected))
 	{
@@ -207,17 +228,12 @@ void UInventoryWidget::OnSortPanelOptionChanged(EItemSortType ItemSort)
 
 void UInventoryWidget::HandleInventoryItemReceived(const FRPGInventoryEntry& Entry)
 {
-	// if (!IsValid(ItemsContainer)) return;
-	// if (ItemsContainer->FindGridIndexByItemID(Entry.ItemID,Entry.ItemTag) != INDEX_NONE)
-	// {
-	// 	ItemsContainer->UpdateItemSlot(Entry);
-	// 	return;
-	// }
-
-	// const FMasterItemDefinition& ItemDefinition = InventoryWidgetController->GetInventoryItemDefinition(Entry.ItemTag);
-	// AddItemToGrid(Entry, ItemDefinition);
 	const FMasterItemDefinition& ItemDefinition = InventoryWidgetController->GetInventoryItemDefinition(Entry.ItemTag);
-	UBaseCategoryWidget* CurrentCategoryWidget = *CategoryWidgets.Find(CurrentCategorySelected);
+
+	UBaseCategoryWidget** FoundWidget = CategoryWidgets.Find(ItemDefinition.CategoryTag);
+	if (FoundWidget == nullptr) return;
+	
+	UBaseCategoryWidget* CurrentCategoryWidget = *FoundWidget;
 	if (!IsValid(CurrentCategoryWidget)) return;
 
 	CurrentCategoryWidget->ReceiveInventoryEntry(Entry, ItemDefinition);
@@ -231,10 +247,14 @@ void UInventoryWidget::HandleItemDropped(const FRPGInventoryEntry& Entry) const
 	InventoryWidgetController->DropItemToWorld(Entry);
 }
 
-void UInventoryWidget::HandleInventoryItemRemoved(const FRPGInventoryEntry& Entry) const
+void UInventoryWidget::HandleInventoryItemRemoved(const FRPGInventoryEntry& Entry)
 {
-	//ItemsContainer->RemoveItem(Entry.ItemID);
-	UBaseCategoryWidget* CurrentCategoryWidget = *CategoryWidgets.Find(CurrentCategorySelected);
+	const FMasterItemDefinition& ItemDefinition = InventoryWidgetController->GetInventoryItemDefinition(Entry.ItemTag);
+
+	UBaseCategoryWidget** FoundWidget = CategoryWidgets.Find(ItemDefinition.CategoryTag);
+	if (FoundWidget == nullptr) return;
+
+	UBaseCategoryWidget* CurrentCategoryWidget = *FoundWidget;
 	if (!IsValid(CurrentCategoryWidget)) return;
 
 	CurrentCategoryWidget->RemoveEntry(Entry.ItemID);

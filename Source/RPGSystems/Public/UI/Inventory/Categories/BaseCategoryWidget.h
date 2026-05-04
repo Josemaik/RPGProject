@@ -20,6 +20,7 @@ class RPGSYSTEMS_API UBaseCategoryWidget : public UUserWidget
 	GENERATED_BODY()
 
 public:
+	virtual void NativeConstruct() override;
 	virtual void ReceiveInventoryEntry(const FRPGInventoryEntry& Entry, 
 									   const FMasterItemDefinition& Definition);
 	virtual void RemoveEntry(int64 ItemID);
@@ -28,6 +29,8 @@ public:
 	void QuickSortPanels();
 	void SortPanels(EItemSortType SortType);
 protected:
-	FGameplayTag LastSelectedSubCategory;
+	FGameplayTag LastSelectedSubCategory = FGameplayTag();
 	TArray<UItemsPanelWidget*> SubCategoryPanels;
+private:
+	void OnSubPanelSelected(FGameplayTag NewSelectedCategory);
 };

@@ -7,6 +7,7 @@
 #include "AbilitySystem/NativeTags/RPGInventoryTags.h"
 #include "Animation/WidgetAnimation.h"
 #include "Blueprint/WidgetBlueprintLibrary.h"
+#include "Components/CanvasPanelSlot.h"
 #include "Components/Image.h"
 #include "Components/TextBlock.h"
 #include "InventorySection/InventoryComponent.h"
@@ -54,6 +55,7 @@ UUniformGridSlot* UItemSlotWidget::GetGridSlot()
 void UItemSlotWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
+	Border->SetColorAndOpacity(FLinearColor(FColor::FromHex(TEXT("121212FF"))));
 }
 
 void UItemSlotWidget::NativeDestruct()
@@ -81,6 +83,7 @@ void UItemSlotWidget::Init(const FRPGInventoryEntry& Entry,const FMasterItemDefi
 	SetIcon(Brush);
 	
 	BackgroundRarity->SetBrushTintColor(FSlateColor(URPGUIStatics::GetColorByRarity(GetWorld(),Definition.RarityTag)));
+	SetIconPadding(false);
 }
 
 void UItemSlotWidget::EmptySlot()
@@ -91,14 +94,14 @@ void UItemSlotWidget::EmptySlot()
 
 void UItemSlotWidget::OutlineSlot() const
 {
-	SetIconPadding(false);
+	//SetIconPadding(false);
 	Border->SetColorAndOpacity(FLinearColor(FColor::FromHex("FFFFFFFF")));
 }
 
 void UItemSlotWidget::RemoveOutLineSlot()
 {
 	//Leave
-	SetIconPadding(true);
+	//SetIconPadding(true);
 	Border->SetColorAndOpacity(FLinearColor(FColor::FromHex(TEXT("121212FF"))));
 }
 
@@ -125,16 +128,37 @@ void UItemSlotWidget::DisableDragOverPreview()
 
 void UItemSlotWidget::StartSelectedAnimation()
 {
-	OutlineSlot();
-	GEngine->AddOnScreenDebugMessage(-1,3.f,FColor::Blue,FString::Printf(TEXT("Animation start")));
-	if (!IsValid(SelectedSlotAnimation)) return;
-	PlayAnimation(SelectedSlotAnimation,0.f,0,EUMGSequencePlayMode::Forward);
+	//OutlineSlot();
+	//GEngine->AddOnScreenDebugMessage(-1,3.f,FColor::Blue,FString::Printf(TEXT("Animation start")));
+	// if (UOverlaySlot* SlotBorder = Cast<UOverlaySlot>(Border->Slot))
+	// {
+	// 	SlotBorder->SetPadding(FMargin(0	, 0, 0, 0));
+	// }
+	// if (!IsValid(SelectedSlotAnimation)) return;
+	PlayAnimation(SelectedSlotAnimation, 0.f, 0, EUMGSequencePlayMode::Forward, 1.f);
 }
 
 void UItemSlotWidget::StopSelectedAnimation()
 {
-	RemoveOutLineSlot();
+	//if (!IsAnimationPlaying(SelectedSlotAnimation)) return;
+	// if (IsValid(SelectedSlotAnimation))
+	// {
+	// 	// Ir al frame 0 (estado inicial) antes de parar
+	// 	PlayAnimation(SelectedSlotAnimation, 0.f, 1, EUMGSequencePlayMode::Reverse);
+	// }
+	//
 	StopAnimation(SelectedSlotAnimation);
+	//
+	// if (UOverlaySlot* SlotBorder = Cast<UOverlaySlot>(Border->Slot))
+	// {
+	// 	SlotBorder->SetPadding(FMargin(10	, 10, 10, 10));
+	// }
+	FTimerHandle Handle;
+	GetWorld()->GetTimerManager().SetTimer(Handle, FTimerDelegate::CreateWeakLambda(this, [this]()
+	{
+		RemoveOutLineSlot();
+	}), 0.01f, false);
+	
 }
 
 void UItemSlotWidget::SetIconPadding(bool reset) const
@@ -363,13 +387,6 @@ bool UItemSlotWidget::NativeOnDrop(const FGeometry& InGeometry, const FDragDropE
     {
         UE_LOG(LogTemp, Warning, TEXT("Delegate NOT bound"));
     }
-
-	// int32 NormalizedTargetIndex = CurrentGridIndex;
-	// if (DroppedSize != ESlotSizeCategories::UniqueSlot && 
-	// 	CurrentSlotSize == ESlotSizeCategories::LowerSlotVertical)
-	// {
-	// 	NormalizedTargetIndex = CurrentGridIndex - MaxColumns;
-	// }
 	
 	OnItemDroppedPanelDelegate.ExecuteIfBound(FromIndex,CurrentGridIndex,Result);
 	return true;
