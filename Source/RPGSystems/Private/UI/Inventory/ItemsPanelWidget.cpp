@@ -849,12 +849,22 @@ bool UItemsPanelWidget::TryDropInNewSlot(int32 FromIndex, int32 ToIndex)
 		const ESlotSizeCategories FromSize = CurrentDragOperation->SlotSize;
 		if (FromSize == ESlotSizeCategories::UniqueSlot)
 		{
-			FItemSlotData& ToSlot    = ItemsArray[ToIndex];
-			ToSlot.Entry = *CurrentDragOperation->ItemEntry;
-			ToSlot.Icon = CurrentDragOperation->ItemDefinition.Icon.Get();
-			ToSlot.Size = ESlotSizeCategories::UniqueSlot;
-			ToSlot.bIsEmpty = false;
-			ToSlot.ItemDefinition = CurrentDragOperation->ItemDefinition;
+			int32 FindedIndex = FindGridIndexByItemID(CurrentDragOperation->ItemEntry->ItemID,CurrentDragOperation->ItemEntry->ItemTag);
+			if (FindedIndex == INDEX_NONE)
+			{
+				FItemSlotData& ToSlot    = ItemsArray[ToIndex];
+				ToSlot.Entry = *CurrentDragOperation->ItemEntry;
+				ToSlot.Icon = CurrentDragOperation->ItemDefinition.Icon.Get();
+				ToSlot.Size = ESlotSizeCategories::UniqueSlot;
+				ToSlot.bIsEmpty = false;
+				ToSlot.ItemDefinition = CurrentDragOperation->ItemDefinition;
+			}
+			else
+			{
+				FItemSlotData& ExistingSLot = ItemsArray[FindedIndex];
+				ExistingSLot.Entry.Quantity++;
+				UpdateItemSlot(ExistingSLot.Entry);
+			}
 
 			// Add equipment to inventory
 			OnEquipmentDropped.ExecuteIfBound(CurrentDragOperation->ItemEntry->ItemTag,CurrentDragOperation->ItemEntry->ItemID);

@@ -318,7 +318,7 @@ void UInventoryWidget::OnEquipKeyPressed()
 	UBaseCategoryWidget* EquipmentCategoryWidget = *CategoryWidgets.Find(CurrentCategorySelected);
 	if (!IsValid(EquipmentCategoryWidget)) return;
 
-	const FRPGInventoryEntry& SelectedItem = *EquipmentCategoryWidget->GetSelectedItem();
+	const FRPGInventoryEntry SelectedItem = *EquipmentCategoryWidget->GetSelectedItem();
 	// const FRPGInventoryEntry& SelectedItem = ItemsContainer->GetSelectedItem();
 	if (SelectedItem.ItemID == INDEX_NONE) return;
 	

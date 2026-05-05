@@ -16,7 +16,7 @@ void UAssasinationAbility::OnGiveAbility(const FGameplayAbilityActorInfo* ActorI
 {
 	Super::OnGiveAbility(ActorInfo, Spec);
 
-	GEngine->AddOnScreenDebugMessage(-1,5.f,FColor::Red,"Assasination Ability");
+	//GEngine->AddOnScreenDebugMessage(-1,5.f,FColor::Red,"Assasination Ability");
 }
 
 void UAssasinationAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle,

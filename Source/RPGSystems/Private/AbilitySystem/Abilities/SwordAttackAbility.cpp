@@ -147,7 +147,7 @@ void USwordAttackAbility::OnHitActor(AActor* HitActor,const FVector& HitLocation
 		CaptureDamageEffectInfo(HitActor, DamageEffectInfo);
 		URPGAbilitySystemLibrary::ApplyDamageEffect(DamageEffectInfo);
 		
-		GEngine->AddOnScreenDebugMessage(-1,3.f,FColor::Magenta,"Sword hit enemy");
+		//GEngine->AddOnScreenDebugMessage(-1,3.f,FColor::Magenta,"Sword hit enemy");
 
 		FGameplayEffectContextHandle ContextHandle = TargetASC->MakeEffectContext();
 		FGameplayEffectSpecHandle SpecHandle = TargetASC->MakeOutgoingSpec(OnHitEffect, DamageEffectInfo.AbilityLevel, ContextHandle);
@@ -165,7 +165,7 @@ void USwordAttackAbility::OnHitEventEnd(FGameplayEventData Payload)
 
 void USwordAttackAbility::OnKickHitEvent(FGameplayEventData Payload)
 {
-	GEngine->AddOnScreenDebugMessage(-1,3.f,FColor::Red,"KickTrace Activate");
+	//GEngine->AddOnScreenDebugMessage(-1,3.f,FColor::Red,"KickTrace Activate");
 	KickHitTrace = UAbilityTask_KickTrace::KickTrace(this,25.f);
 	KickHitTrace->OnHitActorDelegate.BindUObject(this,&USwordAttackAbility::OnHitActor);
 	if (!IsValid(KickHitTrace)) return;
