@@ -69,7 +69,7 @@ public:
 	FOnSelectItem OnSelectItemDelegate;
 	
 	void AddItemToGrid(UItemSlotWidget* Item,const int32 Index);
-	void RemoveItem(const int64 ItemID);
+	void RemoveItem(const FRPGInventoryEntry& Entry);
 	int32 FindGridIndexByItemID(const int64 ItemID,FGameplayTag ItemTag);
 	
 	void UpdateItemSlot(const FRPGInventoryEntry& Entry);
@@ -162,6 +162,7 @@ private:
 	TSubclassOf<UItemToolTip> TooltipWidgetClass;
 
 	TArray<FItemSlotData> ItemsArray;
+	int32 NumOcuppiedSlots = 0;
 	//TMap<FGameplayTag, TArray<FItemSlotData>> CategoryItemsMap;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(AllowPrivateAccess="true"), Category = "Data")

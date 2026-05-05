@@ -81,7 +81,7 @@ void AEnemyBase::EnterRagdoll()
 
 void AEnemyBase::OnRagdollFinished()
 {
-	SpawnLoot();
+	//SpawnLoot();
 	Destroy();
 }
 

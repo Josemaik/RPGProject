@@ -15,6 +15,13 @@ void UItemToolTip::SetData(const FMasterItemDefinition& ItemDefinition)
 	// {
 	// 	ItemTypeText->SetText(FText::FromString("OTHER"));
 	// }
+
+	FString TagString = ItemDefinition.SlotTag.GetTagName().ToString();
+	FString LeafString;
+	TagString.Split(TEXT("."), nullptr, &LeafString, ESearchCase::IgnoreCase, ESearchDir::FromEnd);
+
+	ItemTypeText->SetText(FText::FromString(LeafString));
+	
 	ItemDescriptionText->SetText(ItemDefinition.ItemDescription);
 	FLinearColor RarityColor = URPGUIStatics::GetColorByRarity(GetWorld(),ItemDefinition.RarityTag);
 	RarityBorder->SetBrushColor(FLinearColor(RarityColor.R, RarityColor.G, RarityColor.B, 0.6));

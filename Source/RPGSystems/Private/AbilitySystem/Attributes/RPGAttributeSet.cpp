@@ -75,8 +75,8 @@ void URPGAttributeSet::HandleIncomingDamage(const FGameplayEffectModCallbackData
 	FGameplayEffectContextHandle ContextHandle = Data.EffectSpec.GetContext();
 	FRPGGameplayEffectContext* RPGContext = FRPGGameplayEffectContext::GetEffectContext(ContextHandle);
 	FColor DebugColor = RPGContext->IsCriticalHit() ? FColor::Red : FColor::Green;
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, DebugColor, FString::Printf(TEXT("Damage "
-	"Dealt: %.2f"),LocalDamage));
+	// GEngine->AddOnScreenDebugMessage(-1, 5.f, DebugColor, FString::Printf(TEXT("Damage "
+	// "Dealt: %.2f"),LocalDamage));
 
 	AActor* TargetActor = Data.Target.GetAvatarActor();
 

@@ -18,6 +18,7 @@ class UImage;
 DECLARE_DELEGATE_OneParam(FOnEquipItem, const FRPGInventoryEntry&)
 DECLARE_DELEGATE_OneParam(FOnUnequipItem, const FRPGInventoryEntry&)
 DECLARE_DELEGATE_TwoParams(FOnEquipentDropped,FGameplayTag ItemTag,uint64 ExistingID)
+DECLARE_DELEGATE_OneParam(FOnSwapToPanel, const FRPGInventoryEntry&)
 /**
  * 
  */
@@ -26,7 +27,7 @@ class RPGSYSTEMS_API UEquipmentSlot : public UBaseInventorySlot
 {
 	GENERATED_BODY()
 public:
-	void EquipItemSlot(const FRPGInventoryEntry& Entry,const FMasterItemDefinition& ItemDefinition);
+	void EquipItem(const FRPGInventoryEntry& Entry,const FMasterItemDefinition& ItemDefinition);
 	void SetTooltipReference(UItemToolTip* InTooltip) { ItemToolTipReference = InTooltip; }
 	virtual void EmptySlot() override;
 	FGameplayTag GetSlotTag() const { return SlotTag; };
@@ -34,6 +35,7 @@ public:
 	FOnEquipItem OnEquipItem;
 	FOnUnequipItem OnUnequipItem;
 	FOnEquipentDropped OnEquipmentDropped;
+	FOnSwapToPanel OnSwapToPanelDelegate;
 protected:
 	virtual void NativeConstruct() override;
 	//virtual void NativeOnDragDetected(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent, UDragDropOperation*& OutOperation) override;
@@ -43,13 +45,15 @@ protected:
 	virtual FReply NativeOnMouseButtonDoubleClick(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 	virtual void BuildDragOperation(UDragDropOperation*& OutOperation) override;
 	virtual bool NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
-
+	virtual void NativeOnDragCancelled(const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
+	
 	virtual void DragVisualEnable(bool bEnable) override;
 	virtual void DisableDragOverPreview() override;
 private:
 	virtual void NativePreConstruct() override;
 	void HandleMouseEntered(UBaseInventorySlot* BaseSlot);
 	void HandleMouseLeaved(UBaseInventorySlot* BaseSlot);
+	void EquipItemSlot(const FRPGInventoryEntry& Entry,const FMasterItemDefinition& ItemDefinition);
 	
 	UPROPERTY(EditAnywhere,BlueprintReadOnly, Category= "Config",meta=(AllowPrivateAccess=true))
 	FGameplayTag SlotTag;

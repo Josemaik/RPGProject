@@ -15,6 +15,7 @@
 #include "Blueprint/WidgetLayoutLibrary.h"
 #include "Components/Border.h"
 #include "Components/CanvasPanelSlot.h"
+#include "Components/OverlaySlot.h"
 #include "Components/SizeBox.h"
 #include "Components/TextBlock.h"
 #include "Libraries/RPGUIStatics.h"
@@ -47,12 +48,18 @@ void UItemsPanelWidget::AddItemToGrid(UItemSlotWidget* Item,const int32 Index)
 		GridSlot->SetRow(Row);
 		GridSlot->SetColumn(Column);
 	}
+    
+	// El ZOrder real en UMG:
+	if (UCanvasPanelSlot* ItemSlot = Cast<UCanvasPanelSlot>(Item->Slot))
+	{
+		ItemSlot->SetZOrder(999);
+	}
 		
 	Item->SetGridSlot(GridSlot);
 	Item->SetGridIndex(Index);
 }
 
-void UItemsPanelWidget::RemoveItem(const int64 ItemID)
+void UItemsPanelWidget::RemoveItem(const FRPGInventoryEntry& Entry)
 {
 	ItemToolTipReference->SetVisibility(ESlateVisibility::Collapsed);
 	bool ItemRemoved = false;
@@ -60,22 +67,27 @@ void UItemsPanelWidget::RemoveItem(const int64 ItemID)
 	for (int i = 0; i < ItemsArray.Num();i++)
 	{
 		FItemSlotData& ItemSlotData = ItemsArray[i];
-		if (!ItemSlotData.bIsEmpty && ItemSlotData.Entry.ItemID == ItemID)
+		if (!ItemSlotData.bIsEmpty && ItemSlotData.Entry.ItemID == Entry.ItemID)
 		{
 			if (ItemSlotData.Size == ESlotSizeCategories::SuperiorSlotVertical)
 			{
+				NumOcuppiedSlots--;
 				ResetSlotData(ItemsArray[i + MaxColumns]);
 			}
 			if (ItemSlotData.Size == ESlotSizeCategories::LowerSlotVertical)
 			{
+				NumOcuppiedSlots--;
 				ResetSlotData(ItemsArray[i - MaxColumns]);
 			}
+			
+			NumOcuppiedSlots--;
 			ResetSlotData(ItemSlotData);
 			ItemRemoved = true;
 			break;
 		}
 	}
 	if (!ItemRemoved) return;
+	if (NumOcuppiedSlots < 0) NumOcuppiedSlots = 0;
 	ResetItemsArray();
 }
 
@@ -149,6 +161,7 @@ void UItemsPanelWidget::AddItemSlot(const FRPGInventoryEntry& Entry,const FMaste
 	}
 
 	if (FreeIndex == INDEX_NONE) return;
+	NumOcuppiedSlots++;
 
 	ItemsArray[FreeIndex].Entry = Entry;
 	ItemsArray[FreeIndex].Icon = ItemDefinition.Icon;
@@ -161,6 +174,7 @@ void UItemsPanelWidget::AddItemSlot(const FRPGInventoryEntry& Entry,const FMaste
 	
 	if (ItemDefinition.CategoryTag.MatchesTag(RPGInventoryTags::ItemsCategory::Equipment) && ItemDefinition.SlotsSize == 2)
 	{   //Slot Size == 2
+		NumOcuppiedSlots++;
 		ItemsArray[FreeIndex].Size = ESlotSizeCategories::SuperiorSlotVertical;
 		ItemsArray[FreeIndex + MaxColumns].Entry = Entry;
 		ItemsArray[FreeIndex + MaxColumns].Icon = ItemDefinition.Icon;
@@ -173,7 +187,7 @@ void UItemsPanelWidget::AddItemSlot(const FRPGInventoryEntry& Entry,const FMaste
 	{
 		ResetItemsArray();
 	}
-
+	
 	SelectCurrentIndexSlot(FreeIndex);
 }
 
@@ -194,7 +208,6 @@ void UItemsPanelWidget::SelectCurrentIndexSlot(int32 NewIndex)
 
 void UItemsPanelWidget::DeactivateSlotAtIndex(int32 Index)
 {
-	GEngine->AddOnScreenDebugMessage(-1,3.f,FColor::Green,FString::Printf(TEXT("DeactivateIndex: %d"),Index));
 	if (!ItemsArray.IsValidIndex(Index)) return;
 
 	UItemSlotWidget* ItemSlot = GetItemSlotbyIndex(Index);
@@ -215,7 +228,6 @@ void UItemsPanelWidget::DeactivateSlotAtIndex(int32 Index)
 
 void UItemsPanelWidget::ActivateSlotAtIndex(int32 Index)
 {
-	GEngine->AddOnScreenDebugMessage(-1,3.f,FColor::Green,FString::Printf(TEXT("ActivateIndex: %d"),Index));
 	if (!ItemsArray.IsValidIndex(Index)) return;
 
 	UItemSlotWidget* ItemSlot = GetItemSlotbyIndex(Index);
@@ -298,7 +310,10 @@ void UItemsPanelWidget::InitializeSlotWidget(const FItemSlotData& SlotData, UIte
 			NewWidget->Init(SlotData.Entry, SlotData.ItemDefinition, Brush, ESlotSizeCategories::SuperiorSlotVertical);
 			break;
 		}
-	case ESlotSizeCategories::UniqueSlot: { NewWidget->Init(SlotData.Entry,SlotData.ItemDefinition, Brush, ESlotSizeCategories::UniqueSlot); break; }
+	case ESlotSizeCategories::UniqueSlot:
+		{
+			NewWidget->Init(SlotData.Entry,SlotData.ItemDefinition, Brush, ESlotSizeCategories::UniqueSlot); break;
+		}
 	default: break;
 	}
 }
@@ -336,7 +351,7 @@ void UItemsPanelWidget::CreateSlotWidget(int32 Index,const FItemSlotData& SlotDa
 		AddItemToGrid(NewWidget, Index);
 		return;
 	}
-
+	
 	if (SlotData.Icon.IsNull()) return;
 
 	FSlateBrush Brush;
@@ -382,6 +397,15 @@ void UItemsPanelWidget::ResetItemsArray()
 
 		CreateSlotWidget(i,SlotData);
 	}
+	
+	if (NumOcuppiedSlots == 0)
+	{
+		IsPanelFocus = false;
+		StopAnimation(SelectedPanelAnimation);
+		BorderWidget->SetBrushColor(FLinearColor(1.f,1.f,1.f,0.f));
+		return;
+	}
+	
 	for (int32 i = 0; i < ItemsArray.Num(); i++)
 	{
 		if (ItemsArray[i].Size == ESlotSizeCategories::SuperiorSlotVertical)
@@ -404,7 +428,6 @@ void UItemsPanelWidget::ResetItemsArray()
 void UItemsPanelWidget::SortItemsQuicly()
 {
 	if (ItemsArray.IsEmpty()) return;
-	
 	TArray<FLogicalItem> LogicalItems;
 
 	for (int32 i = 0; i < ItemsArray.Num(); i++)
@@ -424,6 +447,8 @@ void UItemsPanelWidget::SortItemsQuicly()
 		LogicalItems.Add(Item);
 	}
 
+	if (LogicalItems.IsEmpty()) return;
+
 	//Sort by size
 	LogicalItems.Sort([](const FLogicalItem& A, const FLogicalItem& B)
 	{
@@ -441,16 +466,14 @@ void UItemsPanelWidget::SortItemsQuicly()
 	{
 		AddItemSlot(Item.Entry, Item.ItemDefinition,false);
 	}
-
+	
 	ResetItemsArray();
-
 	SelectCurrentIndexSlot(0);
 }
 
 void UItemsPanelWidget::SortItemsBy(EItemSortType SortType)
 {
 	if (ItemsArray.IsEmpty()) return;
-	
 	TArray<FItemSlotData> SortedItems;
 
 	for (const FItemSlotData& ItemSlot : ItemsArray)
@@ -529,7 +552,6 @@ void UItemsPanelWidget::SortItemsBy(EItemSortType SortType)
 	}
 
 	ResetItemsArray();
-	
 	SelectCurrentIndexSlot(0);
 }
 
@@ -578,43 +600,6 @@ void UItemsPanelWidget::NativePreConstruct()
 	Super::NativePreConstruct();
 	SubCategoryText->SetText(SubCategoryEditableText);
 }
-
-// void UItemsPanelWidget::ResolvePair(const TArray<FItemSlotData>& ItemsArray, int32 TargetIndex,
-//                                     ESlotSizeCategories DraggedSize, int32 MaxColumns, int32& OutSuperior, int32& OutLower)
-// {
-// 	 // Given TargetIndex and DraggedSize,
-// 	 // Determines the pair (SuperiorIndex, LowerIndex) that should fill.
-// 	const FItemSlotData& TargetSlot = ItemsArray[TargetIndex];
-// 	
-// 	if (TargetSlot.Size == ESlotSizeCategories::SuperiorSlotVertical)
-// 	{
-// 		OutSuperior = TargetIndex;
-// 		OutLower    = TargetIndex + MaxColumns;
-// 	}
-// 	else if (TargetSlot.Size == ESlotSizeCategories::LowerSlotVertical)
-// 	{
-// 		OutSuperior = TargetIndex;
-// 		OutLower    = TargetIndex + MaxColumns;
-// 	}
-// 	else // empty
-// 	{
-// 		// const int32 PotentialSuperior = TargetIndex - MaxColumns;
-//   //       
-// 		// if (PotentialSuperior < 0)
-// 		// {
-// 		// 	// Can't go up, force downward pair instead
-// 		// 	OutSuperior = TargetIndex;
-// 		// 	OutLower    = TargetIndex + MaxColumns;
-// 		// }
-// 		// else
-// 		// {
-// 		// 	OutSuperior = PotentialSuperior;
-// 		// 	OutLower    = TargetIndex;
-// 		// }
-// 		OutSuperior = TargetIndex;
-// 		OutLower    = TargetIndex + MaxColumns;
-// 	}
-// }
 
 void UItemsPanelWidget::HandleItemDropped(int32 DroppedIndex,int32 NewIndex,EDragOverResult SubCategoryResult)
 {
@@ -761,7 +746,6 @@ void UItemsPanelWidget::HandleDraggedItemEntered(int32 DraggedIndex, int32 Targe
 	
 	if (bIsOwnSuperior || bIsOwnLower)
 	{
-		GEngine->AddOnScreenDebugMessage(-1,3.f,FColor::Green,FString::Printf(TEXT("bIsOwnSuperior || bIsOwnLower: %d"),DraggedLowerIndex));
 		// Hover over the item (Superior or Lower)
 		UItemSlotWidget* TopWidget    = GetItemSlotbyIndex(DraggedSuperiorIndex);
 		UItemSlotWidget* BottomWidget = GetItemSlotbyIndex(DraggedLowerIndex);
@@ -776,7 +760,6 @@ void UItemsPanelWidget::HandleDraggedItemEntered(int32 DraggedIndex, int32 Targe
  
 	if (bIsAboveOwn)
 	{
-		GEngine->AddOnScreenDebugMessage(-1,3.f,FColor::Purple,FString::Printf(TEXT("bIsAboveOwn: %d"),DraggedLowerIndex));
 		// Empty space just ABOVE the Superior
 		const bool bCanDrop = ItemsArray[TargetIndex].bIsEmpty;
 		const EDragOverResult Result = bCanDrop ? EDragOverResult::Drop : EDragOverResult::Invalid;
@@ -794,8 +777,6 @@ void UItemsPanelWidget::HandleDraggedItemEntered(int32 DraggedIndex, int32 Targe
  
 	if (bIsBelowOwn)
 	{
-		GEngine->AddOnScreenDebugMessage(-1,3.f,FColor::Magenta,FString::Printf(TEXT("DraggedLower: %d"),DraggedLowerIndex));
-		GEngine->AddOnScreenDebugMessage(-1,3.f,FColor::Magenta,FString::Printf(TEXT("TargetIndex: %d"),TargetIndex));
 		// Empty space BELOW the Lower
 		const bool bCanDrop = ItemsArray[TargetIndex].bIsEmpty;
 		const EDragOverResult Result = bCanDrop ? EDragOverResult::Drop : EDragOverResult::Invalid;
@@ -844,8 +825,7 @@ void UItemsPanelWidget::HandleDraggedItemEntered(int32 DraggedIndex, int32 Targe
 	{
 		Result = EDragOverResult::Invalid;
 	}
-	GEngine->AddOnScreenDebugMessage(-1,3.f,FColor::Red,FString::Printf(TEXT("targetSuperior: %d"),TargetSuperiorIndex));
-	GEngine->AddOnScreenDebugMessage(-1,3.f,FColor::Red,FString::Printf(TEXT("Target Lower: %d"),TargetLowerIndex));
+	
 	UItemSlotWidget* TopWidget    = GetItemSlotbyIndex(TargetSuperiorIndex);
 	UItemSlotWidget* BottomWidget = GetItemSlotbyIndex(TargetLowerIndex);
 	if (IsValid(TopWidget))

@@ -3,6 +3,7 @@
 
 #include "UI/Inventory/Equipment/EquipmentSlot.h"
 
+#include "AbilitySystem/NativeTags/RPGInventoryTags.h"
 #include "Blueprint/SlateBlueprintLibrary.h"
 #include "Blueprint/WidgetBlueprintLibrary.h"
 #include "Components/CanvasPanelSlot.h"
@@ -28,8 +29,26 @@ void UEquipmentSlot::NativeConstruct()
 	//EmptySlot();
 }
 
+void UEquipmentSlot::EquipItem(const FRPGInventoryEntry& Entry,const FMasterItemDefinition& ItemDefinition)
+{
+	OnEquipItem.ExecuteIfBound(Entry);
+	EquipItemSlot(Entry, ItemDefinition);
+}
+
 void UEquipmentSlot::EquipItemSlot(const FRPGInventoryEntry& Entry,const FMasterItemDefinition& ItemDefinition)
 {
+	if (!bIsEmpty)
+	{
+		FRPGInventoryEntry OldEntry = ItemEntry;
+
+		//unequip -> equipment component
+		OnUnequipItem.ExecuteIfBound(OldEntry);
+
+		//invcomp -> add item back
+		OnSwapToPanelDelegate.ExecuteIfBound(OldEntry);
+	}
+
+	//Update slot with new one
 	ItemEntry = Entry;
 	EquipVisual(ItemDefinition.Icon.Get(), ItemDefinition.RarityTag);
 	
@@ -37,11 +56,8 @@ void UEquipmentSlot::EquipItemSlot(const FRPGInventoryEntry& Entry,const FMaster
 	if (!IsValid(IconBoxSlot)) return;
 
 	IconBoxSlot->SetPadding(0.f);
-	
 	DragOverPreview->SetColorAndOpacity(FLinearColor(1.f, 1.f, 1.f, 0.f));
 	
-	OnEquipItem.ExecuteIfBound(Entry);
-
 	CurrentItemDefinition = ItemDefinition;
 	CurrentSlotSize = ItemDefinition.SlotsSize > 1 ? ESlotSizeCategories::SuperiorSlotVertical : ESlotSizeCategories::UniqueSlot;
 	bIsEmpty = false;
@@ -49,12 +65,12 @@ void UEquipmentSlot::EquipItemSlot(const FRPGInventoryEntry& Entry,const FMaster
 
 void UEquipmentSlot::DragVisualEnable(bool bEnable)
 {
-	if (IsValid(IconBox) && IsValid(PlaceholderTexture))
-	{
-		//IconBox->SetBrushFromTexture(PlaceholderTexture);
-		//FLinearColor Color = bEnable ? FLinearColor(1.f, 1.f, 1.f, 1.f) : FLinearColor(0.f, 0.f, 0.f, 1.f);
-		//IconBox->SetColorAndOpacity(FLinearColor(1.f, 1.f, 1.f, 1.f));
-	}
+	// if (IsValid(IconBox) && IsValid(PlaceholderTexture))
+	// {
+	// 	//IconBox->SetBrushFromTexture(PlaceholderTexture);
+	// 	//FLinearColor Color = bEnable ? FLinearColor(1.f, 1.f, 1.f, 1.f) : FLinearColor(0.f, 0.f, 0.f, 1.f);
+	// 	//IconBox->SetColorAndOpacity(FLinearColor(1.f, 1.f, 1.f, 1.f));
+	// }
 	if (IsValid(BackgroundRarity))
 	{
 		BackgroundRarity->SetColorAndOpacity(FLinearColor(1.f, 1.f, 1.f, 0.f));
@@ -152,6 +168,8 @@ void UEquipmentSlot::BuildDragOperation(UDragDropOperation*& OutOperation)
 
 	IconBox->SetBrushFromTexture(PlaceholderTexture);
 	BackgroundRarity->SetOpacity(0.f);
+
+	bIsEmpty = true;
 }
 
 bool UEquipmentSlot::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent,
@@ -162,30 +180,75 @@ bool UEquipmentSlot::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEv
 
 	if (!DragOp->ItemDefinition.SlotTag.MatchesTag(SlotTag)) return false;
 
-	if (!bIsEmpty)
+	//From Other Equipment Slot
+	if (IsValid(DragOp->SourceEquipmentSlot) && DragOp->SourceEquipmentSlot != this)
 	{
-		FRPGInventoryEntry OldEntry = ItemEntry;
-		OnUnequipItem.ExecuteIfBound(OldEntry);
+		UEquipmentSlot* SourceSlot = DragOp->SourceEquipmentSlot;
+		if (!bIsEmpty)
+		{
+			// Swap between slots
+			FRPGInventoryEntry OldEntry         = ItemEntry;
+			FMasterItemDefinition OldDefinition = CurrentItemDefinition;
+			
+			if (!OldDefinition.SlotTag.MatchesTag(SourceSlot->SlotTag))
+			{
+				return false;
+			}
+
+			// desquip old entry
+			OnUnequipItem.ExecuteIfBound(OldEntry);
+
+			// Equipar el nuevo en este slot
+			EquipItemSlot(*DragOp->ItemEntry, DragOp->ItemDefinition);
+
+			// Equipar el viejo en el slot origen
+			SourceSlot->EquipItemSlot(OldEntry, OldDefinition);
+			SourceSlot->OnEquipItem.ExecuteIfBound(OldEntry);
+		}else
+		{
+			// Slot destino vacío: mover limpio
+			EquipItemSlot(*DragOp->ItemEntry, DragOp->ItemDefinition);
+
+			// Limpiar slot origen visualmente (ya vacío tras BuildDragOperation)
+			// BuildDragOperation ya puso placeholder, solo aseguramos estado
+			SourceSlot->EmptySlot();
+			SourceSlot->bIsEmpty = true;
+		}
+		DragOp->ItemDraggedIconWidget->DisableDragOverResultIcon();
+		return true;
 	}
-	
+
+	// From Items Panel
+	OnEquipItem.ExecuteIfBound(*DragOp->ItemEntry);
 	EquipItemSlot(*DragOp->ItemEntry,DragOp->ItemDefinition);
-	
 	DragOp->ItemDraggedIconWidget->DisableDragOverResultIcon();
 	
 	return true;
 }
 
+void UEquipmentSlot::NativeOnDragCancelled(const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation)
+{
+	Super::NativeOnDragCancelled(InDragDropEvent, InOperation);
+
+	UItemSlotDragDrogOperation* DragOp = Cast<UItemSlotDragDrogOperation>(InOperation);
+	if (!DragOp) return;
+
+	// Restore item
+	if (DragOp->SourceEquipmentSlot == this && DragOp->ItemEntry)
+	{
+		EquipItemSlot(*DragOp->ItemEntry, DragOp->ItemDefinition);
+	}
+}
+
 void UEquipmentSlot::NativeOnDragEnter(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent,
-	UDragDropOperation* InOperation)
+                                       UDragDropOperation* InOperation)
 {
 	Super::NativeOnDragEnter(InGeometry, InDragDropEvent, InOperation);
 
 	UItemSlotDragDrogOperation* DragOp = Cast<UItemSlotDragDrogOperation>(InOperation);
 	if (!IsValid(DragOp) || !DragOp->ItemEntry) return;
-
-	//if (DragOp->SourceEquipmentSlot == this) return;
+	
 	DragOp->LastEnterSlotWidget = this;
-	GEngine->AddOnScreenDebugMessage(-1,3.f,FColor::Red,FString::Printf(TEXT("End Drag Equip")));
 	
 	const bool bCompatible = DragOp->ItemDefinition.SlotTag.MatchesTag(SlotTag);
 	if (IsValid(DragOverPreview))
@@ -195,7 +258,7 @@ void UEquipmentSlot::NativeOnDragEnter(const FGeometry& InGeometry, const FDragD
 			: FLinearColor(1.f, 0.f, 0.f, 0.5f));
 	}
 	
-	EDragOverResult Result = bCompatible ? EDragOverResult::Drop : EDragOverResult::Invalid;
+	EDragOverResult Result = bCompatible ? (bIsEmpty ? EDragOverResult::Drop : EDragOverResult::Swap) : EDragOverResult::Invalid;
 	DragOp->ItemDraggedIconWidget->EnableDragOverResultIcon(Result);
 }
 
@@ -204,13 +267,11 @@ void UEquipmentSlot::NativeOnDragLeave(const FDragDropEvent& InDragDropEvent, UD
 	if (IsValid(DragOverPreview))
 	{
 		DragOverPreview->SetColorAndOpacity( FLinearColor(1.f, 1.f, 1.f, 0.f));
-		BackgroundRarity->SetBrushTintColor(FLinearColor(0.f,0.f,0.f,0.f));
+		//BackgroundRarity->SetBrushTintColor(FLinearColor(0.f,0.f,0.f,0.f));
 	}
 	UItemSlotDragDrogOperation* DragOp = Cast<UItemSlotDragDrogOperation>(InOperation);
 	if (!IsValid(DragOp)) return;
 	DragOp->ItemDraggedIconWidget->DisableDragOverResultIcon();
-	
-	bIsEmpty = true;
 }
 
 

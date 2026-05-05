@@ -27,12 +27,12 @@ void UBaseCategoryWidget::ReceiveInventoryEntry(const FRPGInventoryEntry& Entry,
 	}
 }
 
-void UBaseCategoryWidget::RemoveEntry(int64 ItemID)
+void UBaseCategoryWidget::RemoveEntry(const FRPGInventoryEntry& Entry)
 {
 	for (UItemsPanelWidget* Panel : SubCategoryPanels)
 	{
 		if (!IsValid(Panel)) return;
-		Panel->RemoveItem(ItemID);
+		Panel->RemoveItem(Entry);
 	}
 }
 

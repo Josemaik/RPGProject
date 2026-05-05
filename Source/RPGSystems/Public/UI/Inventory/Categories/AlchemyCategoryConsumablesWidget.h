@@ -18,7 +18,7 @@ class RPGSYSTEMS_API UAlchemyCategoryConsumablesWidget : public UBaseCategoryWid
 public:
 	virtual void ReceiveInventoryEntry(const FRPGInventoryEntry& Entry,
 									   const FMasterItemDefinition& Definition) override;
-	virtual void RemoveEntry(int64 ItemID) override;
+	virtual void RemoveEntry(const FRPGInventoryEntry& Entry) override;
 private:
 
 	virtual void NativeConstruct() override;

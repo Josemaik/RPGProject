@@ -114,8 +114,8 @@ void UExecCalcDamage::Execute_Implementation(const FGameplayEffectCustomExecutio
 
 			Damage += TotalDamage;
 			
-			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Cyan,
-FString::Printf(TEXT("Damage type %s, Damage dealt %.2f"), *DamageTypeTag.ToString(), TotalDamage));
+// 			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Cyan,
+// FString::Printf(TEXT("Damage type %s, Damage dealt %.2f"), *DamageTypeTag.ToString(), TotalDamage));
 		}
 		
 

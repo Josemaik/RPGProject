@@ -1,33 +1,32 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "UI/Inventory/Categories/EquipmentCategoryWidget.h"
+#include "UI/Inventory/Categories/FoodDrinkCategoryConsumableWidget.h"
 
 #include "Components/HorizontalBoxSlot.h"
 #include "UI/Inventory/ItemsPanelWidget.h"
 
-void UEquipmentCategoryWidget::ReceiveInventoryEntry(const FRPGInventoryEntry& Entry,
-                                                     const FMasterItemDefinition& Definition)
+void UFoodDrinkCategoryConsumableWidget::ReceiveInventoryEntry(const FRPGInventoryEntry& Entry,
+													 const FMasterItemDefinition& Definition)
 {
 	Super::ReceiveInventoryEntry(Entry, Definition);
 }
 
-void UEquipmentCategoryWidget::RemoveEntry(const FRPGInventoryEntry& Entry)
+void UFoodDrinkCategoryConsumableWidget::RemoveEntry(const FRPGInventoryEntry& Entry)
 {
 	Super::RemoveEntry(Entry);
 }
 
-const FRPGInventoryEntry* UEquipmentCategoryWidget::GetSelectedItem()
+const FRPGInventoryEntry* UFoodDrinkCategoryConsumableWidget::GetSelectedItem()
 {
 	return Super::GetSelectedItem();
 }
 
-void UEquipmentCategoryWidget::NativeConstruct()
+void UFoodDrinkCategoryConsumableWidget::NativeConstruct()
 {
-	if (!IsValid(WeaponsPanel) || !IsValid(ArmorPanel)) return;
+	if (!IsValid(FoodAndDrinkPanel)) return;
 	
-	SubCategoryPanels.Add(WeaponsPanel);
-	SubCategoryPanels.Add(ArmorPanel);
+	SubCategoryPanels.Add(FoodAndDrinkPanel);
 
 	for (auto& Panel : SubCategoryPanels)
 	{

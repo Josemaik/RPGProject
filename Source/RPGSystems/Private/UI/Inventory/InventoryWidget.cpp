@@ -96,6 +96,10 @@ void UInventoryWidget::NativeConstruct()
 	ConsumableSlot1->OnEquipItem.BindUObject(this, &ThisClass::OnEquipItem);
 	ConsumableSlot2->OnEquipItem.BindUObject(this, &ThisClass::OnEquipItem);
 	ConsumableSlot3->OnEquipItem.BindUObject(this, &ThisClass::OnEquipItem);
+	ChestSlot->OnEquipItem.BindUObject(this, &ThisClass::OnEquipItem);
+	BootsSlot->OnEquipItem.BindUObject(this, &ThisClass::OnEquipItem);
+	GauntletSlot->OnEquipItem.BindUObject(this, &ThisClass::OnEquipItem);
+	TrousersSLot->OnEquipItem.BindUObject(this, &ThisClass::OnEquipItem);
 
 	EquipmentSlots.Add(SilverSword);
 	EquipmentSlots.Add(SteelWeapon);
@@ -105,6 +109,10 @@ void UInventoryWidget::NativeConstruct()
 	EquipmentSlots.Add(ConsumableSlot1);
 	EquipmentSlots.Add(ConsumableSlot2);
 	EquipmentSlots.Add(ConsumableSlot3);
+	EquipmentSlots.Add(ChestSlot);
+	EquipmentSlots.Add(BootsSlot);
+	EquipmentSlots.Add(GauntletSlot);
+	EquipmentSlots.Add(TrousersSLot);
 	
 	InitEquipmentWidget(SilverSword);
 	InitEquipmentWidget(Bolls);
@@ -114,6 +122,10 @@ void UInventoryWidget::NativeConstruct()
 	InitEquipmentWidget(ConsumableSlot1);
 	InitEquipmentWidget(ConsumableSlot2);
 	InitEquipmentWidget(ConsumableSlot3);
+	InitEquipmentWidget(ChestSlot);
+	InitEquipmentWidget(BootsSlot);
+	InitEquipmentWidget(GauntletSlot);
+	InitEquipmentWidget(TrousersSLot);
 	
 	ItemsDropToWorldWidget->OnItemDroppedPanelDelegate.BindUObject(this, &ThisClass::HandleItemDropped);
 
@@ -134,6 +146,11 @@ void UInventoryWidget::InitEquipmentWidget(UEquipmentSlot* EquipmentSlot)
 	EquipmentSlot->SetTooltipReference(ItemToolTipReference); // el mismo del panel
 	EquipmentSlot->OnUnequipItem.BindUObject(this, &UInventoryWidget::HandleUnequipItem);
 	EquipmentSlot->OnEquipmentDropped.BindUObject(this,&UInventoryWidget::OnEquipmentDropped);
+	EquipmentSlot->OnSwapToPanelDelegate.BindLambda([this](const FRPGInventoryEntry& OldEntry)
+	{
+		InventoryWidgetController->AddEquippedItem(OldEntry.ItemTag,OldEntry.ItemID);
+		//HandleInventoryItemReceived(OldEntry);
+	});
 }
 
 void UInventoryWidget::FinishDestroy()
@@ -241,9 +258,6 @@ void UInventoryWidget::HandleInventoryItemReceived(const FRPGInventoryEntry& Ent
 
 void UInventoryWidget::HandleItemDropped(const FRPGInventoryEntry& Entry) const
 {
-
-	GEngine->AddOnScreenDebugMessage(-1,5.f,FColor::Green,FString::Printf(TEXT("Equipment dropped in World")));
-	
 	InventoryWidgetController->DropItemToWorld(Entry);
 }
 
@@ -257,7 +271,7 @@ void UInventoryWidget::HandleInventoryItemRemoved(const FRPGInventoryEntry& Entr
 	UBaseCategoryWidget* CurrentCategoryWidget = *FoundWidget;
 	if (!IsValid(CurrentCategoryWidget)) return;
 
-	CurrentCategoryWidget->RemoveEntry(Entry.ItemID);
+	CurrentCategoryWidget->RemoveEntry(Entry);
 }
 
 void UInventoryWidget::OnSearchBarTextChanged(const FText& InText)
@@ -299,9 +313,9 @@ void UInventoryWidget::OnEquipItem(const FRPGInventoryEntry& Entry)
 
 void UInventoryWidget::OnEquipKeyPressed()
 {
-	if (CurrentCategorySelected != RPGInventoryTags::ItemsCategory::Equipment) return;
+	//if (CurrentCategorySelected != RPGInventoryTags::ItemsCategory::Equipment) return;
 
-	UBaseCategoryWidget* EquipmentCategoryWidget = *CategoryWidgets.Find(RPGInventoryTags::ItemsCategory::Equipment);
+	UBaseCategoryWidget* EquipmentCategoryWidget = *CategoryWidgets.Find(CurrentCategorySelected);
 	if (!IsValid(EquipmentCategoryWidget)) return;
 
 	const FRPGInventoryEntry& SelectedItem = *EquipmentCategoryWidget->GetSelectedItem();
@@ -314,13 +328,20 @@ void UInventoryWidget::OnEquipKeyPressed()
 	{
 		if (EquipmentSlot->GetSlotTag().MatchesTagExact(ItemDefinition.SlotTag))
 		{
-			EquipmentSlot->EquipItemSlot(SelectedItem,ItemDefinition);
+			if (EquipmentSlot->GetSlotTag().MatchesTagExact(RPGInventoryTags::EquipmentSlot::Consumable))
+			{
+				if (!EquipmentSlot->IsEmpty()) continue;
+				EquipmentSlot->EquipItem(SelectedItem,ItemDefinition);
+			}
+			else
+			{
+				EquipmentSlot->EquipItem(SelectedItem,ItemDefinition);
+			}
+			
 			break;
 		}	
 	}
-	// SilverSword->EquipItemSlot(SelectedItem,ItemDefinition);
-	
-	InventoryWidgetController->EquipItem(SelectedItem);
+	//InventoryWidgetController->EquipItem(SelectedItem);
 }
 
 void UInventoryWidget::OnDropKeyPressed()

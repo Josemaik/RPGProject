@@ -128,31 +128,12 @@ void UItemSlotWidget::DisableDragOverPreview()
 
 void UItemSlotWidget::StartSelectedAnimation()
 {
-	//OutlineSlot();
-	//GEngine->AddOnScreenDebugMessage(-1,3.f,FColor::Blue,FString::Printf(TEXT("Animation start")));
-	// if (UOverlaySlot* SlotBorder = Cast<UOverlaySlot>(Border->Slot))
-	// {
-	// 	SlotBorder->SetPadding(FMargin(0	, 0, 0, 0));
-	// }
-	// if (!IsValid(SelectedSlotAnimation)) return;
 	PlayAnimation(SelectedSlotAnimation, 0.f, 0, EUMGSequencePlayMode::Forward, 1.f);
 }
 
 void UItemSlotWidget::StopSelectedAnimation()
 {
-	//if (!IsAnimationPlaying(SelectedSlotAnimation)) return;
-	// if (IsValid(SelectedSlotAnimation))
-	// {
-	// 	// Ir al frame 0 (estado inicial) antes de parar
-	// 	PlayAnimation(SelectedSlotAnimation, 0.f, 1, EUMGSequencePlayMode::Reverse);
-	// }
-	//
 	StopAnimation(SelectedSlotAnimation);
-	//
-	// if (UOverlaySlot* SlotBorder = Cast<UOverlaySlot>(Border->Slot))
-	// {
-	// 	SlotBorder->SetPadding(FMargin(10	, 10, 10, 10));
-	// }
 	FTimerHandle Handle;
 	GetWorld()->GetTimerManager().SetTimer(Handle, FTimerDelegate::CreateWeakLambda(this, [this]()
 	{
@@ -174,17 +155,17 @@ void UItemSlotWidget::SetIconPadding(bool reset) const
     
 	if (CurrentSlotSize == ESlotSizeCategories::UniqueSlot)
 	{
-		BorderSlot->SetPadding(FMargin(5.f)); // Unique ocupa todo el slot
+		BorderSlot->SetPadding(FMargin(3.f)); // Unique ocupa todo el slot
 		return;
 	}
     
 	if (CurrentSlotSize == ESlotSizeCategories::SuperiorSlotVertical)
 	{
-		BorderSlot->SetPadding(FMargin(5.f, 5.f, 5.f, 0.f)); // Sin gap abajo
+		BorderSlot->SetPadding(FMargin(3.f, 3.f, 3.f, 0.f)); // Sin gap abajo
 	}
 	else // LowerSlot
 	{
-		BorderSlot->SetPadding(FMargin(5.f, 0.f, 5.f, 5.f)); // Sin gap arriba
+		BorderSlot->SetPadding(FMargin(3.f, 0.f, 3.f, 3.f)); // Sin gap arriba
 	}
 }
 

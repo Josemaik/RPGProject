@@ -430,12 +430,12 @@ void ARPGSystemsCharacter::TryVault()
 			TraceTypeQuery1,
 			false,
 			ActorsToIgnore,
-			EDrawDebugTrace::ForDuration,
+			EDrawDebugTrace::None,
 			OutHitFirstCheck,
-			true,
-			FLinearColor::Red,
+			true
+			/*FLinearColor::Red,
 			FLinearColor::Green,
-			5.f
+			5.f*/
 			);
 		
 		if (bShereHit)
@@ -448,8 +448,8 @@ void ARPGSystemsCharacter::TryVault()
 	{
 		FHitResult OutHit;
 		FVector ForwardOffset = GetActorForwardVector() * (j * VaultZOffsetSecondTrace);
-		GEngine->AddOnScreenDebugMessage(-1,5.f,FColor::Red,
-			FString::Printf(TEXT("checks: %d"),j));
+		// GEngine->AddOnScreenDebugMessage(-1,5.f,FColor::Red,
+		// 	FString::Printf(TEXT("checks: %d"),j));
 		FVector HitLocationZOffset = OutHitFirstCheck.Location + ZOffsetVector;
 		FVector StartLocationSecondCheck = HitLocationZOffset + ForwardOffset;
 		FVector EndLocationSecondCheck = StartLocationSecondCheck - ZOffsetVector;
@@ -462,7 +462,7 @@ void ARPGSystemsCharacter::TryVault()
 			TraceTypeQuery1,
 			false,
 			ActorsToIgnore,
-			EDrawDebugTrace::ForDuration,
+			EDrawDebugTrace::None,
 			OutHit,
 			true,
 			FLinearColor::Red,
@@ -481,14 +481,14 @@ void ARPGSystemsCharacter::TryVault()
 			if (j == 0)
 			{
 				VaultStartPos = OutHit.Location;
-				UKismetSystemLibrary::DrawDebugSphere(
-					this,VaultStartPos,VaultSphereRadiusSecondCheck,12,
-					FColor::Purple,10.f,2.f);
+				// UKismetSystemLibrary::DrawDebugSphere(
+				// 	this,VaultStartPos,VaultSphereRadiusSecondCheck,12,
+				// 	FColor::Purple,10.f,2.f);
 			}
 			VaultMiddlePos = OutHit.Location;
-			UKismetSystemLibrary::DrawDebugSphere(
-					this,VaultMiddlePos,VaultSphereRadiusSecondCheck,12,
-					FColor::Yellow,10.f,2.f);
+			// UKismetSystemLibrary::DrawDebugSphere(
+			// 		this,VaultMiddlePos,VaultSphereRadiusSecondCheck,12,
+			// 		FColor::Yellow,10.f,2.f);
 		}
 		else
 		{
@@ -497,8 +497,8 @@ void ARPGSystemsCharacter::TryVault()
 			FVector StartLocationThirdCheck = OutHit.TraceStart + DirectionWithOffset;
 			FVector EndLocationThirdCheck = StartLocationThirdCheck - FVector(0,0,1000);
 			bool bLineTraceHit = UKismetSystemLibrary::LineTraceSingle(this,StartLocationThirdCheck,EndLocationThirdCheck,
-				TraceTypeQuery1,false,ActorsToIgnore,EDrawDebugTrace::ForDuration,OutHitThirdCheck,
-				true,FColor::Blue,FColor::Red,5.f);
+				TraceTypeQuery1,false,ActorsToIgnore,EDrawDebugTrace::None,OutHitThirdCheck,
+				true/*FColor::Blue,FColor::Red,5.f*/);
 			if (bLineTraceHit)
 			{
 				VaultLandPos = OutHitThirdCheck.Location;

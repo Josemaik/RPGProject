@@ -16,7 +16,7 @@ void USectionSwitcherWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 	
-	SectionsCarousel = {EUISections::CHARACTERBUILD, EUISections::INVENTORY, EUISections::WORLDMAP, EUISections::MISSIONS };
+	//SectionsCarousel = {EUISections::CHARACTERBUILD, EUISections::INVENTORY, EUISections::WORLDMAP, EUISections::MISSIONS };
 	CurrentSectionIndex = 0;
 	CurrentSection = EUISections::NONE;
 }
@@ -32,7 +32,6 @@ void USectionSwitcherWidget::InitializeTopBarWidget()
 	}
 	
 	UInventoryWidgetController* InvController = PlayerControllerRef->GetInventoryWidgetController();
-	
 	TopBarViewModelRef = NewObject<UTopBarViewModel>(this, TopBarViewModelClass);
 	TopBarWidget->TopBarViewModel = TopBarViewModelRef;
 	
@@ -69,6 +68,7 @@ void USectionSwitcherWidget::InitializeTopBarWidget()
 		});
 
 	//Carousel visuals and Input Delegate
+	SectionsCarousel = {EUISections::CHARACTERBUILD, EUISections::INVENTORY, EUISections::WORLDMAP, EUISections::MISSIONS };
 	TopBarWidget->InitCarousel(SectionsCarousel.Num());
 	TopBarWidget->OnSectionChanged.BindUObject(this, &USectionSwitcherWidget::HandleSectionNavigation);
 	TopBarWidget->OnCloseButtonClickedDelegate.BindLambda([this]()
@@ -124,9 +124,10 @@ void USectionSwitcherWidget::ChangeSection(EUISections Section)
 					if (!IsValid(InventoryWidgetRef) || !IsValid(InventoryWidgetControllerRef)) return;
 					
 					InventoryWidgetRef->SetWidgetController(InventoryWidgetControllerRef);
-					InventoryWidgetControllerRef->BroadCastInitialValues();
 					
 					SectionWidgetSwitcher->AddChild(InventoryWidgetRef);
+
+					InventoryWidgetControllerRef->BroadCastInitialValues();
 				}
 
 				if (SectionWidgetSwitcher->GetActiveWidget() != InventoryWidgetRef)

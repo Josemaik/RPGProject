@@ -29,9 +29,6 @@ private:
 	void SetDropHighlight(bool bEnabled) const;
 
 	UPROPERTY(EditAnywhere, meta = (BindWidget), Category = "UI")
-	UBorder* DropItemToWorldContainer;
-
-	UPROPERTY(EditAnywhere, meta = (BindWidget), Category = "UI")
 	UImage* DropItemImage;
 
 	UPROPERTY(EditAnywhere, meta = (BindWidget), Category = "UI")

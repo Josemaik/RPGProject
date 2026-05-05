@@ -11,9 +11,9 @@ void UAlchemyCategoryConsumablesWidget::ReceiveInventoryEntry(const FRPGInventor
 	Super::ReceiveInventoryEntry(Entry, Definition);
 }
 
-void UAlchemyCategoryConsumablesWidget::RemoveEntry(int64 ItemID)
+void UAlchemyCategoryConsumablesWidget::RemoveEntry(const FRPGInventoryEntry& Entry)
 {
-	Super::RemoveEntry(ItemID);
+	Super::RemoveEntry(Entry);
 }
 
 void UAlchemyCategoryConsumablesWidget::NativeConstruct()

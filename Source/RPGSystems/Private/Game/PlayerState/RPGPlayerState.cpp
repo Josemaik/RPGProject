@@ -80,8 +80,8 @@ void ARPGPlayerState::AddToExperience(const FScalableFloat& XPScale)
 	CurrentExperience += XPScale.GetValueAtLevel(PlayerLevel);
 	const float RequiredExperience = RequiredLevelUpExperience.GetValueAtLevel(PlayerLevel);
 
-	GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue,
-	FString::Printf(TEXT("%s Gained %.2f Experience"),*GetOwner()->GetName(),XPScale.GetValueAtLevel(PlayerLevel)));
+	// GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue,
+	// FString::Printf(TEXT("%s Gained %.2f Experience"),*GetOwner()->GetName(),XPScale.GetValueAtLevel(PlayerLevel)));
 	
 	if (CurrentExperience >= RequiredExperience)
 	{

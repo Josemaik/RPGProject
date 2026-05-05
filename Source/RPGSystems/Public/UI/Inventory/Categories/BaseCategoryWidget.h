@@ -23,7 +23,7 @@ public:
 	virtual void NativeConstruct() override;
 	virtual void ReceiveInventoryEntry(const FRPGInventoryEntry& Entry, 
 									   const FMasterItemDefinition& Definition);
-	virtual void RemoveEntry(int64 ItemID);
+	virtual void RemoveEntry(const FRPGInventoryEntry& Entry);
 	virtual void UpdateEntry(const FRPGInventoryEntry& Entry) {}
 	virtual const FRPGInventoryEntry* GetSelectedItem();
 	void QuickSortPanels();

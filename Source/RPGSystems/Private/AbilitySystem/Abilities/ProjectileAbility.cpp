@@ -68,8 +68,8 @@ void UProjectileAbility::SpawnProjectile()
 		return;
 	}
 
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Cyan,
-		FString::Printf(TEXT("Spawning Projectile %s On Server"), *CurrentProjectileParams.ProjectileClass->GetName()));
+	// GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Cyan,
+	// 	FString::Printf(TEXT("Spawning Projectile %s On Server"), *CurrentProjectileParams.ProjectileClass->GetName()));
 
 	if (const USceneComponent* SpawnPointComp = IRPGAbilitySystemInterface::Execute_GetDynamicSpawnPoint(AvatarActorFromInfo))
 	{

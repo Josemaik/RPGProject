@@ -69,8 +69,8 @@ UEquipmentInstance* FRPGEquipmentList::AddEntry(const TSubclassOf<UEquipmentDefi
 	
 	EquipmentEntryDelegate.Broadcast(NewEntry);
 
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red,
-			FString::Printf(TEXT("Equipped Item: %s"), *NewEntry.EntryTag.ToString()));
+	// GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red,
+	// 		FString::Printf(TEXT("Equipped Item: %s"), *NewEntry.EntryTag.ToString()));
 	
 	return NewEntry.Instance;
 }
@@ -203,8 +203,8 @@ void FRPGEquipmentList::PreReplicatedRemove(const TArrayView<int32> RemovedIndic
 		
 		EquipmentEntryDelegate.Broadcast(Entry);
 		
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red,
-			FString::Printf(TEXT("UnEquipped Item: %s"), *Entry.EntryTag.ToString()));
+		// GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red,
+		// 	FString::Printf(TEXT("UnEquipped Item: %s"), *Entry.EntryTag.ToString()));
 	}
 }
 
@@ -216,8 +216,8 @@ void FRPGEquipmentList::PostReplicatedAdd(const TArrayView<int32> AddedIndices, 
 		
 		EquipmentEntryDelegate.Broadcast(Entry);
 		
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red,
-			FString::Printf(TEXT("Equipped Item: %s"), *Entry.EntryTag.ToString()));
+		// GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red,
+		// 	FString::Printf(TEXT("Equipped Item: %s"), *Entry.EntryTag.ToString()));
 	}
 }
 

@@ -1,33 +1,32 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "UI/Inventory/Categories/EquipmentCategoryWidget.h"
-
+#include "UI/Inventory/Categories/UtilityCategoryWidget.h"
 #include "Components/HorizontalBoxSlot.h"
 #include "UI/Inventory/ItemsPanelWidget.h"
 
-void UEquipmentCategoryWidget::ReceiveInventoryEntry(const FRPGInventoryEntry& Entry,
-                                                     const FMasterItemDefinition& Definition)
+void UUtilityCategoryWidget::ReceiveInventoryEntry(const FRPGInventoryEntry& Entry,
+													 const FMasterItemDefinition& Definition)
 {
 	Super::ReceiveInventoryEntry(Entry, Definition);
 }
 
-void UEquipmentCategoryWidget::RemoveEntry(const FRPGInventoryEntry& Entry)
+void UUtilityCategoryWidget::RemoveEntry(const FRPGInventoryEntry& Entry)
 {
 	Super::RemoveEntry(Entry);
 }
 
-const FRPGInventoryEntry* UEquipmentCategoryWidget::GetSelectedItem()
+const FRPGInventoryEntry* UUtilityCategoryWidget::GetSelectedItem()
 {
 	return Super::GetSelectedItem();
 }
 
-void UEquipmentCategoryWidget::NativeConstruct()
+void UUtilityCategoryWidget::NativeConstruct()
 {
-	if (!IsValid(WeaponsPanel) || !IsValid(ArmorPanel)) return;
+	if (!IsValid(QuestItemsPanel) || !IsValid(OthersPanel)) return;
 	
-	SubCategoryPanels.Add(WeaponsPanel);
-	SubCategoryPanels.Add(ArmorPanel);
+	SubCategoryPanels.Add(QuestItemsPanel);
+	SubCategoryPanels.Add(OthersPanel);
 
 	for (auto& Panel : SubCategoryPanels)
 	{

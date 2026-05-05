@@ -59,7 +59,8 @@ void UAssasinationAbility::ActivateAbility(const FGameplayAbilitySpecHandle Hand
 		{
 			if (IAssasinationInterface* AssasinationInterface = Cast<IAssasinationInterface>(OverlappingActor))
 			{
-				AssasinationInterface->StealthBackAssasin(TargetLocation,TargetRotation); 
+				AssasinationInterface->StealthBackAssasin(TargetLocation,TargetRotation);
+				ActorAssasinated = OverlappingActor;
 				bFoundTarget = true;
 				break;
 			}
@@ -109,6 +110,7 @@ void UAssasinationAbility::PlayAssasinationAnimation(FVector& TargetLocation,FRo
 void UAssasinationAbility::OnAssasinationMontageCompleted()
 {
 	EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+	ActorAssasinated->Destroy();
 }
 
 void UAssasinationAbility::OnAssasinationMontageFailed()

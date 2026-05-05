@@ -16,8 +16,6 @@ void UItemsDropToWorldWidget::NativeDestruct()
 bool UItemsDropToWorldWidget::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent,
                                            UDragDropOperation* InOperation)
 {
-	GEngine->AddOnScreenDebugMessage(-1,5.f,FColor::White,FString::Printf(TEXT("Drop To World")));
-
 	UItemSlotDragDrogOperation* DragDropOp = Cast<UItemSlotDragDrogOperation>(InOperation);
 	if (!IsValid(DragDropOp)) return false;
 	

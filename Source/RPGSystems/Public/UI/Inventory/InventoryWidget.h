@@ -206,6 +206,15 @@ private:
 	UEquipmentSlot* ConsumableSlot2;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget,AllowPrivateAccess="true"), Category = "UI")
 	UEquipmentSlot* ConsumableSlot3;
+	//Armor
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget,AllowPrivateAccess="true"), Category = "UI")
+	UEquipmentSlot* ChestSlot;
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget,AllowPrivateAccess="true"), Category = "UI")
+	UEquipmentSlot* GauntletSlot;
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget,AllowPrivateAccess="true"), Category = "UI")
+	UEquipmentSlot* BootsSlot;
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget,AllowPrivateAccess="true"), Category = "UI")
+	UEquipmentSlot* TrousersSLot;
 
 	TArray<UEquipmentSlot*> EquipmentSlots;
 };

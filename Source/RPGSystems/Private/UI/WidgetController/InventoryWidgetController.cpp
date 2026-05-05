@@ -58,8 +58,6 @@ void UInventoryWidgetController::EquipItem(const FRPGInventoryEntry& Entry) cons
 	if (!IsValid(OwningInventory)) return;
 	
 	OwningInventory->UseItem(Entry,1);
-	
-	GEngine->AddOnScreenDebugMessage(-1,5.f,FColor::Red,FString::Printf(TEXT("numentries: %d"),OwningInventory->InventoryList.GetEntries().Num()));
 }
 
 void UInventoryWidgetController::AddEquippedItem(FGameplayTag ItemTag,uint64 ExistingID) const
@@ -67,8 +65,6 @@ void UInventoryWidgetController::AddEquippedItem(FGameplayTag ItemTag,uint64 Exi
 	if (!IsValid(OwningInventory)) return;
 	
 	OwningInventory->AddItem(ItemTag,ExistingID);
-
-	GEngine->AddOnScreenDebugMessage(-1,5.f,FColor::Green,FString::Printf(TEXT("numentries: %d"),OwningInventory->InventoryList.GetEntries().Num()));
 }
 
 void UInventoryWidgetController::UnEquipItem(const FGameplayTag ItemTag) const

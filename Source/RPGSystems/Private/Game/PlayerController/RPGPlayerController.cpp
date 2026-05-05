@@ -181,7 +181,6 @@ UInventoryWidgetController* ARPGPlayerController::GetInventoryWidgetController()
 		
 	InventoryWidgetControllerRef->SetOwningActor(this);
 	InventoryWidgetControllerRef->BindCallbacksToDependencies();
-	InventoryWidgetControllerRef->BroadCastInitialValues();
 
 	return InventoryWidgetControllerRef;
 }

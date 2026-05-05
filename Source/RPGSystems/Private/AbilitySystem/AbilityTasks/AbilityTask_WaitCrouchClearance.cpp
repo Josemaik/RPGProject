@@ -53,9 +53,9 @@ void UAbilityTask_WaitCrouchClearance::TickTask(float DeltaTime)
 
 	if (bShowDebug && IsValid(TraceHit.GetActor()))
 	{
-		GEngine->AddOnScreenDebugMessage(-1,3.f,FColor::Red,
-			FString::Printf(TEXT("Overlaping with: %s + %s"),*TraceHit.GetActor()->GetActorNameOrLabel(),
-				*TraceHit.Component.Get()->GetName())); 
+		// GEngine->AddOnScreenDebugMessage(-1,3.f,FColor::Red,
+		// 	FString::Printf(TEXT("Overlaping with: %s + %s"),*TraceHit.GetActor()->GetActorNameOrLabel(),
+		// 		*TraceHit.Component.Get()->GetName())); 
 	}
 	//if there is no blocking collision above us within radius, then we have clearance to stop crouching
 	if (!TraceHit.bBlockingHit)

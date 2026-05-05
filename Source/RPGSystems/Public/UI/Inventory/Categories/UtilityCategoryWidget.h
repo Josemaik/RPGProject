@@ -4,16 +4,13 @@
 
 #include "CoreMinimal.h"
 #include "BaseCategoryWidget.h"
-#include "EquipmentCategoryWidget.generated.h"
-
+#include "UtilityCategoryWidget.generated.h"
 DECLARE_DELEGATE_TwoParams(FOnEquipentDropped,FGameplayTag ItemTag,uint64 ExistingID)
-
-class UItemsPanelWidget;
 /**
  * 
  */
 UCLASS()
-class RPGSYSTEMS_API UEquipmentCategoryWidget : public UBaseCategoryWidget
+class RPGSYSTEMS_API UUtilityCategoryWidget : public UBaseCategoryWidget
 {
 	GENERATED_BODY()
 
@@ -29,8 +26,8 @@ public:
 private:
 	virtual void NativeConstruct() override;
 	UPROPERTY(meta=(BindWidget))
-	UItemsPanelWidget* WeaponsPanel;   //filter tag: Item.Equipment.Weapon
+	UItemsPanelWidget* QuestItemsPanel;   //filter tag: Item.Equipment.Weapon
 
 	UPROPERTY(meta=(BindWidget))
-	UItemsPanelWidget* ArmorPanel;     //filter tag: Item.Equipment.Armor
+	UItemsPanelWidget* OthersPanel;     //filter tag: Item.Equipment.Armor
 };

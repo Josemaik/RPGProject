@@ -33,6 +33,9 @@ private:
 	TWeakObjectPtr<UAnimInstance> AnimInstanceRef;
 
 	UPROPERTY()
+	TObjectPtr<AActor> ActorAssasinated;
+
+	UPROPERTY()
 	TWeakObjectPtr<URPGMotionWarpingComponent> MotionWarpingCompRef;
 
 	UPROPERTY(EditDefaultsOnly, Category="Custom Values|Animation")
