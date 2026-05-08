@@ -3,10 +3,10 @@
 
 #include "UI/Inventory/Categories/AlchemyCategoryConsumablesWidget.h"
 
-#include "UI/Inventory/ItemsPanelWidget.h"
+#include "UI/Inventory/GridItemsPanelWidget.h"
 
 void UAlchemyCategoryConsumablesWidget::ReceiveInventoryEntry(const FRPGInventoryEntry& Entry,
-															const FMasterItemDefinition& Definition)
+                                                              const FMasterItemDefinition& Definition)
 {
 	Super::ReceiveInventoryEntry(Entry, Definition);
 }

@@ -6,7 +6,7 @@
 #include "GameplayTagContainer.h"
 #include "Blueprint/UserWidget.h"
 #include "Interfaces/URPGDragDropInterface.h"
-#include "UI/Inventory/Base/BaseInventorySlot.h"
+#include "UI/Inventory/Slots/BaseInventorySlot.h"
 #include "EquipmentSlot.generated.h"
 
 class UOverlaySlot;
@@ -31,6 +31,8 @@ public:
 	void SetTooltipReference(UItemToolTip* InTooltip) { ItemToolTipReference = InTooltip; }
 	virtual void EmptySlot() override;
 	FGameplayTag GetSlotTag() const { return SlotTag; };
+
+	void EnableDrawOverPreview();
 	
 	FOnEquipItem OnEquipItem;
 	FOnUnequipItem OnUnequipItem;
@@ -49,11 +51,11 @@ protected:
 	
 	virtual void DragVisualEnable(bool bEnable) override;
 	virtual void DisableDragOverPreview() override;
+	void EquipItemSlot(const FRPGInventoryEntry& Entry,const FMasterItemDefinition& ItemDefinition);
 private:
 	virtual void NativePreConstruct() override;
 	void HandleMouseEntered(UBaseInventorySlot* BaseSlot);
 	void HandleMouseLeaved(UBaseInventorySlot* BaseSlot);
-	void EquipItemSlot(const FRPGInventoryEntry& Entry,const FMasterItemDefinition& ItemDefinition);
 	
 	UPROPERTY(EditAnywhere,BlueprintReadOnly, Category= "Config",meta=(AllowPrivateAccess=true))
 	FGameplayTag SlotTag;

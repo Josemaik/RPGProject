@@ -1,18 +1,17 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "UI/Inventory/Equipment/EquipmentSlot.h"
+#include "UI/Inventory/Slots/EquipmentSlot.h"
 
 #include "AbilitySystem/NativeTags/RPGInventoryTags.h"
 #include "Blueprint/SlateBlueprintLibrary.h"
 #include "Blueprint/WidgetBlueprintLibrary.h"
-#include "Components/CanvasPanelSlot.h"
 #include "Components/Image.h"
 #include "Components/OverlaySlot.h"
 #include "Components/SizeBox.h"
 #include "InventorySection/InventoryComponent.h"
 #include "Libraries/RPGUIStatics.h"
-#include "UI/Inventory/ItemSlotDragDrogOperation.h"
+#include "UI/Inventory/Slots/ItemSlotDragDrogOperation.h"
 #include "UI/Inventory/ItemDragVisualWidget.h"
 #include "UI/Inventory/ItemToolTip.h"
 
@@ -96,6 +95,12 @@ void UEquipmentSlot::EmptySlot()
 	//	IconBoxSlot->SetPadding(20.f);
 	IconBox->SetColorAndOpacity(FLinearColor(1.f, 1.f, 1.f, 1.f));
 	//DragVisualEnable();
+}
+
+void UEquipmentSlot::EnableDrawOverPreview()
+{
+	EquipVisual(CurrentItemDefinition.Icon.Get(), CurrentItemDefinition.RarityTag);
+	BackgroundRarity->SetOpacity(1.f);
 }
 
 void UEquipmentSlot::HandleMouseEntered(UBaseInventorySlot* BaseSlot)

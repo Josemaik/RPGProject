@@ -6,9 +6,7 @@
 #include "GameplayTagContainer.h"
 #include "ItemSlotDragDrogOperation.h"
 #include "SlotSizeCategories.h"
-#include "Base/BaseInventorySlot.h"
-#include "Blueprint/UserWidget.h"
-#include "Interfaces/URPGDragDropInterface.h"
+#include "BaseInventorySlot.h"
 #include "InventorySection/InventoryComponent.h"
 #include "ItemSlotWidget.generated.h"
 

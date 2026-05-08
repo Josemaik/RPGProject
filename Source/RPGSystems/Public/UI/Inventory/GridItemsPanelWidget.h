@@ -4,10 +4,10 @@
 
 #include "CoreMinimal.h"
 #include "GameplayTagContainer.h"
-#include "SlotSizeCategories.h"
+#include "UI/Inventory/Slots/SlotSizeCategories.h"
 #include "Blueprint/UserWidget.h"
 #include "InventorySection/InventoryComponent.h"
-#include "ItemsPanelWidget.generated.h"
+#include "GridItemsPanelWidget.generated.h"
 
 class UBorder;
 class USizeBox;
@@ -17,7 +17,6 @@ class UItemSlotDragDrogOperation;
 class UBaseInventorySlot;
 class UItemToolTip;
 enum class EItemSortType : uint8;
-class USortPanelWidget;
 enum class ESlotSizeCategories : uint8;
 struct FMasterItemDefinition;
 struct FRPGInventoryEntry;
@@ -26,6 +25,7 @@ class UUniformGridPanel;
 
 DECLARE_DELEGATE_TwoParams(FOnEquipentDropped,FGameplayTag ItemTag,uint64 ExistingID)
 DECLARE_DELEGATE_OneParam(FOnSelectItem, FGameplayTag SubCategory)
+
 USTRUCT()
 struct FItemSlotData
 {
@@ -44,23 +44,19 @@ struct FItemSlotData
 	FSlateBrush IconBrush;
 	
 	ESlotSizeCategories Size;
+	int32 NumSlots; // 1 o 2
 	
 	UPROPERTY()
 	bool bIsEmpty = true;
+
 };
 
-struct FLogicalItem
-{
-	FRPGInventoryEntry Entry;
-	FMasterItemDefinition ItemDefinition;
-	int32 Size; // 1 o 2
-};
 
 /**
  * 
  */
 UCLASS()
-class RPGSYSTEMS_API UItemsPanelWidget : public UUserWidget
+class RPGSYSTEMS_API UGridItemsPanelWidget : public UUserWidget
 {
 	GENERATED_BODY()
 
@@ -85,6 +81,8 @@ public:
 	
 	void ResetItemsArray();
 
+	void BuildSortedItems(TArray<FItemSlotData>& SortedItems);
+	void ResetWithSortedItems(TArray<FItemSlotData> SortedItems);
 	void SortItemsQuicly();
 	void SortItemsBy(EItemSortType SortType);
 
@@ -92,25 +90,25 @@ public:
 
 	FGameplayTag GetItemCategory(FGameplayTag ItemTag);
 	int32 GetMaxColums() const { return MaxColumns; }
-	
 	UItemSlotWidget* GetItemSlotbyIndex(int32 Index) const;
 	FGameplayTag GetSubCategoryTag() const { return SubCategoryTag; }
 	
-	//FGameplayTag CurrentCategoryTag;
-	
-	UPROPERTY()
-	UItemSlotDragDrogOperation* CurrentDragOperation;
-	
-
-private:
+protected:
 	virtual void NativeConstruct() override;
 	virtual void NativePreConstruct() override;
-	
+
+private:
 	void HandleItemDropped(int32 DroppedIndex,int32 NewIndex,EDragOverResult SubCategoryResult);
 	bool TryDropInNewSlot(int32 DroppedIndex,int32 NewIndex);
+	bool TryDropFromEquipment(int32 ToIndex);
 	void HandleDraggedItemEntered(int32 EnteredIndex,int32 NewIndex,EDragOverResult Result);
+	void HandleDragEntered_FromEquipment(int32 TargetIndex, EDragOverResult SubCategoryResult);
+	void HandleDragEntered_FromGrid(int32 DraggedIndex, int32 TargetIndex, EDragOverResult SubCategoryResult);
 	void HandleDraggedItemLeaved(int32 DraggedIndex,int32 NewIndex,EDragOverResult Result);
 	void HandleDragCancelled(int32 FailedIndex, int32 FromIndex, ESlotSizeCategories DraggedSize);
+	
+	void ClearDragPreviews(int32 SuperiorIndex, int32 LowerIndex,bool clearicon = true) const;
+	void ApplyDragPreview(int32 SuperiorIndex, int32 LowerIndex, EDragOverResult Result);
 
 	void HandleSlotHovered(UBaseInventorySlot* BaseSlot);
 	void HandleSlotLeaved(UBaseInventorySlot* SlotWidget);
@@ -121,8 +119,8 @@ private:
 	void ActivateSlotAtIndex(int32 Index);
 
 	void HandleEquipmentEntered(UItemSlotDragDrogOperation* InCurrentDragOperation);
-	
 	void ResetSlotData(FItemSlotData& ItemSlotData);
+	
 	int32 LastHoveredIndex = INDEX_NONE;
 	int32 OldSelectedIndex = INDEX_NONE;
 	int32 CurrentSelectedIndex = 0;
@@ -130,46 +128,54 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "Grid")
 	float SlotSize = 90.f;
-	
-	UPROPERTY(EditAnywhere, meta = (BindWidget), Category = "UI")
-	USizeBox* SizeBox;
-	
-	UPROPERTY(VisibleAnywhere, meta = (BindWidget), Category = "UI")
-	UUniformGridPanel* ItemsPanel;
-
-	UPROPERTY(VisibleAnywhere, meta = (BindWidget), Category = "UI")
-	UTextBlock* SubCategoryText;
 
 	UPROPERTY(EditAnywhere,BlueprintReadOnly, Category="UI", meta=(ExposeOnSpawn=true,AllowPrivateAccess=true))
 	FText SubCategoryEditableText;
-
+	
 	UPROPERTY(EditAnywhere, meta = (BindWidget), Category = "UI")
 	FGameplayTag SubCategoryTag;
 
-	UPROPERTY(EditAnywhere, meta = (BindWidget), Category = "UI")
-	UBorder* BorderWidget;
-
-	UPROPERTY(Transient, meta=(BindWidgetAnim))
-	UWidgetAnimation* SelectedPanelAnimation;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Data")
-	TSubclassOf<UItemSlotWidget> ItemSlotWidgetClass;
-
-	UPROPERTY()
-	UItemToolTip* ItemToolTipReference;
-	
-	UPROPERTY(EditDefaultsOnly, Category = "UI")
-	TSubclassOf<UItemToolTip> TooltipWidgetClass;
-
 	TArray<FItemSlotData> ItemsArray;
 	int32 NumOcuppiedSlots = 0;
-	//TMap<FGameplayTag, TArray<FItemSlotData>> CategoryItemsMap;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(AllowPrivateAccess="true"), Category = "Data")
 	int32 MaxColumns = 5;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(AllowPrivateAccess="true"), Category = "Data")
 	int32 NUM_INITIAL_EMPTY_SLOTS = 35;
+	
+	//References
+	UPROPERTY()
+	TObjectPtr<UItemToolTip> ItemToolTipReference;
+
+	UPROPERTY()
+	TObjectPtr<UItemSlotDragDrogOperation> CurrentDragOperation;
+	
+	//Subclass
+	UPROPERTY(EditDefaultsOnly, Category = "Data")
+	TSubclassOf<UItemSlotWidget> ItemSlotWidgetClass;
+
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<UItemToolTip> TooltipWidgetClass;
+	
+	//////////////////////
+	// Layout
+	
+	UPROPERTY(EditAnywhere, meta = (BindWidget), Category = "UI")
+	TObjectPtr<USizeBox> SizeBox;
+	
+	UPROPERTY(VisibleAnywhere, meta = (BindWidget), Category = "UI")
+	TObjectPtr<UUniformGridPanel> ItemsPanel;
+
+	UPROPERTY(VisibleAnywhere, meta = (BindWidget), Category = "UI")
+	TObjectPtr<UTextBlock> SubCategoryText;
+	
+	UPROPERTY(EditAnywhere, meta = (BindWidget), Category = "UI")
+	TObjectPtr<UBorder> BorderWidget;
+
+	UPROPERTY(Transient, meta=(BindWidgetAnim))
+	TObjectPtr<UWidgetAnimation> SelectedPanelAnimation;
 };
+
 
 

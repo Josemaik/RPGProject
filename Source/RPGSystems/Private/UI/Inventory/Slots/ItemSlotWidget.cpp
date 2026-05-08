@@ -1,17 +1,15 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "UI/Inventory/ItemSlotWidget.h"
+#include "UI/Inventory/Slots/ItemSlotWidget.h"
 
 #include "GameplayTagContainer.h"
 #include "AbilitySystem/NativeTags/RPGInventoryTags.h"
-#include "Animation/WidgetAnimation.h"
 #include "Blueprint/WidgetBlueprintLibrary.h"
-#include "Components/CanvasPanelSlot.h"
 #include "Components/Image.h"
 #include "Components/TextBlock.h"
 #include "InventorySection/InventoryComponent.h"
-#include "UI/Inventory/ItemSlotDragDrogOperation.h"
+#include "UI/Inventory/Slots/ItemSlotDragDrogOperation.h"
 #include "Components/OverlaySlot.h"
 #include "Libraries/RPGUIStatics.h"
 #include "UI/Inventory/ItemDragVisualWidget.h"

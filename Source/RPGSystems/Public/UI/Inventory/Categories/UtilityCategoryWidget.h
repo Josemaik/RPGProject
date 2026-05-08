@@ -26,8 +26,8 @@ public:
 private:
 	virtual void NativeConstruct() override;
 	UPROPERTY(meta=(BindWidget))
-	UItemsPanelWidget* QuestItemsPanel;   //filter tag: Item.Equipment.Weapon
+	UGridItemsPanelWidget* QuestItemsPanel;   //filter tag: Item.Equipment.Weapon
 
 	UPROPERTY(meta=(BindWidget))
-	UItemsPanelWidget* OthersPanel;     //filter tag: Item.Equipment.Armor
+	UGridItemsPanelWidget* OthersPanel;     //filter tag: Item.Equipment.Armor
 };

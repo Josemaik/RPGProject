@@ -1,12 +1,12 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "UI/Inventory/Base/BaseInventorySlot.h"
+#include "UI/Inventory/Slots/BaseInventorySlot.h"
 
 #include "Animation/WidgetAnimation.h"
-#include "Components/CanvasPanelSlot.h"
 #include "Components/Image.h"
 #include "Libraries/RPGUIStatics.h"
+#include "UI/Inventory/Slots/SlotSizeCategories.h"
 #include "UI/Inventory/ItemDragVisualWidget.h"
 
 void UBaseInventorySlot::NativeConstruct()

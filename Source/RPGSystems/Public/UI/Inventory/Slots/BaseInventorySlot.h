@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "UI/Inventory/SlotSizeCategories.h"
+#include "UI/Inventory/Slots/SlotSizeCategories.h"
 #include "Blueprint/UserWidget.h"
 #include "InventorySection/InventoryComponent.h"
 #include "BaseInventorySlot.generated.h"

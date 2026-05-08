@@ -26,5 +26,5 @@ public:
 private:
 	virtual void NativeConstruct() override;
 	UPROPERTY(meta=(BindWidget))
-	UItemsPanelWidget* FoodAndDrinkPanel;   //filter tag: Item.Equipment.Weapon
+	UGridItemsPanelWidget* FoodAndDrinkPanel;   //filter tag: Item.Equipment.Weapon
 };

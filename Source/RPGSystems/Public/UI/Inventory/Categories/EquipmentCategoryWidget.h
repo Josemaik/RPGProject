@@ -8,7 +8,7 @@
 
 DECLARE_DELEGATE_TwoParams(FOnEquipentDropped,FGameplayTag ItemTag,uint64 ExistingID)
 
-class UItemsPanelWidget;
+class UGridItemsPanelWidget;
 /**
  * 
  */
@@ -29,8 +29,8 @@ public:
 private:
 	virtual void NativeConstruct() override;
 	UPROPERTY(meta=(BindWidget))
-	UItemsPanelWidget* WeaponsPanel;   //filter tag: Item.Equipment.Weapon
+	UGridItemsPanelWidget* WeaponsPanel;   //filter tag: Item.Equipment.Weapon
 
 	UPROPERTY(meta=(BindWidget))
-	UItemsPanelWidget* ArmorPanel;     //filter tag: Item.Equipment.Armor
+	UGridItemsPanelWidget* ArmorPanel;     //filter tag: Item.Equipment.Armor
 };

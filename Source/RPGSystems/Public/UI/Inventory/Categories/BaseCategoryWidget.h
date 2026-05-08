@@ -8,7 +8,7 @@
 #include "BaseCategoryWidget.generated.h"
 
 enum class EItemSortType : uint8;
-class UItemsPanelWidget;
+class UGridItemsPanelWidget;
 struct FMasterItemDefinition;
 struct FRPGInventoryEntry;
 /**
@@ -30,7 +30,7 @@ public:
 	void SortPanels(EItemSortType SortType);
 protected:
 	FGameplayTag LastSelectedSubCategory = FGameplayTag();
-	TArray<UItemsPanelWidget*> SubCategoryPanels;
+	TArray<UGridItemsPanelWidget*> SubCategoryPanels;
 private:
 	void OnSubPanelSelected(FGameplayTag NewSelectedCategory);
 };

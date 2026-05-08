@@ -2,7 +2,6 @@
 
 
 #include "UI/Inventory/SortOptionEntryWidget.h"
-
 #include "Components/Button.h"
 #include "Components/CheckBox.h"
 #include "Components/TextBlock.h"

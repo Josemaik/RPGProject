@@ -12,13 +12,12 @@
 #include "InventorySection/InventoryComponent.h"
 #include "UI/Inventory/ItemCategoryButton.h"
 #include "UI/Inventory/ItemsDropToWorldWidget.h"
-#include "UI/Inventory/ItemSlotWidget.h"
-#include "UI/Inventory/ItemsPanelWidget.h"
+#include "UI/Inventory/Slots/ItemSlotWidget.h"
 #include "UI/Inventory/ItemToolTip.h"
 #include "UI/Inventory/SortPanelWidget.h"
 #include "UI/Inventory/Categories/BaseCategoryWidget.h"
 #include "UI/Inventory/Categories/EquipmentCategoryWidget.h"
-#include "UI/Inventory/Equipment/EquipmentSlot.h"
+#include "UI/Inventory/Slots/EquipmentSlot.h"
 #include "UI/WidgetController/InventoryWidgetController.h"
 
 void UInventoryWidget::SetWidgetController(UInventoryWidgetController* InWidgetController)
@@ -26,7 +25,7 @@ void UInventoryWidget::SetWidgetController(UInventoryWidgetController* InWidgetC
 	InventoryWidgetController = InWidgetController;
 	
 	CurrentCategorySelected = RPGInventoryTags::ItemsCategory::Equipment;
-	//ItemsContainer->CurrentCategoryTag = CurrentCategorySelected;
+	
 	//Add category widgets to switcher and map
 	for (const FCategoryButtonData& Data : Categories)
 	{
@@ -87,7 +86,8 @@ void UInventoryWidget::NativeConstruct()
 	ItemToolTipReference = CreateWidget<UItemToolTip>(GetOwningPlayer(), TooltipWidgetClass);
 	ItemToolTipReference->AddToViewport(999); 
 	ItemToolTipReference->SetVisibility(ESlateVisibility::Collapsed);
-	
+
+	//** move to specific widget**/
 	SilverSword->OnEquipItem.BindUObject(this, &ThisClass::OnEquipItem);
 	SteelWeapon->OnEquipItem.BindUObject(this, &ThisClass::OnEquipItem);
 	Bolls->OnEquipItem.BindUObject(this, &ThisClass::OnEquipItem);
@@ -126,6 +126,7 @@ void UInventoryWidget::NativeConstruct()
 	InitEquipmentWidget(BootsSlot);
 	InitEquipmentWidget(GauntletSlot);
 	InitEquipmentWidget(TrousersSLot);
+	//--------------------------------------/
 	
 	ItemsDropToWorldWidget->OnItemDroppedPanelDelegate.BindUObject(this, &ThisClass::HandleItemDropped);
 
@@ -149,7 +150,6 @@ void UInventoryWidget::InitEquipmentWidget(UEquipmentSlot* EquipmentSlot)
 	EquipmentSlot->OnSwapToPanelDelegate.BindLambda([this](const FRPGInventoryEntry& OldEntry)
 	{
 		InventoryWidgetController->AddEquippedItem(OldEntry.ItemTag,OldEntry.ItemID);
-		//HandleInventoryItemReceived(OldEntry);
 	});
 }
 
@@ -177,7 +177,6 @@ void UInventoryWidget::BindInventoryItemDelegates()
 	InventoryWidgetController->OnSortItemsRequested.AddUObject(this, &UInventoryWidget::SortItems);
 	InventoryWidgetController->OnEquipKeyPressed.AddUObject(this,&UInventoryWidget::OnEquipKeyPressed);
 	InventoryWidgetController->OnDropKeyPressed.AddUObject(this,&UInventoryWidget::OnDropKeyPressed);
-	//ItemsContainer->OnEquipmentDropped.BindUObject(this,&UInventoryWidget::OnEquipmentDropped);
 }
 
 void UInventoryWidget::HandleCategorySelected(FGameplayTag CategorySelected)
@@ -192,7 +191,7 @@ void UInventoryWidget::HandleCategorySelected(FGameplayTag CategorySelected)
 	if (UItemCategoryButton* NewButton = CategoryButtonsMap.FindRef(CategorySelected))
 	{
 		NewButton->Select();
-		LastCategorySelected = NewButton; // opcional si quieres mantenerlo
+		LastCategorySelected = NewButton; 
 	}
 	
 	//New Category
@@ -206,7 +205,6 @@ void UInventoryWidget::HandleCategorySelected(FGameplayTag CategorySelected)
 
 void UInventoryWidget::SortItems(bool Quickly)
 {
-	//if (!IsValid(ItemsContainer)) return;
 	UBaseCategoryWidget* ActiveCategory = Cast<UBaseCategoryWidget>(CategorySwitcher->GetActiveWidget());
 	if (!IsValid(ActiveCategory)) return;
 	if (Quickly)
@@ -240,7 +238,6 @@ void UInventoryWidget::OnSortPanelOptionChanged(EItemSortType ItemSort)
 	UBaseCategoryWidget* ActiveCategory = Cast<UBaseCategoryWidget>(CategorySwitcher->GetActiveWidget());
 	if (!IsValid(ActiveCategory)) return;
 	ActiveCategory->SortPanels(ItemSort);
-	//ItemsContainer->SortItemsBy(ItemSort);
 }
 
 void UInventoryWidget::HandleInventoryItemReceived(const FRPGInventoryEntry& Entry)
@@ -274,52 +271,21 @@ void UInventoryWidget::HandleInventoryItemRemoved(const FRPGInventoryEntry& Entr
 	CurrentCategoryWidget->RemoveEntry(Entry);
 }
 
-void UInventoryWidget::OnSearchBarTextChanged(const FText& InText)
-{
-	// if (!IsValid(OwningInventory))
-	// {
-	// 	return;
-	// }
-	//
-	// ItemsContainer->ResetCategory(CurrentCategorySelected);
-	//
-	// if (!IsValid(ItemsContainer)) return;
-	// ItemsContainer->ClearPanel();
-	//
-	// TArray<FRPGInventoryEntry> SearchedEntries = OwningInventory->GetEntriesByString(InText.ToString());
-	//
-	// if (SearchedEntries.IsEmpty()) return;
-	//
-	// for (const FRPGInventoryEntry& Entry : SearchedEntries)
-	// {
-	// 	if (Entry.ItemTag.MatchesTag(CurrentCategorySelected))
-	// 	{
-	// 		UItemSlotWidget* NewItemSlot = NewActiveItem(Entry);
-	// 		if (IsValid(NewItemSlot))
-	// 		{
-	// 			//AddToItemsGrid(NewItemSlot);
-	// 		}
-	// 	}
-	// }
-}
-
 void UInventoryWidget::OnEquipItem(const FRPGInventoryEntry& Entry)
 {
 	if (!IsValid(InventoryWidgetController)) return;
 	
 	InventoryWidgetController->EquipItem(Entry);
-	//ItemsContainer->RemoveItem(Entry.ItemID);
 }
 
 void UInventoryWidget::OnEquipKeyPressed()
 {
-	//if (CurrentCategorySelected != RPGInventoryTags::ItemsCategory::Equipment) return;
 
 	UBaseCategoryWidget* EquipmentCategoryWidget = *CategoryWidgets.Find(CurrentCategorySelected);
 	if (!IsValid(EquipmentCategoryWidget)) return;
 
 	const FRPGInventoryEntry SelectedItem = *EquipmentCategoryWidget->GetSelectedItem();
-	// const FRPGInventoryEntry& SelectedItem = ItemsContainer->GetSelectedItem();
+	
 	if (SelectedItem.ItemID == INDEX_NONE) return;
 	
 	const FMasterItemDefinition& ItemDefinition = InventoryWidgetController->GetInventoryItemDefinition(SelectedItem.ItemTag);
@@ -341,7 +307,6 @@ void UInventoryWidget::OnEquipKeyPressed()
 			break;
 		}	
 	}
-	//InventoryWidgetController->EquipItem(SelectedItem);
 }
 
 void UInventoryWidget::OnDropKeyPressed()
@@ -350,7 +315,7 @@ void UInventoryWidget::OnDropKeyPressed()
 	if (!IsValid(CurrentCategoryWidget)) return;
 
 	const FRPGInventoryEntry& SelectedItem = *CurrentCategoryWidget->GetSelectedItem();
-	//const FRPGInventoryEntry& SelectedItem = ItemsContainer->GetSelectedItem();
+	
 	if (SelectedItem.ItemID == INDEX_NONE) return;
 	
 	InventoryWidgetController->DropItemToWorld(SelectedItem);

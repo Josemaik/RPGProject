@@ -5,7 +5,6 @@
 
 #include "Components/Button.h"
 #include "Components/Image.h"
-#include "Components/TextBlock.h"
 
 void UItemCategoryButton::Init(FGameplayTag Category, FText CategoryText, UTexture2D* IconTexture)
 {

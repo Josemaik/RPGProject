@@ -2,7 +2,6 @@
 
 
 #include "UI/Inventory/SortPanelWidget.h"
-
 #include "Components/Button.h"
 #include "Components/VerticalBox.h"
 #include "UI/Inventory/SortOptionEntryWidget.h"

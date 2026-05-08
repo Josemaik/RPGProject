@@ -3,10 +3,10 @@
 
 #include "UI/Inventory/Categories/UtilityCategoryWidget.h"
 #include "Components/HorizontalBoxSlot.h"
-#include "UI/Inventory/ItemsPanelWidget.h"
+#include "UI/Inventory/GridItemsPanelWidget.h"
 
 void UUtilityCategoryWidget::ReceiveInventoryEntry(const FRPGInventoryEntry& Entry,
-													 const FMasterItemDefinition& Definition)
+                                                   const FMasterItemDefinition& Definition)
 {
 	Super::ReceiveInventoryEntry(Entry, Definition);
 }

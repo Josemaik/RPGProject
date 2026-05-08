@@ -2,10 +2,9 @@
 
 
 #include "UI/Inventory/ItemsDropToWorldWidget.h"
-
 #include "Components/Image.h"
 #include "Components/TextBlock.h"
-#include "UI/Inventory/ItemSlotDragDrogOperation.h"
+#include "UI/Inventory/Slots/ItemSlotDragDrogOperation.h"
 
 void UItemsDropToWorldWidget::NativeDestruct()
 {

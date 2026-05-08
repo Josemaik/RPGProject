@@ -6,7 +6,7 @@
 #include "BaseCategoryWidget.h"
 #include "AlchemyCategoryConsumablesWidget.generated.h"
 
-class UItemsPanelWidget;
+class UGridItemsPanelWidget;
 /**
  * 
  */
@@ -24,11 +24,11 @@ private:
 	virtual void NativeConstruct() override;
 	
 	UPROPERTY(meta=(BindWidget))
-	UItemsPanelWidget* OilsPanel;  
+	UGridItemsPanelWidget* OilsPanel;  
 
 	UPROPERTY(meta=(BindWidget))
-	UItemsPanelWidget* BombsPanel;    
+	UGridItemsPanelWidget* BombsPanel;    
 
 	UPROPERTY(meta=(BindWidget))
-	UItemsPanelWidget* PotionsPanel; 
+	UGridItemsPanelWidget* PotionsPanel; 
 };

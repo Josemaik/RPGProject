@@ -4,10 +4,10 @@
 #include "UI/Inventory/Categories/FoodDrinkCategoryConsumableWidget.h"
 
 #include "Components/HorizontalBoxSlot.h"
-#include "UI/Inventory/ItemsPanelWidget.h"
+#include "UI/Inventory/GridItemsPanelWidget.h"
 
 void UFoodDrinkCategoryConsumableWidget::ReceiveInventoryEntry(const FRPGInventoryEntry& Entry,
-													 const FMasterItemDefinition& Definition)
+                                                               const FMasterItemDefinition& Definition)
 {
 	Super::ReceiveInventoryEntry(Entry, Definition);
 }

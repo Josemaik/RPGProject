@@ -4,7 +4,7 @@
 #include "UI/Inventory/Categories/EquipmentCategoryWidget.h"
 
 #include "Components/HorizontalBoxSlot.h"
-#include "UI/Inventory/ItemsPanelWidget.h"
+#include "UI/Inventory/GridItemsPanelWidget.h"
 
 void UEquipmentCategoryWidget::ReceiveInventoryEntry(const FRPGInventoryEntry& Entry,
                                                      const FMasterItemDefinition& Definition)

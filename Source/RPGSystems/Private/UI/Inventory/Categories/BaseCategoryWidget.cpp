@@ -2,13 +2,13 @@
 
 
 #include "UI/Inventory/Categories/BaseCategoryWidget.h"
-#include "UI/Inventory/ItemsPanelWidget.h"
+#include "UI/Inventory/GridItemsPanelWidget.h"
 
 void UBaseCategoryWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 
-	for (UItemsPanelWidget* Panel : SubCategoryPanels)
+	for (UGridItemsPanelWidget* Panel : SubCategoryPanels)
 	{
 		Panel->OnSelectItemDelegate.BindUObject(this,&UBaseCategoryWidget::OnSubPanelSelected);
 	}
@@ -17,7 +17,7 @@ void UBaseCategoryWidget::NativeConstruct()
 void UBaseCategoryWidget::ReceiveInventoryEntry(const FRPGInventoryEntry& Entry,
 	const FMasterItemDefinition& Definition)
 {
-	for (UItemsPanelWidget* Panel : SubCategoryPanels)
+	for (UGridItemsPanelWidget* Panel : SubCategoryPanels)
 	{
 		if (!IsValid(Panel)) return;
 		if (Definition.SubcategoryTag.MatchesTagExact(Panel->GetSubCategoryTag()))
@@ -29,7 +29,7 @@ void UBaseCategoryWidget::ReceiveInventoryEntry(const FRPGInventoryEntry& Entry,
 
 void UBaseCategoryWidget::RemoveEntry(const FRPGInventoryEntry& Entry)
 {
-	for (UItemsPanelWidget* Panel : SubCategoryPanels)
+	for (UGridItemsPanelWidget* Panel : SubCategoryPanels)
 	{
 		if (!IsValid(Panel)) return;
 		Panel->RemoveItem(Entry);
@@ -38,7 +38,7 @@ void UBaseCategoryWidget::RemoveEntry(const FRPGInventoryEntry& Entry)
 
 const FRPGInventoryEntry* UBaseCategoryWidget::GetSelectedItem()
 {
-	for (UItemsPanelWidget* Panel : SubCategoryPanels)
+	for (UGridItemsPanelWidget* Panel : SubCategoryPanels)
 	{
 		if (LastSelectedSubCategory.MatchesTagExact(Panel->GetSubCategoryTag()))
 		{
@@ -50,7 +50,7 @@ const FRPGInventoryEntry* UBaseCategoryWidget::GetSelectedItem()
 
 void UBaseCategoryWidget::QuickSortPanels()
 {
-	for (UItemsPanelWidget* Panel : SubCategoryPanels)
+	for (UGridItemsPanelWidget* Panel : SubCategoryPanels)
 	{
 		Panel->SortItemsQuicly();
 	}
@@ -58,7 +58,7 @@ void UBaseCategoryWidget::QuickSortPanels()
 
 void UBaseCategoryWidget::SortPanels(EItemSortType SortType)
 {
-	for (UItemsPanelWidget* Panel : SubCategoryPanels)
+	for (UGridItemsPanelWidget* Panel : SubCategoryPanels)
 	{
 		Panel->SortItemsBy(SortType);
 	}
@@ -70,7 +70,7 @@ void UBaseCategoryWidget::OnSubPanelSelected(FGameplayTag NewSelectedCategory)
 
 	const bool bSameCategory = NewSelectedCategory.MatchesTagExact(LastSelectedSubCategory);
 
-	for (UItemsPanelWidget* Panel : SubCategoryPanels)
+	for (UGridItemsPanelWidget* Panel : SubCategoryPanels)
 	{
 		const FGameplayTag PanelTag = Panel->GetSubCategoryTag();
 

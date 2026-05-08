@@ -5,7 +5,7 @@
 
 #include "Components/Image.h"
 #include "Components/SizeBox.h"
-#include "UI/Inventory/SlotSizeCategories.h"
+#include "UI/Inventory/Slots/SlotSizeCategories.h"
 
 void UItemDragVisualWidget::SetIcon(TObjectPtr<UTexture2D> IconTexture, ESlotSizeCategories Size)
 {

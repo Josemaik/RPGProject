@@ -3,37 +3,23 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "ItemSortTypes.h"
+#include "UI/Inventory/ItemSortTypes.h"
 #include "Blueprint/UserWidget.h"
 #include "InventorySection/InventoryComponent.h"
 #include "InventoryWidget.generated.h"
 
+class UHorizontalBox;
+class UItemSlotWidget;
 class UBaseCategoryWidget;
 class UWidgetSwitcher;
 class UItemToolTip;
 class USortPanelWidget;
 class UButton;
-class UKeyHintWidget;
 class UItemsDropToWorldWidget;
-class UItemsPanelWidget;
 class UEquipmentSlot;
 class UItemCategoryButton;
-class UUniformGridPanel;
 struct FRPGInventoryEntry;
-class UEditableText;
-class UItemSlotWidget;
 class UInventoryWidgetController;
-class UInventoryComponent;
-class UScrollBox;
-class UTextBlock;
-class UHorizontalBox;
-class UWrapBox;
-class UOverlay;
-class USizeBox;
-class UBorder;
-class UCanvasPanel;
-class UWidgetController;
-class UVerticalBox;
 
 USTRUCT(BlueprintType)
 struct FCategoryButtonData
@@ -60,34 +46,17 @@ class RPGSYSTEMS_API UInventoryWidget : public UUserWidget
 public:
 
 	void SetWidgetController(UInventoryWidgetController* InWidgetController);
-	//void InitializeKeyHints();
 	
 	void SortItems(bool Quickly);
 
-	UBaseCategoryWidget* GetActiveCategoryWidget() const;
-
 protected:
-	UFUNCTION()
-	void OnQuickSortButtonClicked();
-
-	UFUNCTION()
-	void OnSortButtonClicked();
-
-	UFUNCTION()
-	void OnSortPanelCloseButtonClicked();
-
-	UFUNCTION()
-	void OnSortPanelOptionChanged(EItemSortType ItemSort);
-	
-	void NativeConstruct() override;
+	virtual void NativeConstruct() override;
+	virtual void FinishDestroy() override;
 private:
 	
 	void HandleUnequipItem(const FRPGInventoryEntry& FrpgInventoryEntry);
-	
 	void InitEquipmentWidget(UEquipmentSlot* InEquipmentSlot);
-	virtual void FinishDestroy() override;
 	void OnEquipmentDropped(FGameplayTag ItemTag,uint64 ExistingID);
-	//functions
 	void BindInventoryItemDelegates();
 	void HandleCategorySelected(FGameplayTag CategorySelected);
 	
@@ -100,67 +69,75 @@ private:
 	
 	UFUNCTION()
 	void HandleInventoryItemRemoved(const FRPGInventoryEntry& Entry);
-	
-	UFUNCTION()
-	void OnSearchBarTextChanged(const FText& InText);
 
 	UFUNCTION()
 	void OnEquipItem(const FRPGInventoryEntry& Entry);
 
+	UFUNCTION()
+	void OnQuickSortButtonClicked();
+
+	UFUNCTION()
+	void OnSortButtonClicked();
+
+	UFUNCTION()
+	void OnSortPanelCloseButtonClicked();
+
+	UFUNCTION()
+	void OnSortPanelOptionChanged(EItemSortType ItemSort);
+
 	void OnEquipKeyPressed();
 	void OnDropKeyPressed();
-	
+
+	//Sort Panel
 	void SetSortPanelVisibility();
 	void HideSortPanel();
-
+	
 	bool bShowSortPanelToggle = false;
+	FGameplayTag CurrentCategorySelected;
+	
+	TMap<FGameplayTag, UItemCategoryButton*> CategoryButtonsMap;
+	
+	UPROPERTY(EditAnywhere, Category="Categories")
+	TArray<FCategoryButtonData> Categories;
+
+	UPROPERTY()
+	TMap<FGameplayTag, UBaseCategoryWidget*> CategoryWidgets;
+
+	TArray<UEquipmentSlot*> EquipmentSlots;
 	
 	//References
 	UPROPERTY(BlueprintReadOnly,meta=(allowPrivateAccess=true))
 	TObjectPtr<UInventoryWidgetController> InventoryWidgetController;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Data")
-	TSubclassOf<UItemSlotWidget> ItemSlotWidgetClass;
-	
-	FGameplayTag CurrentCategorySelected;
-
-	/////////////////////////////////
-	//Categories Labels
-
-	UPROPERTY(meta=(BindWidget))
-	UHorizontalBox* CategoriesContainer;
-
-	TMap<FGameplayTag, UItemCategoryButton*> CategoryButtonsMap;
-
 	UPROPERTY()
 	UItemCategoryButton* LastCategorySelected;
 
-	UPROPERTY(EditAnywhere, Category="Categories")
-	TArray<FCategoryButtonData> Categories;
+	UPROPERTY()
+	UItemToolTip* ItemToolTipReference;
 
+	//Subclasses
+	UPROPERTY(EditDefaultsOnly, Category = "Data")
+	TSubclassOf<UItemSlotWidget> ItemSlotWidgetClass;
+	
 	UPROPERTY(EditDefaultsOnly, Category="Categories")
 	TSubclassOf<UItemCategoryButton> CategoryButtonClass;
-
-	//Search Bar
-	// UPROPERTY(VisibleAnywhere, meta = (BindWidget), Category = "UI")
-	// UEditableText* SearchBar;
-
-	// UPROPERTY(VisibleAnywhere, meta = (BindWidget), Category = "UI")
-	// UTextBlock* CategoryText;
-	
-	/////////////////////////////////
-	//ItemsPanel
-
-	// UPROPERTY(VisibleAnywhere, meta = (BindWidget), Category = "UI")
-	// UItemsPanelWidget* ItemsContainer;
-	UPROPERTY(meta=(BindWidget))
-	UWidgetSwitcher* CategorySwitcher;
 
 	UPROPERTY(EditDefaultsOnly, Category="Categories")
 	TMap<FGameplayTag, TSubclassOf<UBaseCategoryWidget>> CategoryWidgetClasses;
 
-	UPROPERTY()
-	TMap<FGameplayTag, UBaseCategoryWidget*> CategoryWidgets;
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<UItemToolTip> TooltipWidgetClass;
+
+	///////////////////
+	// Layout
+	
+	//Categories Labels
+
+	UPROPERTY(meta=(BindWidget))
+	TObjectPtr<UHorizontalBox> CategoriesContainer;
+	
+	UPROPERTY(meta=(BindWidget))
+	TObjectPtr<UWidgetSwitcher> CategorySwitcher;
 
 	///Sort Panel
 	UPROPERTY(VisibleAnywhere, meta = (BindWidget), Category = "UI")
@@ -168,55 +145,49 @@ private:
 
 	//Sort items buttons
 	UPROPERTY(VisibleAnywhere, meta = (BindWidget), Category = "UI")
-	UButton* SortButton;
+	TObjectPtr<UButton> SortButton;
 
 	UPROPERTY(VisibleAnywhere, meta = (BindWidget), Category = "UI")
-	UButton* QuickSortButton;
+	TObjectPtr<UButton> QuickSortButton;
 
 	/////////////////////////////////
 	//Drop To World Panel
 	UPROPERTY(VisibleAnywhere, meta = (BindWidget), Category = "UI")
-	UItemsDropToWorldWidget* ItemsDropToWorldWidget;
-
-	UPROPERTY()
-	UItemToolTip* ItemToolTipReference;
-
-	UPROPERTY(EditDefaultsOnly, Category = "UI")
-	TSubclassOf<UItemToolTip> TooltipWidgetClass;
+	TObjectPtr<UItemsDropToWorldWidget> ItemsDropToWorldWidget;
 	
 	//Equipments Panel
 	//Weapons
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget,AllowPrivateAccess="true"), Category = "UI")
-	UEquipmentSlot* SilverSword;
+	TObjectPtr<UEquipmentSlot> SilverSword;
 	
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget,AllowPrivateAccess="true"), Category = "UI")
-	UEquipmentSlot* SteelWeapon;
+	TObjectPtr<UEquipmentSlot> SteelWeapon;
 
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget,AllowPrivateAccess="true"), Category = "UI")
-	UEquipmentSlot* Bolls;
+	TObjectPtr<UEquipmentSlot> Bolls;
 
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget,AllowPrivateAccess="true"), Category = "UI")
-	UEquipmentSlot* RangedWeapon;
+	TObjectPtr<UEquipmentSlot> RangedWeapon;
+	
 	//Consumables
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget,AllowPrivateAccess="true"), Category = "UI")
-	UEquipmentSlot* ConsumableSlot0;
+	TObjectPtr<UEquipmentSlot> ConsumableSlot0;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget,AllowPrivateAccess="true"), Category = "UI")
-	UEquipmentSlot* ConsumableSlot1;
+	TObjectPtr<UEquipmentSlot> ConsumableSlot1;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget,AllowPrivateAccess="true"), Category = "UI")
-	UEquipmentSlot* ConsumableSlot2;
+	TObjectPtr<UEquipmentSlot> ConsumableSlot2;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget,AllowPrivateAccess="true"), Category = "UI")
-	UEquipmentSlot* ConsumableSlot3;
+	TObjectPtr<UEquipmentSlot> ConsumableSlot3;
+	
 	//Armor
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget,AllowPrivateAccess="true"), Category = "UI")
-	UEquipmentSlot* ChestSlot;
+	TObjectPtr<UEquipmentSlot> ChestSlot;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget,AllowPrivateAccess="true"), Category = "UI")
-	UEquipmentSlot* GauntletSlot;
+	TObjectPtr<UEquipmentSlot> GauntletSlot;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget,AllowPrivateAccess="true"), Category = "UI")
-	UEquipmentSlot* BootsSlot;
+	TObjectPtr<UEquipmentSlot> BootsSlot;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget,AllowPrivateAccess="true"), Category = "UI")
-	UEquipmentSlot* TrousersSLot;
-
-	TArray<UEquipmentSlot*> EquipmentSlots;
+	TObjectPtr<UEquipmentSlot> TrousersSLot;
 };
 
 
