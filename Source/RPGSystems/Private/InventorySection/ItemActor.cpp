@@ -37,6 +37,10 @@ void AItemActor::BeginPlay()
 	if (bIsInialized) return;
 	
 	//RollForStats
+	if (!IsValid(EquipmentDefinition))
+	{
+		return;
+	}
 	
 	const UEquipmentDefinition* EquipmentCDO = GetDefault<UEquipmentDefinition>(EquipmentDefinition);
 	if (!IsValid(EquipmentCDO)) return;

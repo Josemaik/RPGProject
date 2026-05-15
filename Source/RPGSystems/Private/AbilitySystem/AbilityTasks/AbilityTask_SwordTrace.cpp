@@ -5,8 +5,7 @@
 
 #include "Character/RPGSystemsCharacter.h"
 #include "Components/ArrowComponent.h"
-#include "Equipment/EquipmentActor.h"
-#include "Equipment/SwordActor.h"
+#include "Equipment/EquipmentActors/SwordActor.h"
 #include "Kismet/KismetSystemLibrary.h"
 
 void UAbilityTask_SwordTrace::Activate()

@@ -24,6 +24,11 @@ namespace RPGGameplayTags::Combat
 			UE_DECLARE_GAMEPLAY_TAG_EXTERN(HitEnd);
 		}
 
+		namespace Ranged
+		{
+			UE_DECLARE_GAMEPLAY_TAG_EXTERN(CrossbowReady);
+		}
+
 		namespace State
 		{
 			UE_DECLARE_GAMEPLAY_TAG_EXTERN(HitReact);

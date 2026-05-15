@@ -26,11 +26,16 @@ struct FEquipmentGrantedHandles
 	GENERATED_BODY()
 
 	UPROPERTY()
-	FGameplayAbilitySpecHandle GrantedAbility = FGameplayAbilitySpecHandle();
+	TArray<FGameplayAbilitySpecHandle> GrantedAbilities;
 
 	UPROPERTY()
 	TArray<FActiveGameplayEffectHandle> ActiveEffects = TArray<FActiveGameplayEffectHandle>();
 
+	void AddAbilityHandle(FGameplayAbilitySpecHandle Handle)
+	{
+		GrantedAbilities.Add(Handle);
+	}
+	
 	void AddEffectHandle(FActiveGameplayEffectHandle EffectHandle)
 	{
 		ActiveEffects.Add(EffectHandle);

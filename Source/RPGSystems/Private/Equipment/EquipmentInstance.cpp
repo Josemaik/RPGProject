@@ -8,10 +8,9 @@
 #include "Character/RPGSystemsCharacter.h"
 #include "Engine/AssetManager.h"
 #include "Engine/StreamableManager.h"
-#include "Equipment/EquipmentActor.h"
+#include "Equipment/EquipmentActors/EquipmentActor.h"
 #include "Equipment/EquipmentDefinition.h"
 #include "GameFramework/Character.h"
-#include "GameFramework/PlayerState.h"
 
 void UEquipmentInstance::OnEquipped()
 {
@@ -42,7 +41,7 @@ void UEquipmentInstance::SpawnEquipmentActors(const TArray<FEquipmentActorsToSpa
 				{
 					OwnedCharacter->SetRightHandEquipment(NewActor);
 				}
-				else
+				if (SlotTag.MatchesTagExact(RPGInventoryTags::AttachPoint::LeftHand))
 				{
 					OwnedCharacter->SetLeftHandEquipment(NewActor);
 				}

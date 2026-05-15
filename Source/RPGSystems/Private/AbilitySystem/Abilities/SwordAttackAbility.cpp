@@ -57,7 +57,6 @@ void USwordAttackAbility::EndAbility(const FGameplayAbilitySpecHandle Handle,
 	IsAttacking = false;
 	saveAttack = false;
 	AttackIndex = 0;
-	//CanAttack = false;
 	
 	if (IsValid(WaitInputPressedEvent)) WaitInputPressedEvent->EndTask(); WaitInputPressedEvent = nullptr;
 	if (IsValid(WaitStartComboEvent)) WaitStartComboEvent->EndTask(); WaitStartComboEvent = nullptr;
@@ -69,6 +68,31 @@ void USwordAttackAbility::EndAbility(const FGameplayAbilitySpecHandle Handle,
 	if (IsValid(KickHitTrace)) KickHitTrace->EndTask(); KickHitTrace = nullptr;	
 	
 	Super::EndAbility(Handle,ActorInfo,ActivationInfo,bReplicateEndAbility, bWasCancelled);
+}
+
+void USwordAttackAbility::CancelAbility(const FGameplayAbilitySpecHandle Handle,
+	const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo,
+	bool bReplicateCancelAbility)
+{
+	IsAttacking = false;
+	saveAttack = false;
+	AttackIndex = 0;
+	
+	if (IsValid(WaitInputPressedEvent)) WaitInputPressedEvent->EndTask(); WaitInputPressedEvent = nullptr;
+	if (IsValid(WaitStartComboEvent)) WaitStartComboEvent->EndTask(); WaitStartComboEvent = nullptr;
+	if (IsValid(WaitEndComboEvent)) WaitEndComboEvent->EndTask(); WaitEndComboEvent = nullptr;
+	if (IsValid(WaitEndHitTrace)) WaitEndHitTrace->EndTask(); WaitEndHitTrace = nullptr;
+	if (IsValid(WaitStartHitTrace)) WaitStartHitTrace->EndTask(); WaitStartHitTrace = nullptr; 
+	if (IsValid(WaitKickHit)) WaitKickHit->EndTask(); WaitKickHit = nullptr;
+	if (IsValid(ShordTraceTask)) ShordTraceTask->EndTask(); ShordTraceTask = nullptr;
+	if (IsValid(KickHitTrace)) KickHitTrace->EndTask(); KickHitTrace = nullptr;
+
+	if (UWorld* World = GetWorld())
+	{
+		World->GetTimerManager().ClearTimer(DelayBeforeAttackTimer);
+	}
+	
+	Super::CancelAbility(Handle, ActorInfo, ActivationInfo, bReplicateCancelAbility);
 }
 
 void USwordAttackAbility::SetupEventsTasks()

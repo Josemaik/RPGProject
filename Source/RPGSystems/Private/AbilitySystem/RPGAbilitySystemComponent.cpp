@@ -6,6 +6,7 @@
 #include "NativeGameplayTags.h"
 #include "AbilitySystem/Abilities/ProjectileAbility.h"
 #include "AbilitySystem/Abilities/RPGGameplayAbility.h"
+#include "AbilitySystem/Abilities/SwordAttackAbility.h"
 #include "Engine/AssetManager.h"
 #include "Engine/StreamableManager.h"
 #include "Equipment/EquipmentManagerComponent.h"
@@ -214,7 +215,7 @@ void URPGAbilitySystemComponent::AddSingleAttribute(FRPGEquipmentEntry* Equipmen
 	{
 		const FGameplayEffectSpecHandle SpecHandle = MakeOutgoingSpec(ImplicitStat.EffectClass.Get(),ImplicitStat.CurrentValue, ContextHandle);
 		const FActiveGameplayEffectHandle ActiveHandle = ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
-
+		
 		EquipmentEntry->GrantedHandles.AddEffectHandle(ActiveHandle);
 	}
 	else
@@ -292,8 +293,9 @@ void URPGAbilitySystemComponent::AddEquipmentAbility(FRPGEquipmentEntry* Equipme
 	for (FEquipmentAbilityGroup& AbilityGroup: EquipmentEntry->EffectPackage.Abilities)
 	{
 		if (IsValid(AbilityGroup.AbilityClass.Get()))
-		{	
-			EquipmentEntry->GrantedHandles.GrantedAbility = GrantEquipmentAbility(AbilityGroup);
+		{
+			EquipmentEntry->GrantedHandles.AddAbilityHandle(GrantEquipmentAbility(AbilityGroup));
+			//EquipmentEntry->GrantedHandles.GrantedAbility = GrantEquipmentAbility(AbilityGroup);
 			OnEquipmentAbilityGiven.Broadcast(EquipmentEntry,false);
 		}
 		else
@@ -301,7 +303,7 @@ void URPGAbilitySystemComponent::AddEquipmentAbility(FRPGEquipmentEntry* Equipme
 			Manager.RequestAsyncLoad(AbilityGroup.AbilityClass.ToSoftObjectPath(),
 				[WeakThis, EquipmentEntry,AbilityGroup]()
 				{
-					EquipmentEntry->GrantedHandles.GrantedAbility = WeakThis->GrantEquipmentAbility(AbilityGroup);
+					EquipmentEntry->GrantedHandles.AddAbilityHandle(WeakThis->GrantEquipmentAbility(AbilityGroup));
 					WeakThis->OnEquipmentAbilityGiven.Broadcast(EquipmentEntry,true);
 				});
 		}
@@ -312,26 +314,14 @@ void URPGAbilitySystemComponent::RemoveEquipmentAbility(const FRPGEquipmentEntry
 {
 	if (!EquipmentEntry) return;
 
-	FGameplayAbilitySpec* Spec = FindAbilitySpecFromHandle(EquipmentEntry->GrantedHandles.GrantedAbility);
-	if (Spec)
+	for (const FGameplayAbilitySpecHandle& Handle : EquipmentEntry->GrantedHandles.GrantedAbilities)
 	{
-		// Instance per actor -> cancel instances
-		TArray<UGameplayAbility*> Instances = Spec->GetAbilityInstances();
-		for (UGameplayAbility* Instance : Instances)
-		{
-			if (IsValid(Instance))
-			{
-				Instance->CancelAbility(
-					Spec->Handle,
-					Instance->GetCurrentActorInfo(),
-					Instance->GetCurrentActivationInfo(),
-					true
-				);
-			}
-		}
+		FGameplayAbilitySpec* Spec = FindAbilitySpecFromHandle(Handle);
+		if (!Spec) continue;
+
+		CancelAbilityHandle(Handle);
+		ClearAbility(Handle);
 	}
-	
-	ClearAbility(EquipmentEntry->GrantedHandles.GrantedAbility);
 }
 
 FGameplayAbilitySpecHandle URPGAbilitySystemComponent::GrantEquipmentAbility(

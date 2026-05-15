@@ -22,8 +22,9 @@
 #include "Character/Components/RPGMotionWarpingComponent.h"
 #include "Components/ArrowComponent.h"
 #include "Components/SceneCaptureComponent2D.h"
-#include "Equipment/EquipmentActor.h"
+#include "Equipment/EquipmentActors/EquipmentActor.h"
 #include "Equipment/EquipmentManagerComponent.h"
+#include "Interfaces/InteractableInterface.h"
 #include "InventorySection/InventoryComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
@@ -304,6 +305,9 @@ void ARPGSystemsCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ARPGSystemsCharacter::Jump);
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ARPGSystemsCharacter::StopJumping);
 
+		// Interact
+		EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Started, this, &ARPGSystemsCharacter::Interact);
+		
 		// Moving
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ARPGSystemsCharacter::Move);
 
@@ -375,6 +379,7 @@ void ARPGSystemsCharacter::Move(const FInputActionValue& Value)
 
 void ARPGSystemsCharacter::Jump()
 {
+	if (ThisFrameInteractActor) return;
 	TryVault();
 	if (!CanVault)
 		Super::Jump();
@@ -384,6 +389,17 @@ void ARPGSystemsCharacter::StopJumping()
 {
 	if (bPressedJump)
 		Super::StopJumping();
+}
+
+void ARPGSystemsCharacter::Interact()
+{
+	if (ThisFrameInteractActor == nullptr) return;
+	
+	UAbilitySystemComponent* ASC = GetAbilitySystemComponent();
+	if (!IsValid(ASC)) return;
+	
+	TObjectPtr<APlayerController> PlayerController = ASC->AbilityActorInfo->PlayerController.Get();
+	IInteractableInterface::Execute_BeginInteract(ThisFrameInteractActor.GetObject(),PlayerController);
 }
 
 void ARPGSystemsCharacter::Sprint()

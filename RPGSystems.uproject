@@ -42,6 +42,14 @@
 		{
 			"Name": "ModelViewViewModel",
 			"Enabled": true
+		},
+		{
+			"Name": "CommonUI",
+			"Enabled": true
+		},
+		{
+			"Name": "RawInput",
+			"Enabled": true
 		}
 	]
 }

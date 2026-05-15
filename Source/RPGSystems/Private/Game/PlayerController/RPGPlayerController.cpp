@@ -187,7 +187,7 @@ UInventoryWidgetController* ARPGPlayerController::GetInventoryWidgetController()
 
 void ARPGPlayerController::EnableSectionWidget()
 {
-	if (!IsValid(SectionSwitcherWidget)) return;
+	if (!IsValid(SectionSwitcherWidget) || !IsValid(OverlayWidgetRef)) return;
 
 	if (!SectionSwitcherWidget->IsInViewport())
 	{
@@ -237,7 +237,13 @@ void ARPGPlayerController::DisableSectionWidget()
 	Subsystem->RemoveMappingContext(InventoryIMC);
 	Subsystem->AddMappingContext(GameplayIMC, 1);
 
-	SetInputMode(FInputModeGameOnly());
+	FInputModeGameOnly InputMode;
+	InputMode.SetConsumeCaptureMouseDown(true);
+
+	SetInputMode(InputMode);
+	
+	// SetInputMode(FInputModeGameOnly());
+	bShowMouseCursor = false;
 }
 
 

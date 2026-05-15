@@ -9,6 +9,7 @@
 #include "Logging/LogMacros.h"
 #include "RPGSystemsCharacter.generated.h"
 
+class IInteractableInterface;
 class UEquipmentManagerComponent;
 class UInventoryComponent;
 class URPGMotionWarpingComponent;
@@ -39,6 +40,9 @@ class ARPGSystemsCharacter : public ACharacterBase,public IAbilitySystemInterfac
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* JumpAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* InteractAction;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* MoveAction;
@@ -103,6 +107,10 @@ protected:
 	void Move(const FInputActionValue& Value);
 	void Jump() override;
 	void StopJumping() override;
+	void Interact();
+
+	UPROPERTY(BlueprintReadWrite)
+	TScriptInterface<IInteractableInterface> ThisFrameInteractActor;
 
 	/*Called for sprint input*/
 	void Sprint();
@@ -166,6 +174,12 @@ private:
 
 	UPROPERTY()
 	AEquipmentActor* LeftHandEquipment;
+
+	UPROPERTY()
+	AEquipmentActor* BackEquipment;
+
+	//Swap Equipments
+	//void ChangePosition(FGameplayTag OriginSocket, FGameplayTag DestinationSocket);
 
 
 	virtual void Death_Implementation() override;

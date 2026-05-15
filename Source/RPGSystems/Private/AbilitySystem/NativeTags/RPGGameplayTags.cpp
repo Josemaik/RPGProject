@@ -21,6 +21,11 @@ namespace RPGGameplayTags::Combat
 			UE_DEFINE_GAMEPLAY_TAG_COMMENT(HitEnd, "Combat.Event.HitEnd", "End Check hits");
 		}
 
+		namespace Ranged
+		{
+			UE_DEFINE_GAMEPLAY_TAG_COMMENT(CrossbowReady, "Combat.Event.CrossbowReadyToBeShooted","Combo has started");
+		}
+
 		namespace State
 		{
 			UE_DEFINE_GAMEPLAY_TAG_COMMENT(HitReact, "Combat.Event.State.HitReact","Hit Reaction");

@@ -18,6 +18,9 @@ public:
 
 	void InitializeWithAbilitySystem(UAbilitySystemComponent* ASC);
 private:
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Animation", meta=(AllowPrivateAccess=true))
+	bool bIsCrossbowAiming = false;
+	
 	UPROPERTY(EditDefaultsOnly, Category="Custom Values|Property Map")
 	FGameplayTagBlueprintPropertyMap PropertyMap;
 };
