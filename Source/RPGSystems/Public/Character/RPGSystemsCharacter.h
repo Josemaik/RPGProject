@@ -9,6 +9,7 @@
 #include "Logging/LogMacros.h"
 #include "RPGSystemsCharacter.generated.h"
 
+class URPGVaultComponent;
 class IInteractableInterface;
 class UEquipmentManagerComponent;
 class UInventoryComponent;
@@ -68,6 +69,9 @@ class ARPGSystemsCharacter : public ACharacterBase,public IAbilitySystemInterfac
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = CaptureCharacter, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<USceneCaptureComponent2D> CharacterCaptureComponent;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Motion, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<URPGVaultComponent> VaultComponent;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess=true), Replicated, ReplicatedUsing=OnRep_InventoryComponent)
 	TObjectPtr<UInventoryComponent> InventoryComponent;
 	
@@ -113,7 +117,7 @@ protected:
 	TScriptInterface<IInteractableInterface> ThisFrameInteractActor;
 
 	/*Called for sprint input*/
-	void Sprint();
+	//void Sprint();
 	
 	/** Called for looking input */
 	void Look(const FInputActionValue& Value);
@@ -137,36 +141,36 @@ private:
 	void OnRep_EquipmentComponent();
 
 	/*Move to Component***********************/
-	UFUNCTION(BlueprintCallable)
-	void TryVault();
-
-	void VaultMotionWarp();
-
-	UFUNCTION()
-	void OnVaultCompleted(UAnimMontage* Montage, bool bInterrupted);
+	// UFUNCTION(BlueprintCallable)
+	// void TryVault();
+	//
+	// void VaultMotionWarp();
+	//
+	// UFUNCTION()
+	// void OnVaultCompleted(UAnimMontage* Montage, bool bInterrupted);
 	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"),Category="Custom Values|Animation")
-	UAnimMontage* VaultMontage;
+	// UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"),Category="Custom Values|Animation")
+	// UAnimMontage* VaultMontage;
 	
 	//Vaulting
-	const float VaultZOffsetFirstTrace = 30.f;
-	const float VaultZOffsetSecondTrace = 50.f;
-	const int32 NumTracesFirstCheck = 3;
-	const int32 NumTracesSecondCheck = 6;
-	const float MaxDetectionDistance = 180.f;
-	const float LandingZOffset = 50.f;
-	const FVector ZOffsetVector = FVector(0, 0, 100.f);
-	
-	FVector VaultStartPos = FVector::ZeroVector;
-	FVector VaultMiddlePos = FVector::ZeroVector;
-	FVector VaultLandPos = FVector::ZeroVector;
-
-	bool CanVault = false;
-	
-	UPROPERTY()
-	float VaultSphereRadiusFirstCheck;
-	UPROPERTY()
-	float VaultSphereRadiusSecondCheck;
+	// const float VaultZOffsetFirstTrace = 30.f;
+	// const float VaultZOffsetSecondTrace = 50.f;
+	// const int32 NumTracesFirstCheck = 3;
+	// const int32 NumTracesSecondCheck = 6;
+	// const float MaxDetectionDistance = 180.f;
+	// const float LandingZOffset = 50.f;
+	// const FVector ZOffsetVector = FVector(0, 0, 100.f);
+	//
+	// FVector VaultStartPos = FVector::ZeroVector;
+	// FVector VaultMiddlePos = FVector::ZeroVector;
+	// FVector VaultLandPos = FVector::ZeroVector;
+	//
+	// bool CanVault = false;
+	//
+	// UPROPERTY()
+	// float VaultSphereRadiusFirstCheck;
+	// UPROPERTY()
+	// float VaultSphereRadiusSecondCheck;
 	/****************************************/
 
 	UPROPERTY()
@@ -180,7 +184,6 @@ private:
 
 	//Swap Equipments
 	//void ChangePosition(FGameplayTag OriginSocket, FGameplayTag DestinationSocket);
-
 
 	virtual void Death_Implementation() override;
 	

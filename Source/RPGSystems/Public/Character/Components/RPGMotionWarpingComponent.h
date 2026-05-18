@@ -13,5 +13,4 @@ UCLASS()
 class RPGSYSTEMS_API URPGMotionWarpingComponent : public UMotionWarpingComponent
 {
 	GENERATED_BODY()
-	
 };

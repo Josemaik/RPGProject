@@ -6,6 +6,9 @@
 #include "AbilitySystemComponent.h"
 #include "AbilitySystemGlobals.h"
 #include "AbilitySystem/NativeTags/RPGGameplayTags.h"
+#include "Character/RPGSystemsCharacter.h"
+#include "Character/Components/RPGMotionWarpingComponent.h"
+#include "Kismet/KismetSystemLibrary.h"
 
 void URPGCharacterMovement::Crouch(bool bClientSimulation)
 {
