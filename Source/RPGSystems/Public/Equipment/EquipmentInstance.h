@@ -3,12 +3,13 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "GameplayTagContainer.h"
 #include "UObject/NoExportTypes.h"
 #include "EquipmentInstance.generated.h"
 
+class AEquipmentActor;
 class ARPGSystemsCharacter;
 struct FEquipmentActorsToSpawn;
-struct FGameplayTag;
 /**
  * 
  */
@@ -19,19 +20,24 @@ class RPGSYSTEMS_API UEquipmentInstance : public UObject
 public:
 	virtual void OnEquipped();
 	virtual void OnUnEquipped();
-
-	void SpawnEquipmentActors(const TArray<FEquipmentActorsToSpawn>& ActorsToSpawn,FGameplayTag SlotTag);
+	
+	void SpawnEquipmentActors(const TArray<FEquipmentActorsToSpawn>& ActorsToSpawn,FGameplayTag AttachTag);
 	void DestroySpawnedActors(FGameplayTag SlotTag);
-
+	void ChangeAttachPoint(FGameplayTag OldAttachTag,FGameplayTag NewAttachTag);
+	AEquipmentActor* GetActorAttached(FGameplayTag AttachPoint);
+	bool HasAnActorAttached(FGameplayTag AttachPoint) const;
+	
+	TMap<FGameplayTag,AEquipmentActor*>& GetEquipmentActors() { return SpawnedActors; }
 private:
 
 	UPROPERTY()
 	ARPGSystemsCharacter* OwnedCharacter;
 	
 	UPROPERTY()
-	TArray<AActor*> SpawnedActors;
+	TMap<FGameplayTag,AEquipmentActor*> SpawnedActors;
 	
 	ACharacter* GetCharacter();
 };
+
 
 

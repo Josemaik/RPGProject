@@ -7,6 +7,9 @@
 #include "Abilities/Tasks/AbilityTask_WaitInputPress.h"
 #include "Abilities/Tasks/AbilityTask_WaitInputRelease.h"
 #include "AbilitySystem/NativeTags/RPGGameplayTags.h"
+#include "AbilitySystem/NativeTags/RPGInventoryTags.h"
+#include "Character/RPGSystemsCharacter.h"
+#include "Character/Animation/RPGAnimInstance.h"
 
 void UCrossbowAttackAbility::OnGiveAbility(const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilitySpec& Spec)
 {
@@ -15,53 +18,27 @@ void UCrossbowAttackAbility::OnGiveAbility(const FGameplayAbilityActorInfo* Acto
 
 void UCrossbowAttackAbility::SetupInputTask()
 {
-	// WaitInputPressedEvent = UAbilityTask_WaitInputPress::WaitInputPress(this,false);
-	// WaitInputPressedEvent->OnPress.AddDynamic(this,&UCrossbowAttackAbility::OnInputPressed);
-	// WaitInputPressedEvent->ReadyForActivation();
-	OnInputPressed(0.f);
-	
 	WaitInputReleasedEvent = UAbilityTask_WaitInputRelease::WaitInputRelease(this, false);
 	WaitInputReleasedEvent->OnRelease.AddDynamic(this,&UCrossbowAttackAbility::OnInputReleased);
 	WaitInputReleasedEvent->ReadyForActivation();
 }
 
-void UCrossbowAttackAbility::ReadyToShoot(FGameplayEventData Payload)
+void UCrossbowAttackAbility::SetupMontageEvents()
 {
-	bIsReadyToShoot = true;
-	AnimInstance->Montage_Pause(AimCrossbowMontage);
-
-	if (bInputReleasedBeforeReady)
-	{
-		OnInputReleased(0.f);
-	}
-}
-
-void UCrossbowAttackAbility::OnInputPressed(float TimeWaited)
-{
-	if (!IsValid(AnimInstance) || !IsValid(AimCrossbowMontage))
-	{
-		return;
-	}
-	
-	bIsAiming = true;
-	
-	AnimInstance->Montage_Play(AimCrossbowMontage,-1.f,
-		EMontagePlayReturnType::MontageLength, AimCrossbowMontage->GetPlayLength());
-
 	WaitAimReady = UAbilityTask_WaitGameplayEvent::WaitGameplayEvent(this,RPGGameplayTags::Combat::Events::Ranged::CrossbowReady);
 	WaitAimReady->EventReceived.AddDynamic(this, &UCrossbowAttackAbility::ReadyToShoot);
 	WaitAimReady->ReadyForActivation();
 }
 
+void UCrossbowAttackAbility::ReadyToShoot(FGameplayEventData Payload)
+{
+	bIsReadyToShoot = true;
+	//AnimInstance->Montage_Pause(AimCrossbowMontage);
+}
+
 void UCrossbowAttackAbility::OnInputReleased(float TimeWaited)
 {
-	if (!bIsReadyToShoot)
-	{
-		bInputReleasedBeforeReady = true;
-		return;
-	}
-	
-	if (bIsAiming)
+	if (bIsReadyToShoot)
 	{
 		//Shoot();
 		//Init timer and sheatcrossbow
@@ -77,11 +54,13 @@ void UCrossbowAttackAbility::OnInputReleased(float TimeWaited)
 
 void UCrossbowAttackAbility::SheathCrossbow()
 {
-	bIsAiming = false;
+	bIsReadyToShoot = false;
+	AnimInstance->SetIsCrossbowAiming(false);
+	// AnimInstance->Montage_SetPlayRate(AimCrossbowMontage, 1.f);
+	// AnimInstance->Montage_Resume(AimCrossbowMontage);
+	OwnerCharacter->OnRangeStopAiming();
+	OwnerCharacter->ChangueEquipmentAttachPoint(RPGInventoryTags::AttachPoint::LeftHand,RPGInventoryTags::AttachPoint::Back);
 	
-	AnimInstance->Montage_SetPlayRate(AimCrossbowMontage, 1.f);
-	AnimInstance->Montage_Resume(AimCrossbowMontage);
-
 	EndAbility(CurrentSpecHandle,CurrentActorInfo,CurrentActivationInfo,true,true);
 }
 
@@ -90,8 +69,25 @@ void UCrossbowAttackAbility::ActivateAbility(const FGameplayAbilitySpecHandle Ha
                                              const FGameplayEventData* TriggerEventData)
 {
 	Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
-	AnimInstance = ActorInfo->GetAnimInstance();
-	SetupInputTask();
+	
+	AnimInstance = Cast<URPGAnimInstance>(ActorInfo->GetAnimInstance());
+	OwnerCharacter = Cast<ARPGSystemsCharacter>(ActorInfo->AvatarActor);
+	
+	SetupInputTask(); //release task
+
+	if (!IsValid(AnimInstance) || !IsValid(OwnerCharacter)/* || !IsValid(AimCrossbowMontage)*/)
+	{
+		return;
+	}
+
+	AnimInstance->SetIsCrossbowAiming(true);
+	OwnerCharacter->OnRangeStartAiming();
+	OwnerCharacter->ChangueEquipmentAttachPoint(RPGInventoryTags::AttachPoint::Back,RPGInventoryTags::AttachPoint::LeftHand);
+	//play montage
+	// AnimInstance->Montage_Play(AimCrossbowMontage,-1.f,
+	// 	EMontagePlayReturnType::MontageLength, AimCrossbowMontage->GetPlayLength());
+	
+	//SetupMontageEvents();
 }
 
 void UCrossbowAttackAbility::EndAbility(const FGameplayAbilitySpecHandle Handle,

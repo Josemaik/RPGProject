@@ -3,6 +3,8 @@
 
 #include "AbilitySystem/AbilityTasks/AbilityTask_SwordTrace.h"
 
+#include "AbilitySystem/NativeTags/RPGGameplayTags.h"
+#include "AbilitySystem/NativeTags/RPGInventoryTags.h"
 #include "Character/RPGSystemsCharacter.h"
 #include "Components/ArrowComponent.h"
 #include "Equipment/EquipmentActors/SwordActor.h"
@@ -18,7 +20,7 @@ void UAbilityTask_SwordTrace::Activate()
 	ARPGSystemsCharacter* Character = Cast<ARPGSystemsCharacter>(Avatar);
 	if (!IsValid(Character)) return;
 	
-	ASwordActor* Sword = Cast<ASwordActor>(Character->GetRightHandEquipmentActor());
+	ASwordActor* Sword = Cast<ASwordActor>(Character->GetEquipmentActor(RPGInventoryTags::AttachPoint::RightHand));
 	if (!IsValid(Sword)) return;
 	
 	TopPointArrow = Cast<UArrowComponent>(Sword->GetSwordTopPoint());

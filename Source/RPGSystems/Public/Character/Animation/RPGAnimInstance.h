@@ -17,6 +17,7 @@ class RPGSYSTEMS_API URPGAnimInstance : public UAnimInstance
 public:
 
 	void InitializeWithAbilitySystem(UAbilitySystemComponent* ASC);
+	void SetIsCrossbowAiming(bool NewValue) { bIsCrossbowAiming = NewValue; }
 private:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Animation", meta=(AllowPrivateAccess=true))
 	bool bIsCrossbowAiming = false;

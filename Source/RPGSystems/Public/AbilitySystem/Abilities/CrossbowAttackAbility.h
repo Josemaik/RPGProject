@@ -6,6 +6,8 @@
 #include "RPGDamageAbility.h"
 #include "CrossbowAttackAbility.generated.h"
 
+class ARPGSystemsCharacter;
+class URPGAnimInstance;
 class UAbilityTask_WaitGameplayEvent;
 class UAbilityTask_WaitInputPress;
 class UAbilityTask_WaitInputRelease;
@@ -25,26 +27,28 @@ private:
 	UCrossbowAttackAbility();
 
 	void SetupInputTask();
+	void SetupMontageEvents();
 
 	UFUNCTION()
 	void ReadyToShoot(FGameplayEventData Payload);
 	
-	UFUNCTION()
-	void OnInputPressed(float TimeWaited);
+	// UFUNCTION()
+	// void OnInputPressed(float TimeWaited);
 
 	UFUNCTION()
 	void OnInputReleased(float TimeWaited);
 
 	void SheathCrossbow();
-
-	bool bIsAiming = false;
+	
 	bool bIsReadyToShoot = false;
-	bool bInputReleasedBeforeReady = false;
 
 	FTimerHandle WaitUntilSheathTimer;
 	
 	UPROPERTY()
-	TObjectPtr<UAnimInstance> AnimInstance;
+	TObjectPtr<URPGAnimInstance> AnimInstance;
+
+	UPROPERTY()
+	TObjectPtr<ARPGSystemsCharacter> OwnerCharacter;
 
 	// UPROPERTY()
 	// TObjectPtr<UAbilityTask_WaitInputPress> WaitInputPressedEvent;

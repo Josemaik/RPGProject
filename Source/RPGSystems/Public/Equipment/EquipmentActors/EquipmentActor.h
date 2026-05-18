@@ -22,4 +22,6 @@ protected:
 	UPROPERTY(VisibleAnywhere, meta = (AllowPrivateAccess = true))
 	TObjectPtr<UStaticMeshComponent> EquipmentMesh;
 
+	
+
 };

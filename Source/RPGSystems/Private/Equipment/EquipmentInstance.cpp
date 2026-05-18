@@ -4,7 +4,6 @@
 #include "Equipment/EquipmentInstance.h"
 
 
-#include "AbilitySystem/NativeTags/RPGInventoryTags.h"
 #include "Character/RPGSystemsCharacter.h"
 #include "Engine/AssetManager.h"
 #include "Engine/StreamableManager.h"
@@ -20,7 +19,7 @@ void UEquipmentInstance::OnUnEquipped()
 {
 }
 
-void UEquipmentInstance::SpawnEquipmentActors(const TArray<FEquipmentActorsToSpawn>& ActorsToSpawn,FGameplayTag SlotTag)
+void UEquipmentInstance::SpawnEquipmentActors(const TArray<FEquipmentActorsToSpawn>& ActorsToSpawn,FGameplayTag AttachTag)
 {
 	OwnedCharacter = Cast<ARPGSystemsCharacter>(GetCharacter());
 	if (IsValid(OwnedCharacter))
@@ -37,21 +36,14 @@ void UEquipmentInstance::SpawnEquipmentActors(const TArray<FEquipmentActorsToSpa
 				NewActor->FinishSpawning(FTransform::Identity);
 				NewActor->AttachToComponent(OwnedCharacter->GetMesh(), FAttachmentTransformRules::KeepRelativeTransform, ActorToSpawn.AttachName);
 
-				if (SlotTag.MatchesTagExact(RPGInventoryTags::AttachPoint::RightHand))
-				{
-					OwnedCharacter->SetRightHandEquipment(NewActor);
-				}
-				if (SlotTag.MatchesTagExact(RPGInventoryTags::AttachPoint::LeftHand))
-				{
-					OwnedCharacter->SetLeftHandEquipment(NewActor);
-				}
-				
-				SpawnedActors.Emplace(NewActor);
+				OwnedCharacter->AttachNames.Add(AttachTag,ActorToSpawn.AttachName);
+				SpawnedActors.Emplace(AttachTag,NewActor);
+				OwnedCharacter->SetEquipment(this);
 			}
 			else
 			{
 				Manager.RequestAsyncLoad(ActorToSpawn.EquipmentClass.ToSoftObjectPath(),
-					[WeakThis,ActorToSpawn, this,SlotTag]
+					[WeakThis,ActorToSpawn, this,AttachTag]
 					{
 						if (!WeakThis.IsValid())
 							return;
@@ -61,16 +53,9 @@ void UEquipmentInstance::SpawnEquipmentActors(const TArray<FEquipmentActorsToSpa
 						NewActor->FinishSpawning(FTransform::Identity);
 						NewActor->AttachToComponent(OwnedCharacter->GetMesh(), FAttachmentTransformRules::KeepRelativeTransform, ActorToSpawn.AttachName);
 
-						if (SlotTag.MatchesTagExact(RPGInventoryTags::AttachPoint::RightHand))
-						{
-							OwnedCharacter->SetRightHandEquipment(NewActor);
-						}
-						else
-						{
-							OwnedCharacter->SetLeftHandEquipment(NewActor);
-						}
-						
-						WeakThis->SpawnedActors.Emplace(NewActor);
+						OwnedCharacter->AttachNames.Add(AttachTag,ActorToSpawn.AttachName);
+						WeakThis->SpawnedActors.Emplace(AttachTag,NewActor);
+						OwnedCharacter->SetEquipment(this);
 					});
 			}
 		}
@@ -79,21 +64,51 @@ void UEquipmentInstance::SpawnEquipmentActors(const TArray<FEquipmentActorsToSpa
 
 void UEquipmentInstance::DestroySpawnedActors(FGameplayTag AttachTag)
 {
-	for (AActor* Actor : SpawnedActors)
+	for (const TPair<FGameplayTag,AEquipmentActor*>& Actor : SpawnedActors)
 	{
-		Actor->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
-		if (AttachTag.MatchesTagExact(RPGInventoryTags::AttachPoint::RightHand))
-		{
-			OwnedCharacter->RemoveRightHandEquipment();
-		}
-		else
-		{
-			OwnedCharacter->RemoveLeftHandEquipment();
-		}
-		Actor->Destroy();
+		Actor.Value->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+		OwnedCharacter->RemoveEquipment(this);
+		Actor.Value->Destroy();
 	}
 	SpawnedActors.Empty();
 }
+
+void UEquipmentInstance::ChangeAttachPoint(FGameplayTag OldAttachTag,FGameplayTag NewAttachTag)
+{
+	GEngine->AddOnScreenDebugMessage(-1,4.f,FColor::Red,"AttachPoint");
+	AEquipmentActor* AttachedActor = GetActorAttached(OldAttachTag);
+	if (IsValid(AttachedActor))
+	{
+		AttachedActor->DetachFromActor(FDetachmentTransformRules::KeepRelativeTransform);
+		
+		FName SocketName = *OwnedCharacter->AttachNames.Find(NewAttachTag);
+		AttachedActor->AttachToComponent(OwnedCharacter->GetMesh(), FAttachmentTransformRules::KeepRelativeTransform, SocketName);
+		SpawnedActors.Remove(OldAttachTag);
+		SpawnedActors.Add(NewAttachTag,AttachedActor);
+	}
+}
+
+AEquipmentActor* UEquipmentInstance::GetActorAttached(FGameplayTag AttachPoint)
+{
+	if (AEquipmentActor** FoundActor = SpawnedActors.Find(AttachPoint))
+	{
+		if (IsValid(*FoundActor))
+		{
+			return *FoundActor;
+		}
+	}
+	return nullptr;
+}
+
+bool UEquipmentInstance::HasAnActorAttached(FGameplayTag AttachPoint) const
+{
+	if (SpawnedActors.Contains(AttachPoint))
+	{
+		return true;
+	}
+	return false;
+}
+
 
 ACharacter* UEquipmentInstance::GetCharacter()
 {

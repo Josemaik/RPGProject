@@ -12,6 +12,8 @@
 #include "InputActionValue.h"
 #include "AbilitySystem/RPGAbilitySystemComponent.h"
 #include "AbilitySystem/Attributes/RPGAttributeSet.h"
+#include "AbilitySystem/NativeTags/RPGGameplayTags.h"
+#include "AbilitySystem/NativeTags/RPGInventoryTags.h"
 #include "Character/Animation/RPGAnimInstance.h"
 #include "Character/Components/RPGCharacterMovement.h"
 #include "Data/CharacterClassInfo.h"
@@ -23,6 +25,8 @@
 #include "Character/Components/RPGVaultComponent.h"
 #include "Components/ArrowComponent.h"
 #include "Components/SceneCaptureComponent2D.h"
+#include "Components/TimelineComponent.h"
+#include "Equipment/EquipmentInstance.h"
 #include "Equipment/EquipmentActors/EquipmentActor.h"
 #include "Equipment/EquipmentManagerComponent.h"
 #include "Interfaces/InteractableInterface.h"
@@ -128,6 +132,30 @@ void ARPGSystemsCharacter::AddToExperience_Implementation(const FScalableFloat& 
 	{
 		RPGPlayerState->AddToExperience(XPScale);
 	}
+}
+
+void ARPGSystemsCharacter::UpdateCameraAim(float Value)
+{
+	CameraBoom->TargetArmLength = FMath::Lerp(DefaultArmLength, AimArmLength, Value);
+	CameraBoom->SocketOffset = FMath::Lerp(DefaultSocketOffset, AimSocketOffset, Value);
+}
+
+void ARPGSystemsCharacter::OnRangeStartAiming()
+{
+	bIsAiming = true;
+	GetCharacterMovement()->MaxWalkSpeed = 130.f;
+	GetCharacterMovement()->bOrientRotationToMovement = false;
+	GetCharacterMovement()->bUseControllerDesiredRotation = true;
+	CameraTimeline.Play();
+}
+
+void ARPGSystemsCharacter::OnRangeStopAiming()
+{
+	bIsAiming = true;
+	GetCharacterMovement()->MaxWalkSpeed = 500.f; // tu valor normal
+	GetCharacterMovement()->bOrientRotationToMovement = true;
+	GetCharacterMovement()->bUseControllerDesiredRotation = false;
+	CameraTimeline.Reverse();
 }
 
 void ARPGSystemsCharacter::InitAbilityActorInfo()
@@ -254,6 +282,24 @@ void ARPGSystemsCharacter::BeginPlay()
 		EquipmentComponent->EquipmentList.OwningObject = this;
 		EquipmentComponent->BindInventoryDelegates(InventoryComponent);
 	}
+
+	if (CameraAimCurve)
+	{
+		FOnTimelineFloat  ProgressCallback;
+		ProgressCallback.BindUFunction(this, FName("UpdateCameraAim"));
+		CameraTimeline.AddInterpFloat(CameraAimCurve, ProgressCallback);
+		CameraTimeline.SetLooping(false);
+	}
+}
+
+void ARPGSystemsCharacter::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+	
+	if (CameraTimeline.IsPlaying() || CameraTimeline.IsReversing())
+	{
+		CameraTimeline.TickTimeline(DeltaSeconds);
+	}
 }
 
 void ARPGSystemsCharacter::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
@@ -331,28 +377,63 @@ void ARPGSystemsCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 	}
 }
 
-void ARPGSystemsCharacter::SetRightHandEquipment(AEquipmentActor* NewRightHandEquipment)
+AEquipmentActor* ARPGSystemsCharacter::GetEquipmentActor(FGameplayTag AttachPoint)
 {
-	RightHandEquipment = NewRightHandEquipment;
-	AddEquipmentToCharacterCapture(NewRightHandEquipment);
+	for (UEquipmentInstance* Instance : EquipmentInstances)
+	{
+		if (AEquipmentActor* EquipmentActor = Instance->GetActorAttached(AttachPoint))
+		{
+			return EquipmentActor;
+		}
+	}
+	return nullptr;
 }
 
-void ARPGSystemsCharacter::SetLeftHandEquipment(AEquipmentActor* NewLeftHandEquipment)
+void ARPGSystemsCharacter::SetEquipment(UEquipmentInstance* NewInstance)
 {
-	LeftHandEquipment = NewLeftHandEquipment;
-	AddEquipmentToCharacterCapture(NewLeftHandEquipment);
+	if (!IsValid(NewInstance))
+	{
+		return;
+	}
+	
+	EquipmentInstances.Add(NewInstance);
+
+	for (const TPair Pair : NewInstance->GetEquipmentActors())
+	{
+		AddEquipmentToCharacterCapture(Pair.Value);
+	}
+}
+void ARPGSystemsCharacter::RemoveEquipment(UEquipmentInstance* InstanceToRemove)
+{
+	if (IsValid(InstanceToRemove))
+	{
+		EquipmentInstances.Remove(InstanceToRemove);
+	}
 }
 
-void ARPGSystemsCharacter::RemoveRightHandEquipment()
+void ARPGSystemsCharacter::ChangueEquipmentAttachPoint(FGameplayTag OldAttachTag,FGameplayTag NewAttachTag)
 {
-	RightHandEquipment = nullptr;
-	RemoveEquipmentFromCharacterCapture(RightHandEquipment);
-}
+	UEquipmentInstance* CurrentInstance = nullptr;
+	UEquipmentInstance* AlreadyExistedInstance = nullptr;
+	
+	for (UEquipmentInstance* Instance : EquipmentInstances)
+	{
+		if (Instance->HasAnActorAttached(NewAttachTag))
+		{
+			AlreadyExistedInstance = Instance;
+		}
+		if (Instance->HasAnActorAttached(OldAttachTag))
+		{
+			CurrentInstance = Instance;
+		}
+	}
 
-void ARPGSystemsCharacter::RemoveLeftHandEquipment()
-{
-	LeftHandEquipment = nullptr;
-	RemoveEquipmentFromCharacterCapture(LeftHandEquipment);
+	if (AlreadyExistedInstance != nullptr && AlreadyExistedInstance != CurrentInstance)
+	{
+		AlreadyExistedInstance->ChangeAttachPoint(NewAttachTag,OldAttachTag);
+	}
+	
+	CurrentInstance->ChangeAttachPoint(OldAttachTag,NewAttachTag);
 }
 
 
@@ -435,161 +516,11 @@ void ARPGSystemsCharacter::Look(const FInputActionValue& Value)
 		AddControllerPitchInput(LookAxisVector.Y);
 	}
 }
-//////////////////////////////////
-/// Vaulting -> Move To Component
-/// 
-// void ARPGSystemsCharacter::TryVault()
-// {
-// 	TArray<AActor*> ActorsToIgnore;
-// 	ActorsToIgnore.Add(this);
-// 	FHitResult OutHitFirstCheck;
-// 	for (int i = 0; i < NumTracesFirstCheck;i++)
-// 	{
-// 		
-// 		FVector StartLocation = GetActorLocation() + FVector(0, 0, i * VaultZOffsetFirstTrace);
-// 		FVector EndLocation = StartLocation + GetActorForwardVector() * MaxDetectionDistance;
-// 		
-// 		bool bShereHit = UKismetSystemLibrary::SphereTraceSingle(
-// 			this,
-// 			StartLocation,
-// 			EndLocation,
-// 			VaultSphereRadiusFirstCheck,
-// 			TraceTypeQuery1,
-// 			false,
-// 			ActorsToIgnore,
-// 			EDrawDebugTrace::None,
-// 			OutHitFirstCheck,
-// 			true
-// 			/*FLinearColor::Red,
-// 			FLinearColor::Green,
-// 			5.f*/
-// 			);
-// 		
-// 		if (bShereHit)
-// 		{
-// 			break;
-// 		}
-// 	}
-// 		
-// 	for (int j = 0; j < NumTracesSecondCheck;j++)
-// 	{
-// 		FHitResult OutHit;
-// 		FVector ForwardOffset = GetActorForwardVector() * (j * VaultZOffsetSecondTrace);
-// 		// GEngine->AddOnScreenDebugMessage(-1,5.f,FColor::Red,
-// 		// 	FString::Printf(TEXT("checks: %d"),j));
-// 		FVector HitLocationZOffset = OutHitFirstCheck.Location + ZOffsetVector;
-// 		FVector StartLocationSecondCheck = HitLocationZOffset + ForwardOffset;
-// 		FVector EndLocationSecondCheck = StartLocationSecondCheck - ZOffsetVector;
-// 		
-// 		bool bSecondCheckHit = UKismetSystemLibrary::SphereTraceSingle(
-// 			this,
-// 			StartLocationSecondCheck,
-// 			EndLocationSecondCheck,
-// 			VaultSphereRadiusSecondCheck,
-// 			TraceTypeQuery1,
-// 			false,
-// 			ActorsToIgnore,
-// 			EDrawDebugTrace::None,
-// 			OutHit,
-// 			true,
-// 			FLinearColor::Red,
-// 			FLinearColor::Green,
-// 			5.f
-// 			);
-// 		if (bSecondCheckHit)
-// 		{
-// 			if (OutHit.bStartPenetrating)
-// 			{
-// 				CanVault = false;
-// 				VaultLandPos = FVector(0, 0, 20000);
-// 				break;
-// 			}
-// 			
-// 			if (j == 0)
-// 			{
-// 				VaultStartPos = OutHit.Location;
-// 				// UKismetSystemLibrary::DrawDebugSphere(
-// 				// 	this,VaultStartPos,VaultSphereRadiusSecondCheck,12,
-// 				// 	FColor::Purple,10.f,2.f);
-// 			}
-// 			VaultMiddlePos = OutHit.Location;
-// 			// UKismetSystemLibrary::DrawDebugSphere(
-// 			// 		this,VaultMiddlePos,VaultSphereRadiusSecondCheck,12,
-// 			// 		FColor::Yellow,10.f,2.f);
-// 		}
-// 		else
-// 		{
-// 			FHitResult OutHitThirdCheck;
-// 			FVector DirectionWithOffset = GetActorForwardVector() * 80.f;
-// 			FVector StartLocationThirdCheck = OutHit.TraceStart + DirectionWithOffset;
-// 			FVector EndLocationThirdCheck = StartLocationThirdCheck - FVector(0,0,1000);
-// 			bool bLineTraceHit = UKismetSystemLibrary::LineTraceSingle(this,StartLocationThirdCheck,EndLocationThirdCheck,
-// 				TraceTypeQuery1,false,ActorsToIgnore,EDrawDebugTrace::None,OutHitThirdCheck,
-// 				true/*FColor::Blue,FColor::Red,5.f*/);
-// 			if (bLineTraceHit)
-// 			{
-// 				VaultLandPos = OutHitThirdCheck.Location;
-// 				CanVault = true;
-// 				VaultMotionWarp();
-// 				break;
-// 			}
-// 		}
-// 	}
-// }
-//
-// void ARPGSystemsCharacter::VaultMotionWarp()
-// {
-// 	USkeletalMeshComponent* MeshRef = GetMesh();
-// 	if (!IsValid(MeshRef))
-// 	{
-// 		return;
-// 	}
-// 	
-// 	float MeshZWorldLocation = MeshRef->GetComponentLocation().Z;
-// 	float MinZOffset = MeshZWorldLocation - LandingZOffset;
-// 	float MaxZOffset = MeshZWorldLocation + LandingZOffset;
-// 	
-// 	if (CanVault && VaultLandPos.Z >=  MinZOffset && VaultLandPos.Z <= MaxZOffset)
-// 	{
-// 		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-// 		if (!IsValid(AnimInstance) || !IsValid(VaultMontage))
-// 		{
-// 			return;
-// 		}
-// 		
-// 		GetCharacterMovement()->SetMovementMode(MOVE_Flying);
-// 		SetActorEnableCollision(false);
-// 		
-// 		FMotionWarpingTarget TargetStart;
-// 		TargetStart.Location = VaultStartPos;
-// 		TargetStart.Name = FName("VaultStart");
-// 		TargetStart.Rotation = GetActorRotation();
-// 		MotionWarpingComponent->AddOrUpdateWarpTarget(TargetStart);
-// 		FMotionWarpingTarget TargetMiddle;
-// 		TargetMiddle.Location = VaultMiddlePos;
-// 		TargetMiddle.Name = FName("VaultMiddle");
-// 		TargetMiddle.Rotation = GetActorRotation();
-// 		MotionWarpingComponent->AddOrUpdateWarpTarget(TargetMiddle);
-// 		FMotionWarpingTarget TargetLand;
-// 		TargetLand.Location = VaultLandPos;
-// 		TargetLand.Name = FName("VaultLand");
-// 		TargetLand.Rotation = GetActorRotation();
-// 		MotionWarpingComponent->AddOrUpdateWarpTarget(TargetLand);
-//
-// 		AnimInstance->OnMontageEnded.AddDynamic(this, &ARPGSystemsCharacter::OnVaultCompleted);
-// 		AnimInstance->Montage_Play(VaultMontage);
-// 	}
-// }
-//
-// void ARPGSystemsCharacter::OnVaultCompleted(UAnimMontage* Montage, bool bInterrupted)
-// {
-// 	GetCharacterMovement()->SetMovementMode(MOVE_Walking);
-// 	SetActorEnableCollision(true);
-// 	CanVault = false;
-// 	VaultLandPos = FVector(0, 0, 20000);
-// 	
-// 	GetMesh()->GetAnimInstance()->OnMontageEnded.RemoveDynamic(this, &ARPGSystemsCharacter::OnVaultCompleted);
-// }
+
+void ARPGSystemsCharacter::ChangeAttachPoint(FGameplayTag OriginSocket, FGameplayTag DestinationSocket)
+{
+	
+}
 
 void ARPGSystemsCharacter::Death_Implementation()
 {

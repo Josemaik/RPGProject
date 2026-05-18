@@ -5,10 +5,13 @@
 #include "CoreMinimal.h"
 #include "AbilitySystemInterface.h"
 #include "CharacterBase.h"
+#include "Components/TimelineComponent.h"
 #include "Interfaces/RPGAbilitySystemInterface.h"
 #include "Logging/LogMacros.h"
 #include "RPGSystemsCharacter.generated.h"
 
+struct FTimeline;
+class UEquipmentInstance;
 class URPGVaultComponent;
 class IInteractableInterface;
 class UEquipmentManagerComponent;
@@ -97,12 +100,41 @@ public:
 	UEquipmentManagerComponent* GetEquipmentComponent() const { return EquipmentComponent; }
 	
 	/*equipment instances*/
-	AEquipmentActor* GetRightHandEquipmentActor() const { return RightHandEquipment; }
-	AEquipmentActor* GetLeftHandEquipmentActor() const { return LeftHandEquipment; }
-	void SetRightHandEquipment(AEquipmentActor* NewRightHandEquipment);
-	void SetLeftHandEquipment(AEquipmentActor* NewLeftHandEquipment);
-	void RemoveRightHandEquipment();
-	void RemoveLeftHandEquipment();
+	AEquipmentActor* GetEquipmentActor(FGameplayTag AttachTag);
+	void SetEquipment(UEquipmentInstance* NewInstance);
+	void RemoveEquipment(UEquipmentInstance* InstanceToRemove);
+	void ChangueEquipmentAttachPoint(FGameplayTag OldAttachTag,FGameplayTag NewAttachTag);
+
+	TArray<UEquipmentInstance*> EquipmentInstances;
+	
+	UPROPERTY(EditDefaultsOnly)
+	TMap<FGameplayTag,FName> AttachNames;
+
+	UFUNCTION()
+	void UpdateCameraAim(float Value);
+	
+	void OnRangeStartAiming();
+	void OnRangeStopAiming();
+	bool bIsAiming = false;
+	FTimeline CameraTimeline;
+
+	UPROPERTY(EditAnywhere, Category = "Camera|Aim")
+	UCurveFloat* CameraAimCurve;
+
+	UPROPERTY(EditAnywhere, Category = "Camera|Aim")
+	float DefaultArmLength = 200.f;
+
+	UPROPERTY(EditAnywhere, Category = "Camera|Aim")
+	float AimArmLength = 300.f;
+
+	UPROPERTY(EditAnywhere, Category = "Camera|Aim")
+	FVector DefaultSocketOffset = FVector::ZeroVector;
+
+	UPROPERTY(EditAnywhere, Category = "Camera|Aim")
+	FVector AimSocketOffset = FVector(149.f, 43.f, 73.f);
+
+	UPROPERTY(EditAnywhere, Category = "Camera|Aim")
+	float CameraInterpSpeed = 10.f;
 
 	UArrowComponent* GetKickSphereTracePoint() const { return KickSphereTracePoint; }
 protected:
@@ -129,6 +161,7 @@ protected:
 	
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	virtual void BeginPlay() override;
+	virtual void Tick(float DeltaSeconds) override;
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 
 	void AddEquipmentToCharacterCapture(AActor* Actor) const;
@@ -140,50 +173,8 @@ private:
 	UFUNCTION()
 	void OnRep_EquipmentComponent();
 
-	/*Move to Component***********************/
-	// UFUNCTION(BlueprintCallable)
-	// void TryVault();
-	//
-	// void VaultMotionWarp();
-	//
-	// UFUNCTION()
-	// void OnVaultCompleted(UAnimMontage* Montage, bool bInterrupted);
-	
-	// UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"),Category="Custom Values|Animation")
-	// UAnimMontage* VaultMontage;
-	
-	//Vaulting
-	// const float VaultZOffsetFirstTrace = 30.f;
-	// const float VaultZOffsetSecondTrace = 50.f;
-	// const int32 NumTracesFirstCheck = 3;
-	// const int32 NumTracesSecondCheck = 6;
-	// const float MaxDetectionDistance = 180.f;
-	// const float LandingZOffset = 50.f;
-	// const FVector ZOffsetVector = FVector(0, 0, 100.f);
-	//
-	// FVector VaultStartPos = FVector::ZeroVector;
-	// FVector VaultMiddlePos = FVector::ZeroVector;
-	// FVector VaultLandPos = FVector::ZeroVector;
-	//
-	// bool CanVault = false;
-	//
-	// UPROPERTY()
-	// float VaultSphereRadiusFirstCheck;
-	// UPROPERTY()
-	// float VaultSphereRadiusSecondCheck;
-	/****************************************/
-
-	UPROPERTY()
-	AEquipmentActor* RightHandEquipment;
-
-	UPROPERTY()
-	AEquipmentActor* LeftHandEquipment;
-
-	UPROPERTY()
-	AEquipmentActor* BackEquipment;
-
 	//Swap Equipments
-	//void ChangePosition(FGameplayTag OriginSocket, FGameplayTag DestinationSocket);
+	void ChangeAttachPoint(FGameplayTag OriginSocket, FGameplayTag DestinationSocket);
 
 	virtual void Death_Implementation() override;
 	
@@ -199,3 +190,5 @@ private:
 	UPROPERTY(BlueprintReadOnly,meta =(AllowPrivateAccess=true))
 	TObjectPtr<URPGAttributeSet> RPGAttributes;
 };
+
+
