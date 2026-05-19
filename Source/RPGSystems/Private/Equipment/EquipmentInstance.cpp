@@ -21,6 +21,11 @@ void UEquipmentInstance::OnUnEquipped()
 
 void UEquipmentInstance::SpawnEquipmentActors(const TArray<FEquipmentActorsToSpawn>& ActorsToSpawn,FGameplayTag AttachTag)
 {
+	if (ActorsToSpawn.IsEmpty() || !AttachTag.IsValid())
+	{
+		return;
+	}
+	
 	OwnedCharacter = Cast<ARPGSystemsCharacter>(GetCharacter());
 	if (IsValid(OwnedCharacter))
 	{
@@ -64,6 +69,11 @@ void UEquipmentInstance::SpawnEquipmentActors(const TArray<FEquipmentActorsToSpa
 
 void UEquipmentInstance::DestroySpawnedActors(FGameplayTag AttachTag)
 {
+	if (SpawnedActors.IsEmpty() || !AttachTag.IsValid())
+	{
+		return;
+	}
+	
 	for (const TPair<FGameplayTag,AEquipmentActor*>& Actor : SpawnedActors)
 	{
 		Actor.Value->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);

@@ -10,6 +10,8 @@
 #include "Net/Serialization/FastArraySerializer.h"
 #include "EquipmentManagerComponent.generated.h"
 
+class AEquipmentActor;
+
 UENUM()
 enum class EUnequipReason : uint8
 {
@@ -37,6 +39,9 @@ struct FRPGEquipmentEntry : public FFastArraySerializerItem
 
 	UPROPERTY(BlueprintReadOnly)
 	FGameplayTag AttachTag = FGameplayTag();
+
+	UPROPERTY()
+	TSoftClassPtr<AEquipmentActor> EquipmentClass;
 
 	UPROPERTY(BlueprintReadOnly)
 	FEquipmentEffectPackage EffectPackage = FEquipmentEffectPackage();
@@ -114,7 +119,7 @@ struct FRPGEquipmentList : public FFastArraySerializer
 	FOnEquipmentEntrySignature EquipmentEntryDelegate;
 	FOnUnEquippedEntry UnEquippedEntryDelegate;
 	
-	
+	TArray<FRPGEquipmentEntry>& GetEntries() { return Entries; }
 private:
 	UPROPERTY(NotReplicated)
 	TObjectPtr<UEquipmentManagerComponent> OwnerComponent;
@@ -153,6 +158,7 @@ public:
 	void HandleEquipmentRequested(const TSubclassOf<UEquipmentDefinition>& EquipmentDefinition,
 	const FEquipmentEffectPackage& EffectPackage);
 	void HandleUnEquippedItem(const FRPGEquipmentEntry& UnEquippedEntry) const;
+	TSoftClassPtr<AEquipmentActor> GetEquipmentClassBySlotTag(FGameplayTag SlotTag);
 
 	void BindInventoryDelegates(UInventoryComponent* InvComponent);
 protected:

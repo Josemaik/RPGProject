@@ -55,6 +55,7 @@ namespace RPGInventoryTags
     {
         UE_DECLARE_GAMEPLAY_TAG_EXTERN(SilverWeapon); // Equipment.Slot.SilverWeapon
         UE_DECLARE_GAMEPLAY_TAG_EXTERN(SteelWeapon);  // Equipment.Slot.SteelWeapon
+        UE_DECLARE_GAMEPLAY_TAG_EXTERN(Bolts); //Equipment.Slot.Bolts
         UE_DECLARE_GAMEPLAY_TAG_EXTERN(Chest);         // Equipment.Slot.Chest
         UE_DECLARE_GAMEPLAY_TAG_EXTERN(Gauntlets);     // Equipment.Slot.Gauntlets
         UE_DECLARE_GAMEPLAY_TAG_EXTERN(Trousers);      // Equipment.Slot.Trousers

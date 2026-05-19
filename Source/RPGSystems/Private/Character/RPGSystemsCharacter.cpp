@@ -134,6 +134,11 @@ void ARPGSystemsCharacter::AddToExperience_Implementation(const FScalableFloat& 
 	}
 }
 
+TSoftClassPtr<AEquipmentActor> ARPGSystemsCharacter::GetEquipmentClassBySlotTag(FGameplayTag SlotTag) const
+{
+	return EquipmentComponent->GetEquipmentClassBySlotTag(SlotTag);
+}
+
 void ARPGSystemsCharacter::UpdateCameraAim(float Value)
 {
 	CameraBoom->TargetArmLength = FMath::Lerp(DefaultArmLength, AimArmLength, Value);

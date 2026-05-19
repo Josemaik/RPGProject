@@ -49,11 +49,15 @@ UEquipmentInstance* FRPGEquipmentList::AddEntry(const TSubclassOf<UEquipmentDefi
 	NewEntry.EntryTag = EquipmentCTO->ItemTag;
 	NewEntry.SlotTag = EquipmentCTO->SlotTag;
 	NewEntry.AttachTag = EquipmentCTO->AttachTag;
+	NewEntry.EquipmentClass = EquipmentCTO->ActorsToSpawn.Last().EquipmentClass;
 	NewEntry.EquipmentDefinition = InEquipmentDefinition;
 	NewEntry.EffectPackage = EffectPackage;
-	NewEntry.Instance = NewObject<UEquipmentInstance>(OwnerComponent->GetOwner(), InstanceType);
 
-	NewEntry.Instance->SpawnEquipmentActors(EquipmentCTO->ActorsToSpawn,EquipmentCTO->AttachTag);
+	if (NewEntry.AttachTag.IsValid())
+	{
+		NewEntry.Instance = NewObject<UEquipmentInstance>(OwnerComponent->GetOwner(), InstanceType);
+		NewEntry.Instance->SpawnEquipmentActors(EquipmentCTO->ActorsToSpawn,EquipmentCTO->AttachTag);
+	}
 	
 	if (NewEntry.HasAbility())
 	{
@@ -328,6 +332,18 @@ void UEquipmentManagerComponent::HandleUnEquippedItem(const FRPGEquipmentEntry& 
 	{
 		InvComponentRef->AddUnEquippedItemEntry(UnEquippedEntry.EntryTag, UnEquippedEntry.EffectPackage);
 	}
+}
+
+TSoftClassPtr<AEquipmentActor> UEquipmentManagerComponent::GetEquipmentClassBySlotTag(FGameplayTag SlotTag)
+{
+	for (const FRPGEquipmentEntry& EquipmentEntry: EquipmentList.GetEntries())
+	{
+		if (EquipmentEntry.SlotTag.MatchesTagExact(SlotTag))
+		{
+			return EquipmentEntry.EquipmentClass;
+		}
+	}
+	return nullptr;
 }
 
 void UEquipmentManagerComponent::ServerEquipItem_Implementation(TSubclassOf<UEquipmentDefinition> EquipmentDefiniton,

@@ -39,6 +39,11 @@ void UEquipmentGenerator::RollForStats(FEquipmentEffectPackage& OutPackage,const
 	}
 	else
 	{
+		if (EquipmentCDO->PossibleAbilityRolls.IsEmpty())
+		{
+			return;
+		}
+		
 		bool bShouldRoll = true;
 		int32 NumRollAbilities = 0;
 		while (bShouldRoll)

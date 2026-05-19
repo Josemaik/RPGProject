@@ -6,10 +6,14 @@
 #include "Abilities/Tasks/AbilityTask_WaitGameplayEvent.h"
 #include "Abilities/Tasks/AbilityTask_WaitInputPress.h"
 #include "Abilities/Tasks/AbilityTask_WaitInputRelease.h"
+#include "AbilitySystem/AbilityTasks/AbilityTask_ArrowProjectileHits.h"
 #include "AbilitySystem/NativeTags/RPGGameplayTags.h"
 #include "AbilitySystem/NativeTags/RPGInventoryTags.h"
 #include "Character/RPGSystemsCharacter.h"
 #include "Character/Animation/RPGAnimInstance.h"
+#include "Components/ArrowComponent.h"
+#include "Equipment/EquipmentActors/ArrowActor.h"
+#include "Equipment/EquipmentActors/CrossBowActor.h"
 
 void UCrossbowAttackAbility::OnGiveAbility(const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilitySpec& Spec)
 {
@@ -38,18 +42,102 @@ void UCrossbowAttackAbility::ReadyToShoot(FGameplayEventData Payload)
 
 void UCrossbowAttackAbility::OnInputReleased(float TimeWaited)
 {
-	if (bIsReadyToShoot)
-	{
-		//Shoot();
+	// if (bIsReadyToShoot)
+	// {
+	ShootArrow();
 		//Init timer and sheatcrossbow
-		FTimerDelegate TimerDelegate;
-		TimerDelegate.BindUObject(this, &UCrossbowAttackAbility::SheathCrossbow);
-		GetWorld()->GetTimerManager().SetTimer(WaitUntilSheathTimer,TimerDelegate,3.f,false);
-		
+	FTimerDelegate TimerDelegate;
+	TimerDelegate.BindUObject(this, &UCrossbowAttackAbility::SheathCrossbow);
+	GetWorld()->GetTimerManager().SetTimer(WaitUntilSheathTimer,TimerDelegate,1.f,false);
+	
+	//return;
+	//}
+	//Cancelled
+	//SheathCrossbow();
+}
+
+void UCrossbowAttackAbility::ShootArrow()
+{
+	if (!IsValid(LastSpawnedArrow) || !IsValid(CrossBowActor))
+	{
 		return;
 	}
-	//Cancelled
-	SheathCrossbow();
+
+	//1. ShootDirection =  OwnerCharacter->GetControlRotation().Vector();
+	
+	// TObjectPtr<UArrowComponent> MuzzleDirection = Cast<UArrowComponent>(CrossBowActor->MuzzleDirection);
+	// if (!IsValid(MuzzleDirection)) return;
+	
+	//2. MuzzleDirection->GetForwardVector()
+
+	APlayerController* PC = Cast<APlayerController>(OwnerCharacter->GetController());
+	if (!PC) return;
+
+	FVector CameraLocation;
+	FRotator CameraRotation;
+	PC->GetPlayerViewPoint(CameraLocation, CameraRotation);
+
+	FVector TraceStart = CameraLocation;
+	FVector TraceEnd = CameraLocation  + CameraRotation.Vector() * 50000.f;
+
+	FHitResult HitResult;
+	FCollisionQueryParams Params;
+	Params.AddIgnoredActor(OwnerCharacter);
+	Params.AddIgnoredActor(LastSpawnedArrow);
+
+	FVector TargetPoint;
+	if (GetWorld()->LineTraceSingleByChannel(HitResult, TraceStart, TraceEnd, ECC_Visibility, Params))
+	{
+		TargetPoint = HitResult.ImpactPoint;
+	}
+	else
+	{
+		TargetPoint = TraceEnd;
+	}
+
+	FVector Direction = (TargetPoint - LastSpawnedArrow->GetActorLocation()).GetSafeNormal();
+	
+	LastSpawnedArrow->Launch(Direction,1.f);
+	LastSpawnedArrow = nullptr;
+}
+
+void UCrossbowAttackAbility::SpawnArrow()
+{
+	CrossBowActor = Cast<ACrossBowActor>(OwnerCharacter->GetEquipmentActor(RPGInventoryTags::AttachPoint::LeftHand));
+	if (!IsValid(CrossBowActor))
+	{
+		return;
+	}
+	
+	TObjectPtr<UArrowComponent> CrossBowArrowComponent = Cast<UArrowComponent>(CrossBowActor->ArrowComponent);
+	if (!IsValid(CrossBowArrowComponent))
+	{
+		return;
+	}
+	
+	const FVector SpawnLocation = CrossBowArrowComponent->GetComponentLocation();
+	const FRotator SpawnRotation = CrossBowArrowComponent->GetComponentRotation();
+
+	FTransform SpawnTransform;
+	SpawnTransform.SetLocation(SpawnLocation);
+	SpawnTransform.SetRotation(SpawnRotation.Quaternion());
+
+	LastSpawnedArrow = Cast<AArrowActor>(
+		GetWorld()->SpawnActorDeferred<AArrowActor>(OwnerCharacter->GetEquipmentClassBySlotTag(RPGInventoryTags::EquipmentSlot::Bolts).Get(),
+			SpawnTransform, GetAvatarActorFromActorInfo()));
+	if (IsValid(LastSpawnedArrow))
+	{
+		FDamageEffectInfo DamageEffectInfo;
+		CaptureDamageEffectInfo(nullptr, DamageEffectInfo);
+
+		LastSpawnedArrow->DamageEffectInfo = DamageEffectInfo;
+		
+		LastSpawnedArrow->FinishSpawning(SpawnTransform);
+		LastSpawnedArrow->AttachToComponent(
+			CrossBowArrowComponent,
+			  FAttachmentTransformRules::SnapToTargetNotIncludingScale
+		);
+	}
 }
 
 void UCrossbowAttackAbility::SheathCrossbow()
@@ -88,6 +176,7 @@ void UCrossbowAttackAbility::ActivateAbility(const FGameplayAbilitySpecHandle Ha
 	// 	EMontagePlayReturnType::MontageLength, AimCrossbowMontage->GetPlayLength());
 	
 	//SetupMontageEvents();
+	SpawnArrow();
 }
 
 void UCrossbowAttackAbility::EndAbility(const FGameplayAbilitySpecHandle Handle,

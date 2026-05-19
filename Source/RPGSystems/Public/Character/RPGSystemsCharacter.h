@@ -110,6 +110,8 @@ public:
 	UPROPERTY(EditDefaultsOnly)
 	TMap<FGameplayTag,FName> AttachNames;
 
+	TSoftClassPtr<AEquipmentActor> GetEquipmentClassBySlotTag(FGameplayTag SlotTag) const;
+
 	UFUNCTION()
 	void UpdateCameraAim(float Value);
 	

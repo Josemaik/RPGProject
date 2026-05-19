@@ -45,6 +45,7 @@ namespace RPGInventoryTags
     {
         UE_DEFINE_GAMEPLAY_TAG_COMMENT(SilverWeapon, "Equipment.Slot.SilverWeapon", "Witcher: espada de plata");
         UE_DEFINE_GAMEPLAY_TAG_COMMENT(SteelWeapon,  "Equipment.Slot.SteelWeapon",  "Witcher: espada de acero");
+        UE_DEFINE_GAMEPLAY_TAG_COMMENT(Bolts,  "Equipment.Slot.Bolts",  "Witcher: bolts");
         UE_DEFINE_GAMEPLAY_TAG_COMMENT(Chest,        "Equipment.Slot.Chest",        "");
         UE_DEFINE_GAMEPLAY_TAG_COMMENT(Gauntlets,    "Equipment.Slot.Gauntlets",    "");
         UE_DEFINE_GAMEPLAY_TAG_COMMENT(Trousers,     "Equipment.Slot.Trousers",     "");

@@ -6,6 +6,10 @@
 #include "RPGDamageAbility.h"
 #include "CrossbowAttackAbility.generated.h"
 
+class ACrossBowActor;
+class UArrowComponent;
+class AArrowActor;
+class UAbilityTask_ArrowProjectileHits;
 class ARPGSystemsCharacter;
 class URPGAnimInstance;
 class UAbilityTask_WaitGameplayEvent;
@@ -39,6 +43,8 @@ private:
 	void OnInputReleased(float TimeWaited);
 
 	void SheathCrossbow();
+	void ShootArrow();
+	void SpawnArrow();
 	
 	bool bIsReadyToShoot = false;
 
@@ -50,8 +56,16 @@ private:
 	UPROPERTY()
 	TObjectPtr<ARPGSystemsCharacter> OwnerCharacter;
 
+	UPROPERTY()
+	TObjectPtr<AArrowActor> LastSpawnedArrow;
+
+	UPROPERTY()
+	TObjectPtr<ACrossBowActor> CrossBowActor;
+
 	// UPROPERTY()
 	// TObjectPtr<UAbilityTask_WaitInputPress> WaitInputPressedEvent;
+	UPROPERTY()
+	TObjectPtr<UAbilityTask_ArrowProjectileHits> ArrowProjectileTask;
 
 	UPROPERTY()
 	TObjectPtr<UAbilityTask_WaitInputRelease> WaitInputReleasedEvent;
