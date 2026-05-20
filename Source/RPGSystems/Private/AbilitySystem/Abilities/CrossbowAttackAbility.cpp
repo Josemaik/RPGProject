@@ -165,7 +165,7 @@ void UCrossbowAttackAbility::ActivateAbility(const FGameplayAbilitySpecHandle Ha
 	OwnerCharacter->OnRangeStartAiming();
 	//mesh attach
 	OwnerCharacter->ChangueEquipmentAttachPoint(RPGInventoryTags::AttachPoint::Back,RPGInventoryTags::AttachPoint::LeftHand);
-
+	OwnerCharacter->ChangueEquipmentAttachPoint(RPGInventoryTags::AttachPoint::RightHand,RPGInventoryTags::AttachPoint::Back_Sword);
 	//cross bow data
 	CrossBowActor = Cast<ACrossBowActor>(OwnerCharacter->GetEquipmentActor(RPGInventoryTags::AttachPoint::LeftHand));
 	if (!IsValid(CrossBowActor))
@@ -173,7 +173,7 @@ void UCrossbowAttackAbility::ActivateAbility(const FGameplayAbilitySpecHandle Ha
 		return;
 	}
 	
-	CrossBowActor->SetOwner(OwnerCharacter);
+	CrossBowActor->SetOwnerCharacter(OwnerCharacter);
 
 	if (!CrossBowActor->bHasArrow)
 	{
@@ -197,6 +197,8 @@ void UCrossbowAttackAbility::EndAbility(const FGameplayAbilitySpecHandle Handle,
 	}
 
 	AnimInstance->OnMontageEnded.RemoveAll(this);
+	
+	OwnerCharacter->ChangueEquipmentAttachPoint(RPGInventoryTags::AttachPoint::Back_Sword,RPGInventoryTags::AttachPoint::RightHand);
 	
 	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
 }

@@ -13,4 +13,12 @@ UCLASS()
 class RPGSYSTEMS_API URPGMotionWarpingComponent : public UMotionWarpingComponent
 {
 	GENERATED_BODY()
+public:
+	void SetLockedTarget(AActor* Target);
+	void UpdateAttackWarpTarget();
+private:
+	void FindAndSetNearestEnemyTarget();
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<AActor> LockedTarget;
 };

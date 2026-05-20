@@ -71,6 +71,7 @@ namespace RPGInventoryTags
         UE_DECLARE_GAMEPLAY_TAG_EXTERN(RightHand);   // Equipment.AttachPoint.RightHand
         UE_DECLARE_GAMEPLAY_TAG_EXTERN(LeftHand);    // Equipment.AttachPoint.LeftHand
         UE_DECLARE_GAMEPLAY_TAG_EXTERN(Back);        // Equipment.AttachPoint.Back
+        UE_DECLARE_GAMEPLAY_TAG_EXTERN(Back_Sword);
         UE_DECLARE_GAMEPLAY_TAG_EXTERN(Hip);         // Equipment.AttachPoint.Hip
         UE_DECLARE_GAMEPLAY_TAG_EXTERN(Chest);       // Equipment.AttachPoint.Chest
     }

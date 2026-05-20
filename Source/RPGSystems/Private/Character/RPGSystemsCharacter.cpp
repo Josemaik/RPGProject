@@ -331,6 +331,15 @@ void ARPGSystemsCharacter::GetLifetimeReplicatedProps(TArray<class FLifetimeProp
 	DOREPLIFETIME(ARPGSystemsCharacter, EquipmentComponent);
 }
 
+void ARPGSystemsCharacter::UpdateAttackWarpTarget() const
+{
+	if (!IsValid(MotionWarpingComponent))
+	{
+		return;
+	}
+	MotionWarpingComponent->UpdateAttackWarpTarget();
+}
+
 void ARPGSystemsCharacter::AddEquipmentToCharacterCapture(AActor* Actor) const
 {
 	if (!IsValid(CharacterCaptureComponent)) return;
@@ -449,6 +458,8 @@ void ARPGSystemsCharacter::ChangueEquipmentAttachPoint(FGameplayTag OldAttachTag
 		}
 	}
 
+	if (!IsValid(CurrentInstance)) return;
+
 	if (AlreadyExistedInstance != nullptr && AlreadyExistedInstance != CurrentInstance)
 	{
 		AlreadyExistedInstance->ChangeAttachPoint(NewAttachTag,OldAttachTag);
@@ -563,4 +574,10 @@ void ARPGSystemsCharacter::Death_Implementation()
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::Type::NoCollision);
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::Type::QueryAndPhysics);
 	GetMesh()->SetSimulatePhysics(true);
+}
+
+void ARPGSystemsCharacter::SetTargetLock(AActor* NewTargetLockActor)
+{
+	TargetLock = NewTargetLockActor;
+	MotionWarpingComponent->SetLockedTarget(TargetLock);
 }

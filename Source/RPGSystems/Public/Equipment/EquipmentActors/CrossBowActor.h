@@ -28,7 +28,7 @@ public:
 	// Sets default values for this actor's properties
 	ACrossBowActor();
 
-	void SetOwner(const TObjectPtr<ARPGSystemsCharacter>& NewOwner) { OwnerCharacter = NewOwner; }
+	void SetOwnerCharacter(const TObjectPtr<ARPGSystemsCharacter>& NewOwner) { OwnerCharacter = NewOwner; }
 	void Shoot();
 	void SpawnArrow(FDamageEffectInfo DamageEffectInfo);
 	void AttachArrow() const;

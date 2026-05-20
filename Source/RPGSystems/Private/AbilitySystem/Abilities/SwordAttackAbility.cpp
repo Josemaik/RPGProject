@@ -11,6 +11,7 @@
 #include "AbilitySystem/NativeTags/RPGGameplayTags.h"
 #include "AbilitySystem/AbilityTasks/AbilityTask_KickTrace.h"
 #include "AbilitySystem/AbilityTasks/AbilityTask_SwordTrace.h"
+#include "Character/RPGSystemsCharacter.h"
 #include "Kismet/GameplayStatics.h"
 #include "Libraries/RPGAbilitySystemLibrary.h"
 
@@ -37,6 +38,7 @@ void USwordAttackAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handl
                                           const FGameplayEventData* TriggerEventData)
 {
 	AnimInstance = ActorInfo->GetAnimInstance();
+	OwnerCharacter = Cast<ARPGSystemsCharacter>(ActorInfo->AvatarActor);
 	
 	SetupInputTask();
 	
@@ -217,6 +219,11 @@ void USwordAttackAbility::ChooseAttack()
 	
 	World->GetTimerManager().SetTimer(DelayBeforeAttackTimer,[WeakThis]()
 	{
+		if (IsValid(WeakThis->OwnerCharacter))
+		{
+			WeakThis->OwnerCharacter->UpdateAttackWarpTarget();
+		}
+		
 		if (!WeakThis.IsValid()) return;
 		switch (WeakThis->AttackIndex)
 		{

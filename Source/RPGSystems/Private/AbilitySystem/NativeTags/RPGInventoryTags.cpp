@@ -61,6 +61,7 @@ namespace RPGInventoryTags
         UE_DEFINE_GAMEPLAY_TAG_COMMENT(RightHand, "Equipment.AttachPoint.RightHand", "hand_r");
         UE_DEFINE_GAMEPLAY_TAG_COMMENT(LeftHand,  "Equipment.AttachPoint.LeftHand",  "hand_l");
         UE_DEFINE_GAMEPLAY_TAG_COMMENT(Back,      "Equipment.AttachPoint.Back",      "spine_03");
+        UE_DEFINE_GAMEPLAY_TAG_COMMENT(Back_Sword,"Equipment.AttachPoint.Back_Sword_Slot","Socket silver sword");
         UE_DEFINE_GAMEPLAY_TAG_COMMENT(Hip,       "Equipment.AttachPoint.Hip",       "");
         UE_DEFINE_GAMEPLAY_TAG_COMMENT(Chest,     "Equipment.AttachPoint.Chest",     "");
     }

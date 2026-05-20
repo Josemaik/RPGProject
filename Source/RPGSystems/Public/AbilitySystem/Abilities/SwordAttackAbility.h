@@ -7,6 +7,7 @@
 #include "RPGGameplayAbility.h"
 #include "SwordAttackAbility.generated.h"
 
+class ARPGSystemsCharacter;
 class UAbilityTask_KickTrace;
 class UAbilityTask_SwordTrace;
 class UAbilityTask_WaitInputPress;
@@ -55,6 +56,9 @@ private:
 	void OnHitActor(AActor* HitActor,const FVector& HitLocation);
 	/*Timers*/
 	FTimerHandle DelayBeforeAttackTimer;
+
+	UPROPERTY()
+	TObjectPtr<ARPGSystemsCharacter> OwnerCharacter;
 	
 	/*Animation Data*/
 	UPROPERTY()

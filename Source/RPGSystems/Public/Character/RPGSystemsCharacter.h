@@ -54,6 +54,7 @@ public:
 	/*Combat*/
 	UArrowComponent* GetKickSphereTracePoint() const { return KickSphereTracePoint; }
 	TMap<FGameplayTag,FName>& GetSocketNames() { return AttachNames; }
+	void UpdateAttackWarpTarget() const;
 
 	//character capture for UI
 	void AddEquipmentToCharacterCapture(AActor* Actor) const;
@@ -191,6 +192,13 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Camera|Aim")
 	float MaxSpeedWhileAiming = 130.f;
 	float DefaultMaxSpeed;
+
+	UFUNCTION(BlueprintCallable)
+	void SetTargetLock(AActor* NewTargetLockActor);
+	
+	//Combat
+	UPROPERTY(EditAnywhere,BlueprintReadWrite, Category = "Combat", meta=(allowPrivateAccess="true"))
+	TObjectPtr<AActor> TargetLock;
 };
 
 
