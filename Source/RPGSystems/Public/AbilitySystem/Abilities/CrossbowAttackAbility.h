@@ -31,33 +31,33 @@ private:
 	UCrossbowAttackAbility();
 
 	void SetupInputTask();
-	void SetupMontageEvents();
 
 	UFUNCTION()
-	void ReadyToShoot(FGameplayEventData Payload);
+	void OnReloadMontageEnded(UAnimMontage* Montage, bool bInterrupted);
 	
-	// UFUNCTION()
-	// void OnInputPressed(float TimeWaited);
+	UFUNCTION()
+	void OnInputPressed(float TimeWaited);
 
 	UFUNCTION()
 	void OnInputReleased(float TimeWaited);
 
-	void SheathCrossbow();
+	void OnCancelWindowFinished();
+	void StartCancelWindow();
+	void Reload();
 	void ShootArrow();
 	void SpawnArrow();
 	
-	bool bIsReadyToShoot = false;
+	bool bInputPressedInCalcelWindow = false;
+	bool bIsCancelTimeActive = false;
 
 	FTimerHandle WaitUntilSheathTimer;
+	FTimerHandle WaitAfterShootTimer;
 	
 	UPROPERTY()
 	TObjectPtr<URPGAnimInstance> AnimInstance;
 
 	UPROPERTY()
 	TObjectPtr<ARPGSystemsCharacter> OwnerCharacter;
-
-	UPROPERTY()
-	TObjectPtr<AArrowActor> LastSpawnedArrow;
 
 	UPROPERTY()
 	TObjectPtr<ACrossBowActor> CrossBowActor;
@@ -71,10 +71,13 @@ private:
 	TObjectPtr<UAbilityTask_WaitInputRelease> WaitInputReleasedEvent;
 
 	UPROPERTY()
-	TObjectPtr<UAbilityTask_WaitGameplayEvent> WaitAimReady;
+	TObjectPtr<UAbilityTask_WaitInputPress> WaitInputPressedEvent;
 
 	UPROPERTY(EditDefaultsOnly, Category="Custom Values|Animation")
 	TObjectPtr<UAnimMontage> AimCrossbowMontage;
+
+	UPROPERTY(EditDefaultsOnly, Category="Custom Values|Animation")
+	TObjectPtr<UAnimMontage> ReloadCrossbowMontage;
 };
 
 

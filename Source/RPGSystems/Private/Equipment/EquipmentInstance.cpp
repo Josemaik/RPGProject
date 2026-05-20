@@ -41,7 +41,7 @@ void UEquipmentInstance::SpawnEquipmentActors(const TArray<FEquipmentActorsToSpa
 				NewActor->FinishSpawning(FTransform::Identity);
 				NewActor->AttachToComponent(OwnedCharacter->GetMesh(), FAttachmentTransformRules::KeepRelativeTransform, ActorToSpawn.AttachName);
 
-				OwnedCharacter->AttachNames.Add(AttachTag,ActorToSpawn.AttachName);
+				OwnedCharacter->GetSocketNames().Add(AttachTag,ActorToSpawn.AttachName);
 				SpawnedActors.Emplace(AttachTag,NewActor);
 				OwnedCharacter->SetEquipment(this);
 			}
@@ -58,7 +58,7 @@ void UEquipmentInstance::SpawnEquipmentActors(const TArray<FEquipmentActorsToSpa
 						NewActor->FinishSpawning(FTransform::Identity);
 						NewActor->AttachToComponent(OwnedCharacter->GetMesh(), FAttachmentTransformRules::KeepRelativeTransform, ActorToSpawn.AttachName);
 
-						OwnedCharacter->AttachNames.Add(AttachTag,ActorToSpawn.AttachName);
+						OwnedCharacter->GetSocketNames().Add(AttachTag,ActorToSpawn.AttachName);
 						WeakThis->SpawnedActors.Emplace(AttachTag,NewActor);
 						OwnedCharacter->SetEquipment(this);
 					});
@@ -91,7 +91,7 @@ void UEquipmentInstance::ChangeAttachPoint(FGameplayTag OldAttachTag,FGameplayTa
 	{
 		AttachedActor->DetachFromActor(FDetachmentTransformRules::KeepRelativeTransform);
 		
-		FName SocketName = *OwnedCharacter->AttachNames.Find(NewAttachTag);
+		FName SocketName = *OwnedCharacter->GetSocketNames().Find(NewAttachTag);
 		AttachedActor->AttachToComponent(OwnedCharacter->GetMesh(), FAttachmentTransformRules::KeepRelativeTransform, SocketName);
 		SpawnedActors.Remove(OldAttachTag);
 		SpawnedActors.Add(NewAttachTag,AttachedActor);

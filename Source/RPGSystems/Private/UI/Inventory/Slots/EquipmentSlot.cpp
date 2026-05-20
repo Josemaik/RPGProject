@@ -243,6 +243,10 @@ void UEquipmentSlot::NativeOnDragCancelled(const FDragDropEvent& InDragDropEvent
 	{
 		EquipItemSlot(*DragOp->ItemEntry, DragOp->ItemDefinition);
 	}
+	if (DragOp->LastEnterSlotWidget)
+	{
+		DragOp->LastEnterSlotWidget->DisableDragOverPreview();
+	}
 }
 
 void UEquipmentSlot::NativeOnDragEnter(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent,

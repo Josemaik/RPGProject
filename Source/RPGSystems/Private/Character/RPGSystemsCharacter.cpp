@@ -147,19 +147,35 @@ void ARPGSystemsCharacter::UpdateCameraAim(float Value)
 
 void ARPGSystemsCharacter::OnRangeStartAiming()
 {
-	bIsAiming = true;
-	GetCharacterMovement()->MaxWalkSpeed = 130.f;
-	GetCharacterMovement()->bOrientRotationToMovement = false;
-	GetCharacterMovement()->bUseControllerDesiredRotation = true;
+	TObjectPtr<UCharacterMovementComponent> CharacterMovementComp = GetCharacterMovement();
+	if (!IsValid(CharacterMovementComp)) { return; }
+	
+	if (!IsValid(CameraBoom)) { return; }
+
+	//Save default values
+	DefaultMaxSpeed = CharacterMovementComp->GetMaxSpeed();
+	DefaultArmLength = CameraBoom->TargetArmLength;
+	DefaultSocketOffset = CameraBoom->SocketOffset;
+	
+	CharacterMovementComp->MaxWalkSpeed = MaxSpeedWhileAiming;
+	CharacterMovementComp->bOrientRotationToMovement = false;
+	CharacterMovementComp->bUseControllerDesiredRotation = true;
+	
 	CameraTimeline.Play();
 }
 
 void ARPGSystemsCharacter::OnRangeStopAiming()
 {
-	bIsAiming = true;
-	GetCharacterMovement()->MaxWalkSpeed = 500.f; // tu valor normal
-	GetCharacterMovement()->bOrientRotationToMovement = true;
-	GetCharacterMovement()->bUseControllerDesiredRotation = false;
+	TObjectPtr<UCharacterMovementComponent> CharacterMovementComp = GetCharacterMovement();
+	if (!IsValid(CharacterMovementComp)) { return; }
+	
+	if (!IsValid(CameraBoom)) { return; }
+	
+	//Restore Default values
+	CharacterMovementComp->MaxWalkSpeed = DefaultMaxSpeed;
+	CharacterMovementComp->bOrientRotationToMovement = true;
+	CharacterMovementComp->bUseControllerDesiredRotation = false;
+	
 	CameraTimeline.Reverse();
 }
 
@@ -509,23 +525,29 @@ void ARPGSystemsCharacter::Interact()
 // 	},0.1f,true);
 // }
 
-void ARPGSystemsCharacter::Look(const FInputActionValue& Value)
-{
-	// input is a Vector2D
-	FVector2D LookAxisVector = Value.Get<FVector2D>();
-
-	if (Controller != nullptr)
+	void ARPGSystemsCharacter::Look(const FInputActionValue& Value)
 	{
-		// add yaw and pitch input to controller
-		AddControllerYawInput(LookAxisVector.X);
-		AddControllerPitchInput(LookAxisVector.Y);
-	}
-}
+		// input is a Vector2D
+		FVector2D LookAxisVector = Value.Get<FVector2D>();
+		
+		if (Controller != nullptr)
+		{
+			AddControllerYawInput(LookAxisVector.X);
 
-void ARPGSystemsCharacter::ChangeAttachPoint(FGameplayTag OriginSocket, FGameplayTag DestinationSocket)
-{
-	
-}
+			float CurrentPitch = FRotator::NormalizeAxis(GetControlRotation().Pitch);
+
+			const float MinPitch = -40.f;
+			const float MaxPitch =  60.f;
+			
+			APlayerController* PC = Cast<APlayerController>(Controller);
+			float InputScale = PC ? PC->InputPitchScale_DEPRECATED : 1.f;
+			float NewPitch = FMath::Clamp(CurrentPitch + (LookAxisVector.Y * InputScale), MinPitch, MaxPitch);
+
+			FRotator NewRotation = GetControlRotation();
+			NewRotation.Pitch = NewPitch;
+			Controller->SetControlRotation(NewRotation);
+		}
+	}
 
 void ARPGSystemsCharacter::Death_Implementation()
 {

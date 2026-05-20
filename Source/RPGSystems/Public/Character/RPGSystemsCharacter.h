@@ -32,13 +32,86 @@ UCLASS(config=Game)
 class ARPGSystemsCharacter : public ACharacterBase,public IAbilitySystemInterface, public IRPGAbilitySystemInterface
 {
 	GENERATED_BODY()
+public:
+	ARPGSystemsCharacter(const FObjectInitializer& ObjectInitializer);
 	
+	/*Inventory and Equipment Getters*/
+	UInventoryComponent* GetInventoryComponent() const { return InventoryComponent; }
+	UEquipmentManagerComponent* GetEquipmentComponent() const { return EquipmentComponent; }
+	
+	/*equipment instances*/
+	void SetEquipment(UEquipmentInstance* NewInstance);
+	void RemoveEquipment(UEquipmentInstance* InstanceToRemove);
+	void ChangueEquipmentAttachPoint(FGameplayTag OldAttachTag,FGameplayTag NewAttachTag);
+	
+	AEquipmentActor* GetEquipmentActor(FGameplayTag AttachTag);
+	TSoftClassPtr<AEquipmentActor> GetEquipmentClassBySlotTag(FGameplayTag SlotTag) const;
+
+	/*Camera Aiming*/
+	void OnRangeStartAiming();
+	void OnRangeStopAiming();
+
+	/*Combat*/
+	UArrowComponent* GetKickSphereTracePoint() const { return KickSphereTracePoint; }
+	TMap<FGameplayTag,FName>& GetSocketNames() { return AttachNames; }
+
+	//character capture for UI
+	void AddEquipmentToCharacterCapture(AActor* Actor) const;
+	void RemoveEquipmentFromCharacterCapture(AActor* Actor) const;
+protected:
+	virtual void BeginPlay() override;
+	virtual void Tick(float DeltaSeconds) override;
+
+	//replication
+	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
+
+	//Input
+	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	/** Called for movement input */
+	void Move(const FInputActionValue& Value);
+	virtual void Jump() override;
+	virtual void StopJumping() override;
+	//controller input
+	void Look(const FInputActionValue& Value);
+	
+	virtual void PossessedBy(AController* NewController) override;
+	virtual void OnRep_PlayerState() override;
+
+	/*Ability System Interface*/
+	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
+	/*RPG Ability System Interface*/
+	virtual USceneComponent* GetDynamicSpawnPoint_Implementation() override;
+	virtual void AddToExperience_Implementation(const FScalableFloat& XPScale) override;
+	
+	virtual void InitAbilityActorInfo() override;
+	virtual void BindCallbacksToDependencies() override;
+	virtual void InitClassDefaults() override;
+	virtual void BroadcastInitialValues() override;
+
+	//Interact
+	void Interact();
+	UPROPERTY(BlueprintReadWrite)
+	TScriptInterface<IInteractableInterface> ThisFrameInteractActor;
+private:
+	UFUNCTION()
+	void UpdateCameraAim(float Value);
+
+	UFUNCTION()
+	void OnRep_InventoryComponent();
+
+	UFUNCTION()
+	void OnRep_EquipmentComponent();
+
+	virtual void Death_Implementation() override;
+	
+	//Camera
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	USpringArmComponent* CameraBoom;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	UCameraComponent* FollowCamera;
-	
+
+	//Input
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputMappingContext* DefaultMappingContext;
 
@@ -62,7 +135,8 @@ class ARPGSystemsCharacter : public ACharacterBase,public IAbilitySystemInterfac
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* SprintAction;
-	
+
+	// Gameplay Components
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Motion, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<URPGMotionWarpingComponent> MotionWarpingComponent;
 
@@ -81,105 +155,6 @@ class ARPGSystemsCharacter : public ACharacterBase,public IAbilitySystemInterfac
 	UPROPERTY(VisibleAnywhere, meta=(AllowPrivateAccess=true), Replicated, ReplicatedUsing=OnRep_EquipmentComponent)
 	TObjectPtr<UEquipmentManagerComponent> EquipmentComponent;
 
-public:
-	ARPGSystemsCharacter(const FObjectInitializer& ObjectInitializer);
-	
-	virtual void PossessedBy(AController* NewController) override;
-	virtual void OnRep_PlayerState() override;
-
-	/*Ability System Interface*/
-	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
-	/*RPG Ability System Interface*/
-	virtual USceneComponent* GetDynamicSpawnPoint_Implementation() override;
-	virtual void AddToExperience_Implementation(const FScalableFloat& XPScale) override;
-	
-	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
-	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
-	/*Inventory and Equipment Getters*/
-	UInventoryComponent* GetInventoryComponent() const { return InventoryComponent; }
-	UEquipmentManagerComponent* GetEquipmentComponent() const { return EquipmentComponent; }
-	
-	/*equipment instances*/
-	AEquipmentActor* GetEquipmentActor(FGameplayTag AttachTag);
-	void SetEquipment(UEquipmentInstance* NewInstance);
-	void RemoveEquipment(UEquipmentInstance* InstanceToRemove);
-	void ChangueEquipmentAttachPoint(FGameplayTag OldAttachTag,FGameplayTag NewAttachTag);
-
-	TArray<UEquipmentInstance*> EquipmentInstances;
-	
-	UPROPERTY(EditDefaultsOnly)
-	TMap<FGameplayTag,FName> AttachNames;
-
-	TSoftClassPtr<AEquipmentActor> GetEquipmentClassBySlotTag(FGameplayTag SlotTag) const;
-
-	UFUNCTION()
-	void UpdateCameraAim(float Value);
-	
-	void OnRangeStartAiming();
-	void OnRangeStopAiming();
-	bool bIsAiming = false;
-	FTimeline CameraTimeline;
-
-	UPROPERTY(EditAnywhere, Category = "Camera|Aim")
-	UCurveFloat* CameraAimCurve;
-
-	UPROPERTY(EditAnywhere, Category = "Camera|Aim")
-	float DefaultArmLength = 200.f;
-
-	UPROPERTY(EditAnywhere, Category = "Camera|Aim")
-	float AimArmLength = 300.f;
-
-	UPROPERTY(EditAnywhere, Category = "Camera|Aim")
-	FVector DefaultSocketOffset = FVector::ZeroVector;
-
-	UPROPERTY(EditAnywhere, Category = "Camera|Aim")
-	FVector AimSocketOffset = FVector(149.f, 43.f, 73.f);
-
-	UPROPERTY(EditAnywhere, Category = "Camera|Aim")
-	float CameraInterpSpeed = 10.f;
-
-	UArrowComponent* GetKickSphereTracePoint() const { return KickSphereTracePoint; }
-protected:
-
-	/** Called for movement input */
-	void Move(const FInputActionValue& Value);
-	void Jump() override;
-	void StopJumping() override;
-	void Interact();
-
-	UPROPERTY(BlueprintReadWrite)
-	TScriptInterface<IInteractableInterface> ThisFrameInteractActor;
-
-	/*Called for sprint input*/
-	//void Sprint();
-	
-	/** Called for looking input */
-	void Look(const FInputActionValue& Value);
-
-	virtual void InitAbilityActorInfo() override;
-	virtual void BindCallbacksToDependencies() override;
-	virtual void InitClassDefaults() override;
-	virtual void BroadcastInitialValues() override;
-	
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-	virtual void BeginPlay() override;
-	virtual void Tick(float DeltaSeconds) override;
-	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
-
-	void AddEquipmentToCharacterCapture(AActor* Actor) const;
-	void RemoveEquipmentFromCharacterCapture(AActor* Actor) const;
-private:
-	UFUNCTION()
-	void OnRep_InventoryComponent();
-
-	UFUNCTION()
-	void OnRep_EquipmentComponent();
-
-	//Swap Equipments
-	void ChangeAttachPoint(FGameplayTag OriginSocket, FGameplayTag DestinationSocket);
-
-	virtual void Death_Implementation() override;
-	
 	UPROPERTY(VisibleAnywhere, meta=(AllowPrivateAccess=true))
 	TObjectPtr<USceneComponent> DynamicProjectileSpawnPoint;
 
@@ -191,6 +166,31 @@ private:
 
 	UPROPERTY(BlueprintReadOnly,meta =(AllowPrivateAccess=true))
 	TObjectPtr<URPGAttributeSet> RPGAttributes;
+
+	//Equipments instances 
+	TArray<UEquipmentInstance*> EquipmentInstances;
+	
+	UPROPERTY(EditDefaultsOnly)
+	TMap<FGameplayTag,FName> AttachNames;
+	
+	//Camera Aiming
+	FTimeline CameraTimeline;
+
+	UPROPERTY(EditAnywhere, Category = "Camera|Aim")
+	UCurveFloat* CameraAimCurve;
+	
+	float DefaultArmLength = 0.f;
+	FVector DefaultSocketOffset = FVector::ZeroVector;
+
+	UPROPERTY(EditAnywhere, Category = "Camera|Aim")
+	float AimArmLength = 300.f;
+	
+	UPROPERTY(EditAnywhere, Category = "Camera|Aim")
+	FVector AimSocketOffset = FVector(149.f, 43.f, 73.f);
+
+	UPROPERTY(EditAnywhere, Category = "Camera|Aim")
+	float MaxSpeedWhileAiming = 130.f;
+	float DefaultMaxSpeed;
 };
 
 
