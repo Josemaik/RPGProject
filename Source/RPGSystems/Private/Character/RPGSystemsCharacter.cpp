@@ -352,6 +352,11 @@ void ARPGSystemsCharacter::RemoveEquipmentFromCharacterCapture(AActor* Actor) co
 	CharacterCaptureComponent->ShowOnlyActors.Remove(Actor);
 }
 
+void ARPGSystemsCharacter::Test()
+{
+	UE_LOG(LogTemp, Warning, TEXT("TEST"));
+}
+
 void ARPGSystemsCharacter::OnRep_InventoryComponent()
 {
 	InventoryComponent->InventoryList.OwningObject = this;

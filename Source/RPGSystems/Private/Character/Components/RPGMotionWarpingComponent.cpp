@@ -5,6 +5,7 @@
 #include "MotionWarpingAdapter.h"
 #include "Character/EnemyBase.h"
 #include "GameFramework/Character.h"
+#include "Kismet/KismetMathLibrary.h"
 #include "Kismet/KismetSystemLibrary.h"
 
 void URPGMotionWarpingComponent::SetLockedTarget(AActor* NewLockedTarget)
@@ -17,12 +18,41 @@ void URPGMotionWarpingComponent::UpdateAttackWarpTarget()
 	//is Target has value -> locked
 	if (IsValid(LockedTarget))
 	{
+		UMotionWarpingBaseAdapter* MotionWarpingBaseAdapter = GetOwnerAdapter();
+		if (!IsValid(MotionWarpingBaseAdapter)) return;
+	
+		ACharacter* OwnerCharacter = Cast<ACharacter>(MotionWarpingBaseAdapter->GetActor());
+		if (!IsValid(OwnerCharacter))
+		{
+			return;
+		}
+		
+		FVector DirectionToPlayer =
+		(
+			OwnerCharacter->GetActorLocation() -
+			LockedTarget->GetActorLocation()
+		).GetSafeNormal();
+		
+		FVector WarpLocation = LockedTarget->GetActorLocation() + DirectionToPlayer * 120.f;
+		FRotator WarpRotation = UKismetMathLibrary::FindLookAtRotation(
+			OwnerCharacter->GetActorLocation(),
+			LockedTarget->GetActorLocation()
+		);
+
+		FTransform WarpTransform;
+		WarpTransform.SetLocation(WarpLocation);
+		WarpTransform.SetRotation(WarpRotation.Quaternion());
+		
 		AddOrUpdateWarpTargetFromTransform(
 			FName("AttackTarget"),
-			LockedTarget->GetActorTransform()
+			WarpTransform
 		);
 		return;
 	}
+
+	LockedTarget = nullptr;
+
+	RemoveWarpTarget(FName("AttackTarget"));
 
 	//searh nearest target
 	FindAndSetNearestEnemyTarget();
@@ -78,5 +108,9 @@ void URPGMotionWarpingComponent::FindAndSetNearestEnemyTarget()
 			FName("AttackTarget"),
 			BestTarget->GetActorTransform()
 		);
+	}
+	else
+	{
+		RemoveWarpTarget(FName("AttackTarget"));
 	}
 }

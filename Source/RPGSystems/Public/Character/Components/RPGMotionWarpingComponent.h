@@ -16,6 +16,7 @@ class RPGSYSTEMS_API URPGMotionWarpingComponent : public UMotionWarpingComponent
 public:
 	void SetLockedTarget(AActor* Target);
 	void UpdateAttackWarpTarget();
+	
 private:
 	void FindAndSetNearestEnemyTarget();
 	

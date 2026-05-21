@@ -24,6 +24,11 @@ ACrossBowActor::ACrossBowActor()
 
 void ACrossBowActor::Shoot()
 {
+	if (!IsValid(LastSpawnedArrow))
+	{
+		return;
+	}
+	
 	APlayerController* PC = Cast<APlayerController>(OwnerCharacter->GetController());
 	if (!IsValid(PC)) return;
 

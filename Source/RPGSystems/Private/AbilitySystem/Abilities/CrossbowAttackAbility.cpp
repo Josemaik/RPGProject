@@ -100,6 +100,19 @@ void UCrossbowAttackAbility::OnInputReleased(float TimeWaited)
 		return;
 	}
 	
+	if (!IsValid(CrossBowActor))
+	{
+		return;
+	}
+
+	if (!CrossBowActor->bHasArrow)
+	{
+		FTimerDelegate TimerDelegate;
+		TimerDelegate.BindUObject(this, &UCrossbowAttackAbility::OnCancelWindowFinished);
+		GetWorld()->GetTimerManager().SetTimer(WaitUntilSheathTimer,TimerDelegate,2.f,false);
+		return;
+	}
+	
 	ShootArrow();
 	
 	Reload();

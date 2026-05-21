@@ -29,7 +29,7 @@ struct FInputActionValue;
 DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
 
 UCLASS(config=Game)
-class ARPGSystemsCharacter : public ACharacterBase,public IAbilitySystemInterface, public IRPGAbilitySystemInterface
+class RPGSYSTEMS_API ARPGSystemsCharacter : public ACharacterBase,public IAbilitySystemInterface, public IRPGAbilitySystemInterface
 {
 	GENERATED_BODY()
 public:
@@ -59,6 +59,9 @@ public:
 	//character capture for UI
 	void AddEquipmentToCharacterCapture(AActor* Actor) const;
 	void RemoveEquipmentFromCharacterCapture(AActor* Actor) const;
+
+	UFUNCTION(BlueprintCallable)
+	void Test();
 protected:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaSeconds) override;
