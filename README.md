@@ -1,6 +1,12 @@
 # RPGProject
 Multiplayer RPG prototype made with Gameplay Ability System in UE5.6
 
+## Gameplay
+
+<h3>Updated: Combat Combo, Crossbow and Target Locked Funtionality</h3>
+
+[![Ver demo](https://github.com/user-attachments/assets/9df8a60f-fd81-4852-b024-b8086e5dff6b)](https://www.youtube.com/watch?v=B8pZ_oZfzHk)
+
 <h2>Inventory / Equipment System inspired by The Witcher 3 - UMG C++ </h2>
 
 <h3>----------------------------------------------------------------------------------</h3>
@@ -21,9 +27,7 @@ Multiplayer RPG prototype made with Gameplay Ability System in UE5.6
 
 [![Ver demo](https://github.com/user-attachments/assets/a6dff5e3-94dd-4826-a36e-efd7bec1a6cc)](https://www.youtube.com/watch?v=mJkfg7-rj3c)
 
-## Gameplay
-
-<h3>Updated: Combat Combo and Target Locked Funtionality</h3>
+Old version:
 <video src="https://github.com/user-attachments/assets/3e33f9a6-13e3-43e6-9e6b-97e4561a676e" width="300" controls></video>
 
 
