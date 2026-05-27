@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "AbilitySystem/Abilities/AssasinationAbility.h"
+#include "AbilitySystem/Abilities/Equipment/AssasinationAbility.h"
 
 #include "Abilities/Tasks/AbilityTask_PlayMontageAndWait.h"
 #include "Character/Components/RPGMotionWarpingComponent.h"

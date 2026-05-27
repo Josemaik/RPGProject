@@ -3,8 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "RPGDamageAbility.h"
-#include "RPGGameplayAbility.h"
+#include "../RPGDamageAbility.h"
 #include "SwordAttackAbility.generated.h"
 
 class ARPGSystemsCharacter;

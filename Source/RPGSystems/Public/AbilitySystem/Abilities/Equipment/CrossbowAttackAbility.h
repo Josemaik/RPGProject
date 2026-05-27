@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "RPGDamageAbility.h"
+#include "../RPGDamageAbility.h"
 #include "CrossbowAttackAbility.generated.h"
 
 class ACrossBowActor;

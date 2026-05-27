@@ -62,6 +62,9 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void Test();
+
+	UFUNCTION(BlueprintCallable)
+	void SetTargetLock(AActor* NewTargetLockActor);
 protected:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaSeconds) override;
@@ -195,9 +198,6 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Camera|Aim")
 	float MaxSpeedWhileAiming = 130.f;
 	float DefaultMaxSpeed;
-
-	UFUNCTION(BlueprintCallable)
-	void SetTargetLock(AActor* NewTargetLockActor);
 	
 	//Combat
 	UPROPERTY(EditAnywhere,BlueprintReadWrite, Category = "Combat", meta=(allowPrivateAccess="true"))

@@ -16,17 +16,28 @@ void URPGMotionWarpingComponent::SetLockedTarget(AActor* NewLockedTarget)
 void URPGMotionWarpingComponent::UpdateAttackWarpTarget()
 {
 	//is Target has value -> locked
-	if (IsValid(LockedTarget))
-	{
-		UMotionWarpingBaseAdapter* MotionWarpingBaseAdapter = GetOwnerAdapter();
-		if (!IsValid(MotionWarpingBaseAdapter)) return;
+
+	UMotionWarpingBaseAdapter* MotionWarpingBaseAdapter = GetOwnerAdapter();
+	if (!IsValid(MotionWarpingBaseAdapter)) return;	
 	
-		ACharacter* OwnerCharacter = Cast<ACharacter>(MotionWarpingBaseAdapter->GetActor());
-		if (!IsValid(OwnerCharacter))
-		{
-			return;
-		}
-		
+	ACharacter* OwnerCharacter = Cast<ACharacter>(MotionWarpingBaseAdapter->GetActor());
+	if (!IsValid(OwnerCharacter))
+	{
+		return;
+	}
+
+	if (!IsValid(LockedTarget))
+	{
+		FindAndSetNearestEnemyTarget();
+		return;
+	}
+	
+	FVector TargetForward = LockedTarget->GetActorForwardVector();
+	FVector CharacterForward = OwnerCharacter->GetActorForwardVector();
+	float Dot = FVector::DotProduct(TargetForward, CharacterForward);
+	
+	if (Dot >= -1 && Dot <= -0.5)
+	{
 		FVector DirectionToPlayer =
 		(
 			OwnerCharacter->GetActorLocation() -
@@ -39,6 +50,8 @@ void URPGMotionWarpingComponent::UpdateAttackWarpTarget()
 			LockedTarget->GetActorLocation()
 		);
 
+		GEngine->AddOnScreenDebugMessage(-1,3.f,FColor::Red,FString::Printf(TEXT("Attack target updated")));
+
 		FTransform WarpTransform;
 		WarpTransform.SetLocation(WarpLocation);
 		WarpTransform.SetRotation(WarpRotation.Quaternion());
@@ -50,8 +63,9 @@ void URPGMotionWarpingComponent::UpdateAttackWarpTarget()
 		return;
 	}
 
-	LockedTarget = nullptr;
+	GEngine->AddOnScreenDebugMessage(-1,3.f,FColor::Yellow,FString::Printf(TEXT("Attack target Removed")));
 
+	LockedTarget = nullptr;
 	RemoveWarpTarget(FName("AttackTarget"));
 
 	//searh nearest target
@@ -104,6 +118,7 @@ void URPGMotionWarpingComponent::FindAndSetNearestEnemyTarget()
 
 	if (IsValid(BestTarget))
 	{
+		LockedTarget = BestTarget;
 		AddOrUpdateWarpTargetFromTransform(
 			FName("AttackTarget"),
 			BestTarget->GetActorTransform()

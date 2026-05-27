@@ -321,6 +321,15 @@ void ARPGSystemsCharacter::Tick(float DeltaSeconds)
 	{
 		CameraTimeline.TickTimeline(DeltaSeconds);
 	}
+
+	if (IsValid(TargetLock))
+	{
+		FVector TargetLocationOffset = TargetLock->GetActorLocation() - FVector(0, 0, 100.f);
+		FRotator LookAtTargetRotator = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(),TargetLocationOffset);
+
+		FRotator LookAtCurrentRotInterp = UKismetMathLibrary::RInterpTo(GetControlRotation(),LookAtTargetRotator,DeltaSeconds,8.f);
+		GetController()->SetControlRotation(FRotator(LookAtCurrentRotInterp.Pitch,LookAtCurrentRotInterp.Yaw,0.f));
+	}
 }
 
 void ARPGSystemsCharacter::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const

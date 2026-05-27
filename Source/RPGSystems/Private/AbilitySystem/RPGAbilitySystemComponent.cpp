@@ -6,7 +6,7 @@
 #include "NativeGameplayTags.h"
 #include "AbilitySystem/Abilities/ProjectileAbility.h"
 #include "AbilitySystem/Abilities/RPGGameplayAbility.h"
-#include "AbilitySystem/Abilities/SwordAttackAbility.h"
+#include "AbilitySystem/Abilities/Equipment/SwordAttackAbility.h"
 #include "Engine/AssetManager.h"
 #include "Engine/StreamableManager.h"
 #include "Equipment/EquipmentManagerComponent.h"
