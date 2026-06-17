@@ -50,6 +50,11 @@ void AEnemyDummy::SetWidgetVisibility_Implementation(bool value)
 {
 }
 
+float AEnemyDummy::Attack()
+{
+	return PlayAnimMontage(AttackMontage);
+}
+
 void AEnemyDummy::BeginPlay()
 {
 	Super::BeginPlay();

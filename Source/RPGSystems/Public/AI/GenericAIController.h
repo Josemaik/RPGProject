@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Perception/AIPerceptionTypes.h"
 #include "Runtime/AIModule/Classes/AIController.h"
 #include "GenericAIController.generated.h"
 
@@ -18,7 +19,18 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 private:
+
+	UFUNCTION()
+	void OnTargetPerceptionUpdated(AActor* Actor, FAIStimulus Stimulus);
+	
+	UPROPERTY(EditDefaultsOnly, Category= "Components", meta=(allowPrivateAccess="true"))
+	TObjectPtr<UAIPerceptionComponent> AIPerceptionComponent;
+	
 	UPROPERTY(EditDefaultsOnly, Category= "AI")
 	TObjectPtr<UBehaviorTree> GenericBehaviorTree;
 };
+
+
+

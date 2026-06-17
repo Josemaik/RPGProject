@@ -5,12 +5,13 @@
 #include "CoreMinimal.h"
 #include "EnemyBase.h"
 #include "Interfaces/AssasinationInterface.h"
+#include "Interfaces/EnemyAIInterface.h"
 #include "EnemyDummy.generated.h"
 
 class USphereComponent;
 
 UCLASS()
-class RPGSYSTEMS_API AEnemyDummy : public AEnemyBase, public IAssasinationInterface
+class RPGSYSTEMS_API AEnemyDummy : public AEnemyBase, public IAssasinationInterface, public IEnemyAIInterface
 {
 	GENERATED_BODY()
 
@@ -22,6 +23,8 @@ public:
 
 	UFUNCTION(blueprintNativeEvent)
 	void SetWidgetVisibility(bool value);
+
+	virtual float Attack() override;
 protected:
 	virtual void BeginPlay() override;
 private:
@@ -34,4 +37,7 @@ private:
 	
 	UPROPERTY(EditDefaultsOnly, Category="Custom Values|Animation")
 	UAnimMontage* AssasinationAnimMontage;
+
+	UPROPERTY(EditDefaultsOnly, Category="Custom Values|Animation")
+	UAnimMontage* AttackMontage;
 };
