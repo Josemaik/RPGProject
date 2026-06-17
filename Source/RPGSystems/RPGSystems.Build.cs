@@ -9,7 +9,7 @@ public class RPGSystems : ModuleRules
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
 		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput","GameplayAbilities","GameplayTasks","GameplayTags","NetCore", "MotionWarping","Slate",
-			"SlateCore", "ModelViewViewModel" });
+			"SlateCore", "ModelViewViewModel", "AIModule","NavigationSystem" });
 		
 		PublicIncludePaths.AddRange(
 			new string[] {

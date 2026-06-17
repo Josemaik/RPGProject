@@ -152,6 +152,12 @@ void ARPGSystemsCharacter::OnRangeStartAiming()
 	
 	if (!IsValid(CameraBoom)) { return; }
 
+	if (IsValid(TargetLock))
+	{
+		CachedTargetLock = TargetLock;
+		TargetLock = nullptr;
+	}
+	
 	//Save default values
 	DefaultMaxSpeed = CharacterMovementComp->GetMaxSpeed();
 	DefaultArmLength = CameraBoom->TargetArmLength;
@@ -170,6 +176,12 @@ void ARPGSystemsCharacter::OnRangeStopAiming()
 	if (!IsValid(CharacterMovementComp)) { return; }
 	
 	if (!IsValid(CameraBoom)) { return; }
+
+	if (IsValid(CachedTargetLock))
+	{
+		TargetLock = CachedTargetLock;
+		CachedTargetLock = nullptr;
+	}
 	
 	//Restore Default values
 	CharacterMovementComp->MaxWalkSpeed = DefaultMaxSpeed;

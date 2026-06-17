@@ -202,6 +202,9 @@ private:
 	//Combat
 	UPROPERTY(EditAnywhere,BlueprintReadWrite, Category = "Combat", meta=(allowPrivateAccess="true"))
 	TObjectPtr<AActor> TargetLock;
+
+	UPROPERTY()
+	TObjectPtr<AActor> CachedTargetLock;
 };
 
 
